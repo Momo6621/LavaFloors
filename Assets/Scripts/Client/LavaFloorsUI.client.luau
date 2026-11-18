@@ -129,7 +129,7 @@ close.Position = UDim2.new(1, -10, 0.5, 0)
 local list = make("ScrollingFrame", { Position = UDim2.fromOffset(12, 66), Size = UDim2.new(1, -24, 1, -110), BackgroundTransparency = 1, BorderSizePixel = 0, ScrollBarThickness = 6, ScrollBarImageColor3 = INK, CanvasSize = UDim2.new(), AutomaticCanvasSize = Enum.AutomaticSize.Y }, shop)
 make("UIGridLayout", { CellSize = UDim2.new(0.5, -8, 0, 150), CellPadding = UDim2.fromOffset(10, 10), SortOrder = Enum.SortOrder.LayoutOrder, HorizontalAlignment = Enum.HorizontalAlignment.Center }, list)
 make("UIPadding", { PaddingTop = UDim.new(0, 4), PaddingBottom = UDim.new(0, 8) }, list)
-local foot = label(shop, "Every glove has the same stats. Robux items are optional.", 14, INK:Lerp(CREAM, 0.35))
+local foot = label(shop, "Gloves and hats are just for looks. Robux items are optional.", 14, INK:Lerp(CREAM, 0.35))
 foot.AnchorPoint = Vector2.new(0.5, 1)
 foot.Position = UDim2.new(0.5, 0, 1, -10)
 foot.Size = UDim2.new(1, -24, 0, 26)
@@ -187,6 +187,38 @@ for i, s in C.Skins do
 		})
 	end
 end
+local FruitModels = game.ReplicatedStorage:WaitForChild("FruitModels")
+for i, h in C.Hats do
+	local f, b = card(50 + i, h.Color, h.Name)
+	local model = FruitModels:FindFirstChild(h.Id)
+	if model then
+		local view: ViewportFrame = make("ViewportFrame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 4), Size = UDim2.fromOffset(64, 64), BackgroundTransparency = 1, ZIndex = 3 }, f)
+		local copy = model:Clone()
+		copy:PivotTo(CFrame.new())
+		copy.Parent = view
+		local _, size = copy:GetBoundingBox()
+		local cam: Camera = make("Camera", { FieldOfView = 30 }, view)
+		cam.CFrame = CFrame.lookAt(Vector3.new(0, size.Y * 0.3, size.Magnitude * 2.1), Vector3.zero)
+		view.CurrentCamera = cam
+	end
+	local id = h.Id
+	b.Activated:Connect(function()
+		event:FireServer("Hat", id)
+	end)
+	table.insert(cards, {
+		refresh = function()
+			if player:GetAttribute("HatStyle") == id then
+				setButton(b, "✓ ON", GREEN)
+			elseif player:GetAttribute("OwnsHat" .. id) then
+				setButton(b, "WEAR", ORANGE)
+			else
+				local afford = (player:GetAttribute("Coins") or 0) >= h.Cost
+				setButton(b, "💰 " .. h.Cost, if afford then ORANGE else Color3.fromRGB(170, 150, 140))
+			end
+		end,
+	})
+end
+
 local function price(id: number, kind: Enum.InfoType, b: TextButton, prefix: string)
 	task.spawn(function()
 		local ok, info = pcall(function()
@@ -253,11 +285,14 @@ local function refreshShop()
 		c.refresh()
 	end
 end
-for _, attr in { "Coins", "GloveStyle", "AuroraPass", "DoubleLavaPass" } do
+for _, attr in { "Coins", "GloveStyle", "HatStyle", "AuroraPass", "DoubleLavaPass" } do
 	player:GetAttributeChangedSignal(attr):Connect(refreshShop)
 end
 for _, s in C.Skins do
 	player:GetAttributeChangedSignal("Owns" .. s.Id):Connect(refreshShop)
+end
+for _, h in C.Hats do
+	player:GetAttributeChangedSignal("OwnsHat" .. h.Id):Connect(refreshShop)
 end
 refreshShop()
 
@@ -358,6 +393,27 @@ if UIS.TouchEnabled then
 	(b:FindFirstChildOfClass("UICorner") :: UICorner).CornerRadius = UDim.new(0, 48)
 	b.Activated:Connect(shove)
 end
+
+local function raise()
+	event:FireServer("LavaLift")
+end
+CAS:BindAction("LavaRaise", function(_, state)
+	if state == Enum.UserInputState.Begin and not shop.Visible then
+		raise()
+	end
+	return Enum.ContextActionResult.Sink
+end, false, Enum.KeyCode.E, Enum.KeyCode.ButtonY)
+local raiseButton = button(gui, "⬆️ RAISE" .. string.char(10) .. "40 💰", Color3.fromRGB(255, 185, 40), UDim2.fromOffset(96, 72))
+raiseButton.AnchorPoint = Vector2.new(1, 1)
+raiseButton.Position = if UIS.TouchEnabled then UDim2.new(1, -132, 1, -150) else UDim2.new(1, -24, 1, -150)
+raiseButton.TextSize = 18
+raiseButton.Visible = false
+raiseButton.Activated:Connect(raise)
+local function showRaise()
+	raiseButton.Visible = player:GetAttribute("ArenaMode") == "LavaRush"
+end
+player:GetAttributeChangedSignal("ArenaMode"):Connect(showRaise)
+showRaise()
 
 local function cameraBehind()
 	task.wait(0.4)

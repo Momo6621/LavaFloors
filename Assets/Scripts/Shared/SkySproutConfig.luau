@@ -22,4 +22,12 @@ return {
  {Id="Diamond",Name="Diamond Gloves",Cost=4000,Color=Color3.fromRGB(205,240,255),Material="Glass",Sparkle=true},
  {Id="Aurora",Name="Aurora Gloves",Premium=true,Cost=0,Color=Color3.fromRGB(105,224,255),Material="Neon",Sparkle=true},
  },
+ Hats={
+ {Id="Strawberry",Name="Strawberry Hat",Cost=250,Color=Color3.fromRGB(235,70,80)},
+ {Id="Banana",Name="Banana Hat",Cost=400,Color=Color3.fromRGB(255,220,80)},
+ {Id="Pineapple",Name="Pineapple Hat",Cost=700,Color=Color3.fromRGB(255,170,60)},
+ {Id="Watermelon",Name="Watermelon Hat",Cost=1000,Color=Color3.fromRGB(255,110,140)},
+ {Id="Coconut",Name="Coconut Hat",Cost=1500,Color=Color3.fromRGB(150,95,60)},
+ {Id="Blueberry",Name="Blueberry Hat",Cost=2200,Color=Color3.fromRGB(120,110,255)},
+ },
 }

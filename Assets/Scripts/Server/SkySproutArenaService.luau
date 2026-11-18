@@ -14,6 +14,7 @@ local function setMode(p,mode)p:SetAttribute("ArenaMode",mode)end
 local function stats(p)
  local d=data(p);if not d then return end
  p:SetAttribute("UnlockedFloor",d.BestFloor);p:SetAttribute("GloveStyle",d.Skin);for _,skin in ipairs(C.Skins)do p:SetAttribute("Owns"..skin.Id,d.Owned[skin.Id]==true)end
+ p:SetAttribute("HatStyle",d.Hat or "");for _,h in ipairs(C.Hats)do p:SetAttribute("OwnsHat"..h.Id,d.OwnedHats and d.OwnedHats[h.Id]==true)end
  p:SetAttribute("Crowns",d.Crowns or 0);p:SetAttribute("Floor",Rules.floor(d.Points));p:SetAttribute("Points",d.Points);p:SetAttribute("Coins",d.Coins)
  local ls=p:FindFirstChild("leaderstats")
  if ls then
@@ -216,6 +217,9 @@ function A.HandleAction(p,action,value)
  elseif action=="Skin"then
   if f or type(value)~="string"then return end
   local ok,msg=Rules.skin(data(p),value,A.Pass~=nil and A.Pass.Owns(p));if ok then stats(p);equip(p)end;tell(p,msg)
+ elseif action=="Hat"then
+  if type(value)~="string"then return end
+  local ok,msg=Rules.hat(data(p),value);if ok then stats(p);if A.OnHat then A.OnHat(p)end end;tell(p,msg)
  elseif action=="Punch"or action=="Heavy"then
   if C.PartyMode and not f then return end
   if f then attack(p,f,action=="Heavy")else practice(p,action=="Heavy")end

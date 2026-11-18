@@ -147,6 +147,47 @@ local function freezeTime(tower: Instance, phase: number): number
 	return (attr(tower, "Start") or 0) + phase * phaseTime + RISE[1] * phaseTime
 end
 
+-- Per-tile overrides the server sets as attributes: camping (CampWarn/CampFall/CampBack) drops a tile for a
+-- while, and a raise (LiftStart/LiftEnd/LiftHeight) pops it up.
+local CAMP_SINK = 0.6
+local LIFT_RAMP = 0.6
+
+local function tilePart(tower: Instance, index: number): Instance?
+	return tower:FindFirstChild("Tile" .. index)
+end
+
+local function num(item: Instance, name: string): number?
+	local v = item:GetAttribute(name)
+	return if type(v) == "number" then v else nil
+end
+
+local function campState(tile: Instance, t: number): (string?, number)
+	local warnAt, fallAt, backAt = num(tile, "CampWarn"), num(tile, "CampFall"), num(tile, "CampBack")
+	if not warnAt or not fallAt or not backAt or t < warnAt or t >= backAt + CAMP_SINK then
+		return nil, 0
+	end
+	if t < fallAt then
+		return "Warning", 0
+	elseif t < fallAt + CAMP_SINK then
+		return "Falling", FALL_DEPTH * smooth((t - fallAt) / CAMP_SINK)
+	elseif t < backAt then
+		return "Gone", FALL_DEPTH
+	end
+	return "Growing", FALL_DEPTH * (1 - smooth((t - backAt) / CAMP_SINK))
+end
+
+function G.Lift(tower: Instance, row: number, col: number, t: number): number
+	local tile = tilePart(tower, (row - 1) * (attr(tower, "Size") or 9) + col)
+	if not tile then
+		return 0
+	end
+	local start, finish, height = num(tile, "LiftStart"), num(tile, "LiftEnd"), num(tile, "LiftHeight")
+	if not start or not finish or not height or t < start or t > finish then
+		return 0
+	end
+	return height * math.min(smooth((t - start) / LIFT_RAMP), smooth((finish - t) / LIFT_RAMP))
+end
+
 function G.TileState(tower: Instance, row: number, col: number, t: number): (string, number, number)
 	local size = attr(tower, "Size") or 9
 	local phaseTime = attr(tower, "PhaseTime") or 12
@@ -179,6 +220,13 @@ function G.TileState(tower: Instance, row: number, col: number, t: number): (str
 			return "Warning", 0, 1
 		end
 	end
+	local tile = tilePart(tower, index)
+	if tile then
+		local camp, sink = campState(tile, t)
+		if camp then
+			return camp, sink, 1
+		end
+	end
 	return "Still", 0, 1
 end
 
@@ -205,6 +253,7 @@ function G.TileCFrame(tower: Instance, row: number, col: number, t: number): CFr
 		end
 		lift = -TUCK_DROP * (1 - pop)
 	end
+	lift += G.Lift(tower, row, col, t)
 	local centre = CFrame.new(attr(tower, "CenterX") or 0, y - sink + lift, attr(tower, "CenterZ") or 0)
 	return centre * CFrame.Angles(0, angle, 0) * CFrame.new(x, 0, z)
 end
@@ -226,6 +275,46 @@ function G.FallLift(item: Instance, t: number): number
 		return 0
 	end
 	return math.max(0, from - speed * math.max(0, t - start))
+end
+
+-- The tile (row, col) a world position is standing over right now, if any.
+-- How worn a tile looks (0..1), or nil if it isn't wearing: planned holes wear out over their phase, and
+-- tiles wear while people stand on them (the server's Wear attribute).
+function G.Crumble(tower: Instance, row: number, col: number, t: number): number?
+	local size = attr(tower, "Size") or 9
+	local index = (row - 1) * size + col
+	local drop = G.Plan(tower).drop[index]
+	local p, s = G.Phase(tower, t)
+	if drop and p == drop then
+		local phaseTime = attr(tower, "PhaseTime") or 12
+		if s < FALL[1] * phaseTime then
+			return s / (FALL[1] * phaseTime)
+		end
+	end
+	local tile = tilePart(tower, index)
+	if not tile then
+		return nil
+	end
+	local warnAt, fallAt = num(tile, "CampWarn"), num(tile, "CampFall")
+	if warnAt and fallAt and t >= warnAt and t < fallAt then
+		return 1
+	end
+	local w = num(tile, "Wear")
+	return if w and w > 0 then w else nil
+end
+
+function G.TileAt(tower: Instance, position: Vector3, t: number): (number?, number?)
+	local size = attr(tower, "Size") or 9
+	local step = (attr(tower, "Tile") or 7) + (attr(tower, "Gap") or 0.15)
+	local angle, y = G.Pose(tower, t)
+	local frame = CFrame.new(attr(tower, "CenterX") or 0, y, attr(tower, "CenterZ") or 0) * CFrame.Angles(0, angle, 0)
+	local rel = frame:PointToObjectSpace(position)
+	local mid = (size + 1) / 2
+	local col, row = math.floor(rel.X / step + mid + 0.5), math.floor(rel.Z / step + mid + 0.5)
+	if row < 1 or row > size or col < 1 or col > size or rel.Y < 0 or rel.Y > 14 then
+		return nil, nil
+	end
+	return row, col
 end
 
 function G.Safe(tower: Instance, row: number, col: number, t: number): boolean

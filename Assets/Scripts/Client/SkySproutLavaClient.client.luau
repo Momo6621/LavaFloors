@@ -202,7 +202,7 @@ event.OnClientEvent:Connect(function(kind: string, v: any)
 		if v.Kind == "Ember" then
 			play("Ember", 1 + math.random() * 0.2)
 			if v.Position then
-				floatText(v.Position, "+1 🔥")
+				floatText(v.Position, "+1 🍓")
 				burst(v.Position, FIRE, 20, 12)
 			end
 		elseif v.Kind == "Scorched" then
@@ -301,7 +301,7 @@ Run.RenderStepped:Connect(function(dt)
 			local twist = state.Mutator
 			title.Text = if twist and twist ~= "Classic" then string.format("%s IN %d", string.upper(twist), secs) else string.format("🔥 LAVA RUSH STARTS IN %d", secs)
 			local shoveTip = if game:GetService("UserInputService").TouchEnabled then "💥 Tap SHOVE to push rivals" else "🖱️ Click to SHOVE rivals"
-			local tips = { shoveTip,"🌀 The floor spins, grows, then rises — stay on!", "🛡️ Blue bubbles block shoves", "🔴 Red tiles fall or get left behind — move!", "🏆 Get to the middle and survive every phase!", "🎁 Grab falling crates for boosts!" }
+			local tips = { shoveTip,"🌀 The floor spins, grows, then rises — stay on!", "🛡️ Blue bubbles block shoves", "🔴 Red tiles fall or get left behind — move!", "🍉 Stay on one tile too long and it cracks!", "⬆️ Press E or tap RAISE to pop your tile up (40 coins)", "🏆 Get to the middle and survive every phase!", "🎁 Grab falling crates for boosts!" }
 			info.Text = string.format("%s%d climber%s ready  •  %s", if state.Theme then state.Theme .. "  •  " else "", state.Queued, if state.Queued == 1 then "" else "s", tips[math.floor(t / 2.5) % #tips + 1])
 			if secs <= 3 and secs > 0 and secs ~= lastBeep then
 				lastBeep = secs
@@ -318,7 +318,7 @@ Run.RenderStepped:Connect(function(dt)
 				local gap = math.max(0, math.floor((r.Position.Y - 3) - state.LavaY))
 				local phase, phases = state.GridPhase or 0, state.GridPhases or 0
 				local stage = if phase <= 0 then "Get ready!" else string.format("Phase %d/%d", phase, phases)
-				info.Text = string.format("%s  •  👥 %d left  •  🔥 %d  •  Lava %d below", stage, state.Alive or 0, me.Embers, gap)
+				info.Text = string.format("%s  •  👥 %d left  •  🍓 %d  •  Lava %d below", stage, state.Alive or 0, me.Embers, gap)
 				local target = if gap < 10 then 0.6 + 0.4 * (gap / 10) else 1
 				tint.BackgroundTransparency += (target - tint.BackgroundTransparency) * math.min(1, dt * 8)
 			else
@@ -394,6 +394,8 @@ end)
 
 -- Moving grid
 
+local wearTile: (BasePart, CFrame, number?, string, number) -> CFrame
+
 type Rider = { tower: Instance?, tile: Instance? }
 local riders: { [BasePart]: Rider } = {}
 local function addRider(item: Instance)
@@ -408,6 +410,72 @@ CollectionService:GetInstanceAddedSignal("LavaRider"):Connect(addRider)
 CollectionService:GetInstanceRemovedSignal("LavaRider"):Connect(function(item)
 	riders[item :: BasePart] = nil
 end)
+
+-- Wear: a tile darkens, cracks and shakes as it wears out, then shatters into chunks that tumble into the lava.
+local CRACKED = Color3.fromRGB(70, 52, 48)
+type Look = { color: Color3, material: Enum.Material, broken: boolean }
+local looks: { [BasePart]: Look } = {}
+
+local function shatter(tile: BasePart, at: CFrame)
+	local size = tile.Size
+	local character = player.Character
+	local me = character and character:FindFirstChild("HumanoidRootPart")
+	if me and me:IsA("BasePart") and (me.Position - at.Position).Magnitude < 70 then
+		play("Shove", 0.55)
+	end
+	for gx = -1, 1 do
+		for gz = -1, 1 do
+			local chunk = Instance.new("Part")
+			chunk.Size = Vector3.new(size.X / 3 - 0.15, size.Y, size.Z / 3 - 0.15)
+			chunk.CFrame = at * CFrame.new(gx * size.X / 3, 0, gz * size.Z / 3) * CFrame.Angles(math.random() * 0.3, math.random() * 0.6, math.random() * 0.3)
+			chunk.Color = CRACKED:Lerp(looks[tile] and looks[tile].color or tile.Color, 0.35)
+			chunk.Material = Enum.Material.Slate
+			chunk.CanCollide = false
+			chunk.CanQuery = false
+			chunk.CanTouch = false
+			chunk.CastShadow = false
+			chunk.AssemblyLinearVelocity = Vector3.new(gx * 9 + (math.random() - 0.5) * 6, math.random() * 8, gz * 9 + (math.random() - 0.5) * 6)
+			chunk.AssemblyAngularVelocity = Vector3.new(math.random() - 0.5, math.random() - 0.5, math.random() - 0.5) * 10
+			chunk.Parent = workspace
+			Debris:AddItem(chunk, 2.5)
+		end
+	end
+	burst(at.Position, ColorSequence.new(Color3.fromRGB(255, 200, 120), Color3.fromRGB(120, 90, 80)), 26, 14)
+end
+
+wearTile = function(tile: BasePart, moved: CFrame, crumble: number?, state: string, t: number): CFrame
+	local look = looks[tile]
+	if not look then
+		look = { color = tile.Color, material = tile.Material, broken = false }
+		looks[tile] = look
+	end
+	if state == "Falling" or state == "Gone" then
+		if not look.broken then
+			look.broken = true
+			if state == "Falling" then
+				shatter(tile, moved)
+			end
+		end
+		tile.LocalTransparencyModifier = 1
+		return moved
+	end
+	look.broken = false
+	tile.LocalTransparencyModifier = 0
+	if crumble and crumble > 0 then
+		local w = math.min(1, crumble)
+		tile.Color = look.color:Lerp(CRACKED, w * 0.75)
+		tile.Material = if w > 0.66 then Enum.Material.CrackedLava elseif w > 0.33 then Enum.Material.Cobblestone else Enum.Material.Slate
+		if w > 0.66 then
+			local shake = (w - 0.66) * 0.5
+			moved *= CFrame.new(math.noise(t * 20, tile.Position.X) * shake, 0, math.noise(t * 20, tile.Position.Z) * shake)
+				* CFrame.Angles(math.noise(t * 15, 1) * shake * 0.2, 0, math.noise(t * 15, 2) * shake * 0.2)
+		end
+	elseif tile.Material ~= look.material then
+		tile.Color = look.color
+		tile.Material = look.material
+	end
+	return moved
+end
 
 local standingOn: BasePart? = nil
 local standingCFrame: CFrame? = nil
@@ -454,11 +522,22 @@ Run.PreSimulation:Connect(function()
 		if fall > 0 then
 			moved += Vector3.new(0, fall, 0)
 		end
+		local row, col = tile:GetAttribute("Row"), tile:GetAttribute("Col")
+		local state, crumble = "Still", nil
+		if type(row) == "number" and type(col) == "number" then
+			state = Grid.TileState(towerModel, row, col, t)
+			crumble = Grid.Crumble(towerModel, row, col, t)
+		end
+		local broken = state == "Falling" or state == "Gone"
+		if item == tile then
+			moved = wearTile(tile, moved, crumble, state, t)
+		elseif item.Name == "LiftGlow" or item.Name == "WarnPlate" then
+			item.LocalTransparencyModifier = if broken then 1 else 0
+		end
 		item.CFrame = if CollectionService:HasTag(item, "LavaEmber") then moved * CFrame.Angles(0, t * 3, 0) else moved
 		if item.Name == "WarnPlate" then
-			local row, col = tile:GetAttribute("Row"), tile:GetAttribute("Col")
-			local state = if type(row) == "number" and type(col) == "number" then Grid.TileState(towerModel, row, col, t) else "Still"
-			item.Transparency = if state == "Warning" then (if blink then 0.05 else 0.6) else 1
+			-- Red only for rings about to be left behind; tiles that break show wear and cracks instead.
+			item.Transparency = if state == "Warning" and crumble == nil then (if blink then 0.05 else 0.6) else 1
 		elseif item.Name == "Chute" then
 			item.Transparency = if fall > 0 then 0.15 else 1
 		end

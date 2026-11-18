@@ -9,6 +9,9 @@ local Profiles = require(script.Parent.SkySproutProfiles)
 local GameConfig = require(game.ReplicatedStorage.SkySproutConfig) :: any
 local Themes = require(game.ReplicatedStorage:WaitForChild("LavaThemes")) :: any
 local Grid = require(game.ReplicatedStorage:WaitForChild("LavaGrid")) :: any
+local FruitModels = game.ReplicatedStorage:WaitForChild("FruitModels")
+local applyHat: (Player) -> ()
+local wear: { [number]: number } = {}
 
 local CFG = {
 	-- Arena
@@ -16,7 +19,7 @@ local CFG = {
 	Center = Vector3.new(-250, 0, 300),
 	Beacon = Vector3.new(-200.7, 0, 262.4),
 	MinPlayers = 1,
-	Countdown = 8,
+	Countdown = 6,
 	ResultsTime = 4,
 
 	-- Grid
@@ -26,8 +29,8 @@ local CFG = {
 	StartRings = 2,
 	GridBaseY = 12,
 	GridRise = 10,
-	PhaseTime = 12,
-	StartDelay = 5,
+	PhaseTime = 10,
+	StartDelay = 4,
 	GridSpins = { 90, -90, 180, 45, -90, 135, -180 },
 	GridGrow = { 1, 1, 0, 0, 0, 0, 0 },
 	GridShrink = { 0, 0, 1, 0, 1, 1, 0 },
@@ -37,7 +40,7 @@ local CFG = {
 
 	-- Lava
 	LavaBelow = 7,
-	LavaLag = 2.5,
+	LavaLag = 2,
 	LavaPool = 92,
 	LavaStart = -6,
 	LavaGlowRange = 60,
@@ -82,6 +85,16 @@ local CFG = {
 	JumpBoostPower = 64,
 	JumpTime = 7,
 	EmberBag = 3,
+
+	-- Keep moving
+	CampTime = 6,
+	CampRespawn = 6,
+
+	-- Raise
+	LiftCost = 40,
+	LiftTime = 10,
+	LiftHeight = 6,
+	LiftCooldown = 15,
 }
 
 type Mutator = { Id: string, Name: string, Weight: number }
@@ -126,6 +139,7 @@ type Runner = {
 	speedUntil: number,
 	jumpUntil: number,
 	rescue: boolean,
+	nextLift: number,
 }
 
 type Phase = "Idle" | "Countdown" | "Round" | "Results"
@@ -573,12 +587,31 @@ local function buildArena()
 	arenaFolder.Parent = workspace.SkySprout.Floors:FindFirstChild("Floor_" .. CFG.Floor)
 end
 
+local function fruit(name: string, scale: number, cf: CFrame, parent: Instance): Model
+	local model = (FruitModels:FindFirstChild(name) :: Model):Clone()
+	model:ScaleTo(scale)
+	model:PivotTo(cf)
+	for _, d in model:GetDescendants() do
+		if d:IsA("BasePart") then
+			d.Anchored = true
+			d.CanCollide = false
+			d.CanQuery = false
+			d.CanTouch = false
+			d:SetAttribute("NoTheme", true)
+		end
+	end
+	model.Parent = parent
+	return model
+end
+
 local function makeEmber(parent: Instance, position: Vector3, stepIndex: number)
-	local ember = part(parent, "Ember", Vector3.new(1.6, 1.6, 1.6), CFrame.new(position) * CFrame.Angles(math.rad(45), 0, math.rad(45)), Color3.fromRGB(255, 160, 40), Enum.Material.Neon)
+	local ember = part(parent, "Ember", Vector3.new(1.6, 1.6, 1.6), CFrame.new(position), Color3.fromRGB(255, 160, 40), Enum.Material.SmoothPlastic)
+	ember.Transparency = 1
 	ember.CanCollide = false
 	ember.CanQuery = false
 	ember.CanTouch = false
-	CollectionService:AddTag(ember, "LavaEmber")
+	local berry = fruit("Strawberry", 0.9, CFrame.new(position), ember)
+	CollectionService:AddTag(berry.PrimaryPart :: BasePart, "LavaEmber")
 	ride(ember, stepIndex)
 	table.insert(pickups, {
 		item = ember,
@@ -1034,6 +1067,8 @@ local function makeShield(parent: Instance, position: Vector3, stepIndex: number
 	orb.CanQuery = false
 	local core = part(orb, "Core", Vector3.new(2, 2, 2), CFrame.new(position), Color3.fromRGB(50, 150, 255), Enum.Material.Neon)
 	core.Shape = Enum.PartType.Ball
+	core.Transparency = 1
+	fruit("Blueberry", 1.1, CFrame.new(position), orb)
 	core.CanCollide = false
 	core.CanQuery = false
 	core.CanTouch = false
@@ -1074,13 +1109,13 @@ local function makeShield(parent: Instance, position: Vector3, stepIndex: number
 	})
 end
 
-type Boost = { Id: string, Name: string, Icon: string, Color: Color3, Weight: number }
+type Boost = { Id: string, Name: string, Icon: string, Color: Color3, Weight: number, Fruit: string }
 local BOOSTS: { Boost } = {
-	{ Id = "Speed", Name = "⚡ Speed Boost", Icon = "⚡", Color = Color3.fromRGB(255, 225, 60), Weight = 3 },
-	{ Id = "Jump", Name = "🦘 Super Jump", Icon = "🦘", Color = Color3.fromRGB(255, 120, 210), Weight = 3 },
-	{ Id = "Shield", Name = "🛡️ Shield", Icon = "🛡️", Color = Color3.fromRGB(90, 190, 255), Weight = 2 },
-	{ Id = "Rescue", Name = "🪂 Rescue", Icon = "🪂", Color = Color3.fromRGB(150, 230, 255), Weight = 2 },
-	{ Id = "Embers", Name = "🔥 Ember Bag", Icon = "🔥", Color = Color3.fromRGB(255, 170, 60), Weight = 2 },
+	{ Id = "Speed", Name = "⚡ Speed Boost", Icon = "⚡", Color = Color3.fromRGB(255, 225, 60), Weight = 3, Fruit = "Banana" },
+	{ Id = "Jump", Name = "🦘 Super Jump", Icon = "🦘", Color = Color3.fromRGB(255, 120, 210), Weight = 3, Fruit = "Pineapple" },
+	{ Id = "Shield", Name = "🛡️ Shield", Icon = "🛡️", Color = Color3.fromRGB(90, 190, 255), Weight = 2, Fruit = "Blueberry" },
+	{ Id = "Rescue", Name = "🪂 Rescue", Icon = "🪂", Color = Color3.fromRGB(150, 230, 255), Weight = 2, Fruit = "Coconut" },
+	{ Id = "Embers", Name = "🔥 Ember Bag", Icon = "🔥", Color = Color3.fromRGB(255, 170, 60), Weight = 2, Fruit = "Watermelon" },
 }
 local drops: { Model } = {}
 
@@ -1186,11 +1221,12 @@ local function spawnDrop()
 	local drop = Instance.new("Model")
 	drop.Name = "BoostDrop"
 	local crate = part(drop, "Crate", Vector3.new(2.2, 2.2, 2.2), CFrame.new(landAt), Color3.fromRGB(255, 250, 235), Enum.Material.SmoothPlastic)
-	local band = part(drop, "Band", Vector3.new(2.3, 0.5, 2.3), crate.CFrame, boost.Color, Enum.Material.Neon)
+	crate.Transparency = 1
+	local treat = fruit(boost.Fruit, 1.5, crate.CFrame, drop).PrimaryPart :: BasePart
 	local chute = part(drop, "Chute", Vector3.new(5, 2.4, 5), crate.CFrame * CFrame.new(0, 4.6, 0), boost.Color, Enum.Material.SmoothPlastic)
 	chute.Shape = Enum.PartType.Ball
 	chute.Transparency = 0.15
-	for _, piece in { crate, band, chute } do
+	for _, piece in { crate, treat, chute } do
 		piece.CanCollide = false
 		piece.CanQuery = false
 		piece.CanTouch = false
@@ -1310,6 +1346,14 @@ end
 
 -- Grid
 
+local TILE_COLOURS = {
+	Color3.fromRGB(240, 180, 40),
+	Color3.fromRGB(130, 200, 50),
+	Color3.fromRGB(40, 185, 160),
+	Color3.fromRGB(60, 135, 235),
+	Color3.fromRGB(145, 85, 235),
+}
+
 local function buildTower()
 	local model = Instance.new("Model")
 	model.Name = "LavaRushTower"
@@ -1345,13 +1389,15 @@ local function buildTower()
 	model:SetAttribute("CenterX", c.X)
 	model:SetAttribute("CenterZ", c.Z)
 
+	table.clear(wear)
 	local size = CFG.GridSize
 	for row = 1, size do
 		for col = 1, size do
 			local index = (row - 1) * size + col
-			local ring = Grid.Ring(size, row, col) / ((size - 1) / 2)
-			local color = Color3.fromHSV(0.07 - 0.04 * ring, 0.5, 0.75 - 0.25 * ring)
-			local tile = part(model, "Tile" .. index, Vector3.new(CFG.GridTile, 1.2, CFG.GridTile), Grid.TileCFrame(model, row, col, -math.huge), color, Enum.Material.Slate)
+			local base = TILE_COLOURS[Grid.Ring(size, row, col) + 1]
+			local color = if (row + col) % 2 == 0 then base else base:Lerp(Color3.new(1, 1, 1), 0.2)
+			local tile = part(model, "Tile" .. index, Vector3.new(CFG.GridTile, 1.2, CFG.GridTile), Grid.TileCFrame(model, row, col, -math.huge), color, Enum.Material.SmoothPlastic)
+			tile:SetAttribute("NoTheme", true)
 			tile:SetAttribute("StepIndex", index)
 			tile:SetAttribute("Row", row)
 			tile:SetAttribute("Col", col)
@@ -1410,7 +1456,7 @@ local function buildTower()
 		spot.Face = Enum.NormalId.Front
 		spot.Range = 60
 		spot.Angle = 75
-		spot.Brightness = 5
+		spot.Brightness = 2.5
 		spot.Shadows = true
 		spot.Color = Color3.fromRGB(255, 160, 80)
 		spot.Parent = rig
@@ -1599,6 +1645,7 @@ local function enter(p: Player): boolean
 		speedUntil = 0,
 		jumpUntil = 0,
 		rescue = if existing then existing.rescue else false,
+		nextLift = if existing then existing.nextLift else 0,
 	}
 	pcall(function()
 		p:RequestStreamAroundAsync(pl.Position, 2)
@@ -1745,6 +1792,77 @@ local function payout()
 	end
 end
 
+-- Tiles wear down while anyone stands on them (they darken, crack and shake on clients) and shatter when worn
+-- out, coming back after CampRespawn. Empty tiles slowly recover; a raised tile never wears.
+local function updateWear(occupied: { [number]: boolean }, dt: number)
+	local grid = tower
+	if not grid then
+		return
+	end
+	local t = now()
+	local started = Grid.Phase(grid, t) >= 0
+	for index, tile in platforms do
+		local row, col = tile:GetAttribute("Row"), tile:GetAttribute("Col")
+		local w = wear[index] or 0
+		local state = Grid.TileState(grid, row, col, t)
+		if not started or state ~= "Still" or Grid.Lift(grid, row, col, t) > 0 then
+			w = if state == "Still" then math.max(0, w - dt / CFG.CampTime) else 0
+		elseif occupied[index] then
+			w += dt / CFG.CampTime
+		else
+			w = math.max(0, w - dt / (CFG.CampTime * 1.5))
+		end
+		if w >= 1 then
+			w = 0
+			tile:SetAttribute("CampWarn", t)
+			tile:SetAttribute("CampFall", t + 0.15)
+			tile:SetAttribute("CampBack", t + 0.75 + CFG.CampRespawn)
+		end
+		wear[index] = w
+		local shown = math.floor(w * 20 + 0.5) / 20
+		local current = tile:GetAttribute("Wear")
+		if shown > 0 and current ~= shown then
+			tile:SetAttribute("Wear", shown)
+		elseif shown == 0 and current ~= nil then
+			tile:SetAttribute("Wear", nil)
+		end
+	end
+end
+
+-- Spend earned coins to pop your tile up for a while.
+local function raiseTile(p: Player)
+	local r = L.Runners[p]
+	local me = root(p)
+	local d = data(p)
+	local grid = tower
+	if not r or not r.alive or r.crowned or not me or not d or not grid or L.Phase ~= "Round" then
+		return
+	end
+	local t = now()
+	if t < r.nextLift then
+		tell(p, string.format("⬆️ Raise ready in %ds", math.ceil(r.nextLift - t)))
+		return
+	end
+	if (d.Coins or 0) < CFG.LiftCost then
+		tell(p, "⬆️ Raise costs " .. CFG.LiftCost .. " coins. Win rounds to earn more!")
+		return
+	end
+	local row, col = Grid.TileAt(grid, me.Position, t)
+	if not row or not col or Grid.TileState(grid, row, col, t) ~= "Still" then
+		tell(p, "⬆️ Stand on a solid tile to raise it.")
+		return
+	end
+	d.Coins -= CFG.LiftCost
+	pushStats(p)
+	r.nextLift = t + CFG.LiftCooldown
+	local tile = platforms[(row - 1) * CFG.GridSize + col]
+	tile:SetAttribute("LiftStart", t)
+	tile:SetAttribute("LiftEnd", t + CFG.LiftTime)
+	tile:SetAttribute("LiftHeight", CFG.LiftHeight)
+	event:FireClient(p, "LavaFX", { Kind = "Boost", Position = me.Position, Text = "⬆️ RAISED!", Color = Color3.fromRGB(255, 205, 60) })
+	tell(p, "⬆️ Your tile is up for " .. CFG.LiftTime .. "s!")
+end
+
 local function crownPlayer(p: Player, r: Runner)
 	r.crowned = true
 	badge(p, "FirstCrown")
@@ -1795,7 +1913,7 @@ local function runRound()
 	local lastPhase = 0
 	local starters = 0
 	while now() < L.EndsAt do
-		Run.Heartbeat:Wait()
+		local dt = Run.Heartbeat:Wait()
 		if now() >= nextDrop then
 			nextDrop = now() + dropEvery
 			spawnDrop()
@@ -1811,6 +1929,7 @@ local function runRound()
 			end
 		end
 		local active = 0
+		local occupied: { [number]: boolean } = {}
 		local lastActive: Player? = nil
 		starters = math.max(starters, count(L.Runners))
 		for p, r in L.Runners do
@@ -1858,9 +1977,15 @@ local function runRound()
 					else
 						scorch(p, r)
 					end
+				else
+					local row, col = Grid.TileAt(tower :: Model, me.Position, now())
+					if row and col then
+						occupied[(row - 1) * CFG.GridSize + col] = true
+					end
 				end
 			end
 		end
+		updateWear(occupied, dt)
 		if now() - lastBroadcast > 0.5 then
 			lastBroadcast = now()
 			broadcast()
@@ -1965,10 +2090,63 @@ local function loop()
 	end
 end
 
+-- Fruit hats (cosmetic, bought with coins in the shop).
+applyHat = function(p: Player)
+	local character = p.Character
+	local head = character and character:FindFirstChild("Head")
+	if not character or not head or not head:IsA("BasePart") then
+		return
+	end
+	local old = character:FindFirstChild("FruitHat")
+	if old then
+		old:Destroy()
+	end
+	local d = data(p)
+	local id = d and d.Hat
+	if type(id) ~= "string" or id == "" or not FruitModels:FindFirstChild(id) then
+		return
+	end
+	local hat = (FruitModels:FindFirstChild(id) :: Model):Clone()
+	hat.Name = "FruitHat"
+	local _, size = hat:GetBoundingBox()
+	hat:ScaleTo(head.Size.X * 1.15 / math.max(size.X, size.Z))
+	local _, scaled = hat:GetBoundingBox()
+	hat:PivotTo(head.CFrame * CFrame.new(0, head.Size.Y / 2 + scaled.Y * 0.38, 0))
+	for _, part in hat:GetDescendants() do
+		if part:IsA("BasePart") then
+			part.Anchored = false
+			part.CanCollide = false
+			part.CanQuery = false
+			part.CanTouch = false
+			part.Massless = true
+			local weld = Instance.new("WeldConstraint")
+			weld.Part0 = head
+			weld.Part1 = part
+			weld.Parent = part
+		end
+	end
+	hat.Parent = character
+end
+
 -- Island: the old flat floor is hidden so the arena sits on the terrain island, and anything low that would
 -- end up out in the sea is removed.
 local function islandMode()
 	local floorModel = workspace.SkySprout.Floors:FindFirstChild("Floor_" .. CFG.Floor)
+	local decor = Instance.new("Model")
+	decor.Name = "FruitDecor"
+	decor.ModelStreamingMode = Enum.ModelStreamingMode.Persistent
+	local rng = Random.new(5150)
+	local kinds = FruitModels:GetChildren()
+	for i = 1, 26 do
+		local kind = kinds[(i - 1) % #kinds + 1].Name
+		local a = rng:NextNumber(0, 2 * math.pi)
+		local onBeach = i <= 10
+		local r = if onBeach then rng:NextNumber(CFG.IslandRadius - 40, CFG.IslandRadius - 5) else rng:NextNumber(CFG.IslandRadius + 30, CFG.IslandRadius + 320)
+		local scale = if onBeach then rng:NextNumber(5, 8) else rng:NextNumber(9, 18)
+		local at = CFG.Center + Vector3.new(math.cos(a) * r, if onBeach then 1.5 * scale - 1 else 0.9 * scale - 6, math.sin(a) * r)
+		fruit(kind, scale, CFrame.new(at) * CFrame.Angles(rng:NextNumber(-0.35, 0.35), rng:NextNumber(0, 2 * math.pi), rng:NextNumber(-0.35, 0.35)), decor)
+	end
+	decor.Parent = floorModel
 	local regions = floorModel and floorModel:FindFirstChild("Regions")
 	if regions then
 		for _, d in regions:GetDescendants() do
@@ -2003,6 +2181,10 @@ function L.HandleAction(p: Player, action: unknown, _value: unknown): boolean
 	end
 	local r = L.Runners[p]
 	if r and r.alive and not r.crowned and p:GetAttribute("ArenaMode") == "LavaRush" then
+		if action == "LavaLift" then
+			raiseTile(p)
+			return true
+		end
 		if action == "Punch" or action == "Heavy" or action == "Kick" then
 			shove(p)
 			return true
@@ -2025,9 +2207,14 @@ function L.Start(arena: any, remote: RemoteEvent, stats: (Player) -> (), notice:
 			task.defer(function()
 				if character.Parent then
 					character:ScaleTo(CFG.CharacterScale)
+					local p = Players:GetPlayerFromCharacter(character)
+					if p then
+						applyHat(p)
+					end
 				end
 			end)
 		end
+		A.OnHat = applyHat
 		local function watch(p: Player)
 			p.CharacterAdded:Connect(scale)
 			if p.Character then
