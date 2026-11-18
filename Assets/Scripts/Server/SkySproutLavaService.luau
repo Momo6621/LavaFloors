@@ -21,7 +21,7 @@ local CFG = {
 
 	-- Grid
 	GridSize = 9,
-	GridTile = 7,
+	GridTile = 8,
 	GridGap = 0.15,
 	StartRings = 2,
 	GridBaseY = 12,
@@ -33,6 +33,7 @@ local CFG = {
 	GridShrink = { 0, 0, 1, 0, 1, 1, 0 },
 	GridDrops = { 0, 2, 3, 3, 2, 1, 1 },
 	RoundJumpPower = 48,
+	CharacterScale = 0.8,
 
 	-- Lava
 	LavaBelow = 7,
@@ -41,6 +42,14 @@ local CFG = {
 	LavaStart = -6,
 	LavaGlowRange = 60,
 	LavaGlowBrightness = 2.2,
+
+	-- Island
+	IslandRadius = 340,
+
+	-- Stage lights
+	StageLights = 4,
+	StageLightHeight = 26,
+	StageLightReach = 30,
 
 	-- Shove
 	ShoveRange = 9,
@@ -1386,6 +1395,28 @@ local function buildTower()
 		end
 	end
 
+	local centre = platforms[(size * size + 1) / 2]
+	local centreIndex = centre:GetAttribute("StepIndex") :: number
+	for k = 1, CFG.StageLights do
+		local a = (k - 0.5) * 2 * math.pi / CFG.StageLights
+		local at = centre.Position + Vector3.new(math.cos(a) * CFG.StageLightReach, CFG.StageLightHeight, math.sin(a) * CFG.StageLightReach)
+		local rig = part(model, "StageLight", Vector3.new(1.4, 1.4, 1.4), CFrame.lookAt(at, centre.Position + Vector3.new(math.cos(a) * 6, 0, math.sin(a) * 6)), Color3.fromRGB(255, 150, 70), Enum.Material.Neon)
+		rig.Shape = Enum.PartType.Ball
+		rig.CanCollide = false
+		rig.CanQuery = false
+		rig.CanTouch = false
+		rig.CastShadow = false
+		local spot = Instance.new("SpotLight")
+		spot.Face = Enum.NormalId.Front
+		spot.Range = 60
+		spot.Angle = 75
+		spot.Brightness = 5
+		spot.Shadows = true
+		spot.Color = Color3.fromRGB(255, 160, 80)
+		spot.Parent = rig
+		ride(rig, centreIndex)
+	end
+
 	local l = part(model, "Lava", Vector3.new(CFG.LavaPool, 4, CFG.LavaPool), CFrame.new(c), Color3.fromRGB(230, 70, 10), Enum.Material.Neon)
 	local crust = part(model, "LavaCrust", Vector3.new(CFG.LavaPool, 0.2, CFG.LavaPool), CFrame.new(c), Color3.fromRGB(255, 120, 40), Enum.Material.CrackedLava)
 	crust.Transparency = 0.35
@@ -1934,6 +1965,35 @@ local function loop()
 	end
 end
 
+-- Island: the old flat floor is hidden so the arena sits on the terrain island, and anything low that would
+-- end up out in the sea is removed.
+local function islandMode()
+	local floorModel = workspace.SkySprout.Floors:FindFirstChild("Floor_" .. CFG.Floor)
+	local regions = floorModel and floorModel:FindFirstChild("Regions")
+	if regions then
+		for _, d in regions:GetDescendants() do
+			if d:IsA("BasePart") then
+				d.Transparency = 1
+				d.CanCollide = false
+				d.CanQuery = false
+				d.CanTouch = false
+				d.CastShadow = false
+			end
+		end
+	end
+	local scene = floorModel and floorModel:FindFirstChild("Backdrop")
+	if scene then
+		for _, d in scene:GetChildren() do
+			if d:IsA("BasePart") and (d.Name == "EmberPool" or d.Name == "LavaRiver") then
+				local flat = Vector3.new(d.Position.X - CFG.Center.X, 0, d.Position.Z - CFG.Center.Z).Magnitude
+				if flat > CFG.IslandRadius - 8 then
+					d:Destroy()
+				end
+			end
+		end
+	end
+end
+
 -- Public
 
 function L.HandleAction(p: Player, action: unknown, _value: unknown): boolean
@@ -1959,6 +2019,26 @@ function L.Start(arena: any, remote: RemoteEvent, stats: (Player) -> (), notice:
 	A, event, pushStats, tell = arena, remote, stats, notice
 	buildArena()
 	buildBackdrop()
+	if GameConfig.PartyMode then
+		islandMode()
+		local function scale(character: Model)
+			task.defer(function()
+				if character.Parent then
+					character:ScaleTo(CFG.CharacterScale)
+				end
+			end)
+		end
+		local function watch(p: Player)
+			p.CharacterAdded:Connect(scale)
+			if p.Character then
+				scale(p.Character)
+			end
+		end
+		Players.PlayerAdded:Connect(watch)
+		for _, p in Players:GetPlayers() do
+			watch(p)
+		end
+	end
 	buildTower()
 	setTheme(L.Theme)
 	if Run:IsStudio() then

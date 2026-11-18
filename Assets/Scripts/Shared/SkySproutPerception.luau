@@ -173,6 +173,7 @@ function M.Start()
    Lighting.Ambient=lt.Ambient;Lighting.OutdoorAmbient=lt.Outdoor
    air.Color=lt.AirColor;air.Decay=lt.AirDecay;air.Density=lt.AirDensity;air.Haze=lt.Haze
    grade.TintColor=lt.Tint
+   workspace.Terrain.WaterColor=lt.Water
   end
   grade.Saturation=lt and lt.Saturation or .035;grade.Contrast=lt and lt.Contrast or .025
   setSky(lt and lt.Sky or(night and"Night"or"Day"))
