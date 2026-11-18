@@ -15,7 +15,8 @@ Each round is 7 phases. Every phase the floor:
 4. **Rises.** The floor goes up and the lava follows. In the later phases the outer ring stays behind as a
    step, so it shrinks back down like a pyramid (9x9 → 7x7 → 5x5 → 3x3).
 
-Whoever is still standing after phase 7 gets crowned. You can shove other players off, and supply crates
+Whoever is still standing after phase 7 gets crowned. With two or more players, the last one standing wins
+straight away, so nobody waits out a long round after falling. You can shove other players off, and supply crates
 parachute in with boosts (speed, super jump, shield, rescue, ember bag).
 
 Every round also rolls a twist (Low Gravity, Turbo Spin, Hole Party, Speed Rush, Shield Party, Drop Party)

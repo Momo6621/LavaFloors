@@ -31,7 +31,7 @@ local CFG = {
 	GridSpins = { 90, -90, 180, 45, -90, 135, -180 },
 	GridGrow = { 1, 1, 0, 0, 0, 0, 0 },
 	GridShrink = { 0, 0, 1, 0, 1, 1, 0 },
-	GridDrops = { 0, 2, 3, 3, 2, 2, 2 },
+	GridDrops = { 0, 2, 3, 3, 2, 1, 1 },
 	RoundJumpPower = 48,
 
 	-- Lava
@@ -249,6 +249,16 @@ local function count(t: { [Player]: any }): number
 	return n
 end
 
+local function aliveCount(): number
+	local n = 0
+	for _, r in L.Runners do
+		if r.alive and not r.crowned then
+			n += 1
+		end
+	end
+	return n
+end
+
 local function gridPhase(): number
 	if not tower or L.Phase ~= "Round" then
 		return 0
@@ -265,6 +275,7 @@ local function broadcast()
 		Theme = Themes.Get(L.Theme).Name,
 		Queued = count(L.Queue),
 		Running = count(L.Runners),
+		Alive = aliveCount(),
 		LavaY = L.LavaY,
 		BaseY = CFG.Center.Y,
 		CrownY = CFG.Center.Y + crownHeight,
@@ -1751,6 +1762,7 @@ local function runRound()
 	local dropEvery = if L.Mutator.Id == "DropParty" then CFG.DropPartyEvery else CFG.DropEvery
 	local nextDrop = started + CFG.DropFirstAt
 	local lastPhase = 0
+	local starters = 0
 	while now() < L.EndsAt do
 		Run.Heartbeat:Wait()
 		if now() >= nextDrop then
@@ -1768,6 +1780,8 @@ local function runRound()
 			end
 		end
 		local active = 0
+		local lastActive: Player? = nil
+		starters = math.max(starters, count(L.Runners))
 		for p, r in L.Runners do
 			if not p.Parent then
 				L.Runners[p] = nil
@@ -1783,6 +1797,7 @@ local function runRound()
 			local me = root(p)
 			if me then
 				active += 1
+				lastActive = p
 				for k = #pickups, 1, -1 do
 					local pick = pickups[k]
 					if not pick.item.Parent then
@@ -1820,6 +1835,19 @@ local function runRound()
 			broadcast()
 		end
 		if active == 0 and not lateOpen() and next(L.Queue) == nil then
+			break
+		end
+		if starters >= 2 and active == 1 and lastActive and not lateOpen() and next(L.Queue) == nil then
+			local winner = lastActive :: Player
+			local r = L.Runners[winner]
+			if r and r.alive and not r.crowned then
+				crownPlayer(winner, r)
+				for other in L.Runners do
+					if other.Parent then
+						tell(other, "👑 " .. winner.DisplayName .. " is the last one standing!")
+					end
+				end
+			end
 			break
 		end
 	end

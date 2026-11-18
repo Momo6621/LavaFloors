@@ -20,7 +20,7 @@ local TITLE = Color3.fromRGB(255, 245, 140)
 local ORANGE = Color3.fromRGB(255, 150, 40)
 local STROKE = Color3.fromRGB(60, 15, 0)
 
-type State = { Phase: string, EndsAt: number, Mutator: string?, Theme: string?, Queued: number, Running: number, LavaY: number, BaseY: number, CrownY: number, GridPhase: number?, GridPhases: number? }
+type State = { Phase: string, EndsAt: number, Mutator: string?, Theme: string?, Queued: number, Running: number, LavaY: number, BaseY: number, CrownY: number, GridPhase: number?, GridPhases: number?, Alive: number? }
 type Me = { Queued: boolean, Running: boolean, Crowned: boolean, Embers: number, Peak: number }
 
 local state: State = { Phase = "Idle", EndsAt = 0, Queued = 0, Running = 0, LavaY = -100, BaseY = 0, CrownY = 160 }
@@ -318,7 +318,7 @@ Run.RenderStepped:Connect(function(dt)
 				local gap = math.max(0, math.floor((r.Position.Y - 3) - state.LavaY))
 				local phase, phases = state.GridPhase or 0, state.GridPhases or 0
 				local stage = if phase <= 0 then "Get ready!" else string.format("Phase %d/%d", phase, phases)
-				info.Text = string.format("%s  •  🔥 %d embers  •  Lava %d below", stage, me.Embers, gap)
+				info.Text = string.format("%s  •  👥 %d left  •  🔥 %d  •  Lava %d below", stage, state.Alive or 0, me.Embers, gap)
 				local target = if gap < 10 then 0.6 + 0.4 * (gap / 10) else 1
 				tint.BackgroundTransparency += (target - tint.BackgroundTransparency) * math.min(1, dt * 8)
 			else
