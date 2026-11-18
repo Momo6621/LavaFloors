@@ -1,0 +1,20 @@
+{
+  "name": "LavaFloors",
+  "tree": {
+    "$className": "DataModel",
+    "ServerScriptService": {
+      "$path": "Assets/Scripts/Server"
+    },
+    "ReplicatedStorage": {
+      "$path": "Assets/Scripts/Shared",
+      "Icon": {
+        "$path": "Packages/TopbarPlus"
+      }
+    },
+    "StarterPlayer": {
+      "StarterPlayerScripts": {
+        "$path": "Assets/Scripts/Client"
+      }
+    }
+  }
+}
