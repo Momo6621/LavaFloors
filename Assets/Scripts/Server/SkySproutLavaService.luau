@@ -48,6 +48,7 @@ local CFG = {
 
 	-- Island
 	IslandRadius = 340,
+	SeaLimit = 560,
 
 	-- Stage lights
 	StageLights = 4,
@@ -2304,6 +2305,23 @@ function L.Start(arena: any, remote: RemoteEvent, stats: (Player) -> (), notice:
 		for _, p in Players:GetPlayers() do
 			watch(p)
 		end
+		-- Sea limit: anyone who swims (or falls) too far from the island is brought back to the lobby.
+		task.spawn(function()
+			while true do
+				task.wait(1)
+				for _, p in Players:GetPlayers() do
+					local me = root(p)
+					if me and p:GetAttribute("ArenaMode") ~= "LavaRush" then
+						local flat = Vector3.new(me.Position.X - CFG.Center.X, 0, me.Position.Z - CFG.Center.Z).Magnitude
+						if flat > CFG.SeaLimit or me.Position.Y < -40 then
+							me.AssemblyLinearVelocity = Vector3.zero
+							placeAtBeacon(p)
+							tell(p, "🌊 Too far out to sea! Back to the lobby.")
+						end
+					end
+				end
+			end
+		end)
 	end
 	buildTower()
 	setTheme(L.Theme)
