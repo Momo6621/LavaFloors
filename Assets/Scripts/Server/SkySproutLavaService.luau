@@ -2202,12 +2202,18 @@ local function islandMode()
 		end
 	end
 	local scene = floorModel and floorModel:FindFirstChild("Backdrop")
+	local terrainOnly = RaycastParams.new()
+	terrainOnly.FilterType = Enum.RaycastFilterType.Include
+	terrainOnly.FilterDescendantsInstances = { workspace.Terrain }
 	if scene then
 		for _, d in scene:GetChildren() do
 			if d:IsA("BasePart") and (d.Name == "EmberPool" or d.Name == "LavaRiver") then
-				local flat = Vector3.new(d.Position.X - CFG.Center.X, 0, d.Position.Z - CFG.Center.Z).Magnitude
-				if flat > CFG.IslandRadius - 8 then
+				-- Sit lava on the island's surface; drop pieces that would be in the sea (coves) or deep in a hill.
+				local hit = workspace:Raycast(Vector3.new(d.Position.X, 150, d.Position.Z), Vector3.new(0, -220, 0), terrainOnly)
+				if not hit or hit.Material == Enum.Material.Water or hit.Position.Y > d.Position.Y + 6 then
 					d:Destroy()
+				else
+					d.CFrame += Vector3.new(0, hit.Position.Y + 0.25 - d.Position.Y, 0)
 				end
 			end
 		end

@@ -67,8 +67,14 @@ in the place so the edit view isn't empty; the game clears it on start and build
 the build code, refresh the preview from the command bar:
 
 ```lua
-require(game.ServerScriptService.SkySproutLavaService).BuildPreview()
+local m = game.ServerScriptService.SkySproutLavaService:Clone(); m.Parent = game.ServerScriptService; require(m).BuildPreview(); m:Destroy()
 ```
+
+(It requires a fresh copy because Studio caches modules: a plain `require` keeps running the old code after you
+edit the script.)
+
+The island itself (terrain, palms, flower bushes, tiki torches and clouds) is regular scenery saved in the place:
+`Floor_1.IslandDecor`, with the source models in `ServerStorage.IslandAssets`.
 
 To work on the scripts from the repo, serve them with [Rojo](https://rojo.space):
 
