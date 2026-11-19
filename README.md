@@ -62,6 +62,14 @@ All the tuning (grid size, phase timing, rewards, boosts) is in the `CFG` table 
 
 Open `Place/LavaFloors.rbxl` in Roblox Studio. The scripts are already in it.
 
+The map (arena, floor, lights, backdrop, fruit) is built by scripts when the game runs. A preview copy is saved
+in the place so the edit view isn't empty; the game clears it on start and builds a fresh one. After changing
+the build code, refresh the preview from the command bar:
+
+```lua
+require(game.ServerScriptService.SkySproutLavaService).BuildPreview()
+```
+
 To work on the scripts from the repo, serve them with [Rojo](https://rojo.space):
 
 ```

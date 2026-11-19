@@ -2238,8 +2238,46 @@ function L.HandleAction(p: Player, action: unknown, _value: unknown): boolean
 	return false
 end
 
+-- Studio edit preview: the map is built by scripts, so it only exists while the game runs. BuildPreview builds it
+-- into the place so it can be seen and worked on in Studio's edit view; those copies are marked EditPreview and
+-- cleared when the game starts. Run from the command bar:
+--   require(game.ServerScriptService.SkySproutLavaService).BuildPreview()
+local PREVIEW_MODELS = { "LavaRush", "Backdrop", "FruitDecor" }
+
+local function clearPreview()
+	local floorModel = workspace.SkySprout.Floors:FindFirstChild("Floor_" .. CFG.Floor)
+	if not floorModel then
+		return
+	end
+	for _, child in floorModel:GetChildren() do
+		if table.find(PREVIEW_MODELS, child.Name) and child:GetAttribute("EditPreview") then
+			child:Destroy()
+		end
+	end
+end
+
+function L.BuildPreview()
+	clearPreview()
+	buildArena()
+	buildBackdrop()
+	if GameConfig.PartyMode then
+		islandMode()
+	end
+	buildTower()
+	setTheme(L.Theme)
+	setLava(CFG.Center.Y + CFG.LavaStart)
+	local floorModel = workspace.SkySprout.Floors:FindFirstChild("Floor_" .. CFG.Floor)
+	for _, name in PREVIEW_MODELS do
+		local model = floorModel and floorModel:FindFirstChild(name)
+		if model then
+			model:SetAttribute("EditPreview", true)
+		end
+	end
+end
+
 function L.Start(arena: any, remote: RemoteEvent, stats: (Player) -> (), notice: (Player, string) -> ())
 	A, event, pushStats, tell = arena, remote, stats, notice
+	clearPreview()
 	buildArena()
 	buildBackdrop()
 	if GameConfig.PartyMode then
