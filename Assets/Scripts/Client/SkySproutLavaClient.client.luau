@@ -643,6 +643,152 @@ Run.PreSimulation:Connect(function()
 	standingCFrame = if standingOn then standingOn.CFrame else nil
 end)
 
+-- Climb parallax: local-only rocks, clouds and light streaks drift down past the grid in three depth layers,
+-- faster up close and slower far away, so the floor feels like it is climbing. They rush while the grid rises.
+
+type Layer = { Count: number, Radius: NumberRange, Span: number, Drift: number, Rush: number }
+type Floater = { part: BasePart, layer: Layer, angle: number, radius: number, y: number, spin: number }
+
+local LAYERS: { [string]: Layer } = {
+	Streak = { Count = 40, Radius = NumberRange.new(60, 90), Span = 70, Drift = 10, Rush = 7 },
+	Rock = { Count = 28, Radius = NumberRange.new(95, 145), Span = 110, Drift = 4.5, Rush = 3.2 },
+	Cloud = { Count = 12, Radius = NumberRange.new(150, 230), Span = 160, Drift = 1.6, Rush = 1.2 },
+}
+
+local climbFolder: Folder? = nil
+local floaters: { Floater } = {}
+local climbTheme: string? = nil
+local lastGridY: number? = nil
+local rush = 0
+
+local function floaterColour(kind: string, hue: number): Color3
+	if kind == "Streak" then
+		return Color3.fromHSV(hue, 0.35, 1)
+	elseif kind == "Rock" then
+		return Color3.fromHSV(hue, 0.3 + math.random() * 0.15, 0.22 + math.random() * 0.12)
+	end
+	return Color3.fromHSV(hue, 0.12, 1)
+end
+
+local function makeFloater(kind: string, layer: Layer, hue: number, parent: Instance): BasePart
+	local p = Instance.new("Part")
+	p.Name = kind
+	p.Anchored = true
+	p.CanCollide = false
+	p.CanQuery = false
+	p.CanTouch = false
+	p.CastShadow = false
+	p.Color = floaterColour(kind, hue)
+	if kind == "Streak" then
+		p.Material = Enum.Material.Neon
+		p.Size = Vector3.new(0.35, 5 + math.random() * 6, 0.35)
+		p.Transparency = 0.45
+	elseif kind == "Rock" then
+		p.Material = Enum.Material.Basalt
+		local s = 4 + math.random() * 7
+		p.Size = Vector3.new(s, s * (0.6 + math.random() * 0.5), s * (0.7 + math.random() * 0.5))
+	else
+		p.Shape = Enum.PartType.Ball
+		p.Material = Enum.Material.SmoothPlastic
+		local s = 30 + math.random() * 30
+		p.Size = Vector3.new(s, s * 0.22, s * 0.7)
+		p.Transparency = 0.7
+	end
+	p.Parent = parent
+	return p
+end
+
+local function clearClimb()
+	if climbFolder then
+		climbFolder:Destroy()
+	end
+	climbFolder = nil
+	table.clear(floaters)
+	climbTheme = nil
+	lastGridY = nil
+	rush = 0
+end
+
+local function buildClimb(gridY: number)
+	clearClimb()
+	local folder = Instance.new("Folder")
+	folder.Name = "ClimbParallax"
+	folder.Parent = workspace.CurrentCamera
+	climbFolder = folder
+	climbTheme = workspace:GetAttribute("LavaTheme")
+	local hue = LavaThemes.Get(climbTheme).TileHue or 0.05
+	for kind, layer in LAYERS do
+		for _ = 1, layer.Count do
+			table.insert(floaters, {
+				part = makeFloater(kind, layer, hue, folder),
+				layer = layer,
+				angle = math.random() * math.pi * 2,
+				radius = layer.Radius.Min + math.random() * (layer.Radius.Max - layer.Radius.Min),
+				y = gridY + (math.random() * 2 - 1) * layer.Span,
+				spin = (math.random() * 2 - 1) * 0.6,
+			})
+		end
+	end
+end
+
+Run.RenderStepped:Connect(function(dt: number)
+	local floors = workspace:FindFirstChild("SkySprout") and workspace.SkySprout:FindFirstChild("Floors")
+	local arena = floors and floors:FindFirstChild("Floor_1") and floors.Floor_1:FindFirstChild("LavaRush")
+	local tower = arena and arena:FindFirstChild("LavaRushTower")
+	local t = workspace:GetServerTimeNow()
+	local phase = if tower then Grid.Phase(tower, t) else -1
+	local phases = if tower then tower:GetAttribute("Phases") else nil
+	if not tower or phase < 0 or type(phases) ~= "number" or phase >= phases then
+		if climbFolder then
+			clearClimb()
+		end
+		return
+	end
+	local _, gridY = Grid.Pose(tower, t)
+	if not climbFolder then
+		buildClimb(gridY)
+	end
+	local themeNow = workspace:GetAttribute("LavaTheme")
+	if themeNow ~= climbTheme then
+		climbTheme = themeNow
+		local hue = LavaThemes.Get(themeNow).TileHue or 0.05
+		for _, f in floaters do
+			f.part.Color = floaterColour(f.part.Name, hue)
+		end
+	end
+	-- How fast the grid is climbing right now (0 between rises), smoothed so the rush eases in and out.
+	local climbing = if lastGridY and dt > 0 then math.max(0, (gridY - lastGridY) / dt) else 0
+	lastGridY = gridY
+	rush += (climbing - rush) * math.min(1, dt * 5)
+	local cx, cz = tower:GetAttribute("CenterX"), tower:GetAttribute("CenterZ")
+	if type(cx) ~= "number" or type(cz) ~= "number" then
+		return
+	end
+	local cameraY = workspace.CurrentCamera.CFrame.Position.Y
+	local centreY = math.max(gridY, cameraY - 10)
+	for _, f in floaters do
+		local layer = f.layer
+		f.y -= (layer.Drift + rush * layer.Rush) * dt
+		if f.y < centreY - layer.Span then
+			f.y += layer.Span * 2
+			f.angle = math.random() * math.pi * 2
+		elseif f.y > centreY + layer.Span then
+			f.y -= layer.Span * 2
+		end
+		local pos = Vector3.new(cx + math.cos(f.angle) * f.radius, f.y, cz + math.sin(f.angle) * f.radius)
+		if f.part.Name == "Streak" then
+			-- Streaks stretch with the rush, like speed lines.
+			f.part.Size = Vector3.new(0.35, math.clamp(6 + rush * 1.6, 6, 26), 0.35)
+			f.part.Transparency = math.clamp(0.6 - rush * 0.04, 0.25, 0.6)
+			f.part.CFrame = CFrame.new(pos)
+		elseif f.part.Name == "Cloud" then
+			f.part.CFrame = CFrame.new(pos) * CFrame.Angles(0, f.angle, 0)
+		else
+			f.part.CFrame = CFrame.new(pos) * CFrame.Angles(t * f.spin, t * f.spin * 0.7, 0)
+		end
+	end
+end)
+
 -- Spectate
 
 local UIS = game:GetService("UserInputService")
