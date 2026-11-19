@@ -48,6 +48,7 @@ for name, id in {
 	Scorch = "rbxassetid://116330889947483",
 	Beep = "rbxassetid://7743999789",
 	Shove = "rbxassetid://92357564819100",
+	Rise = "rbxassetid://140334012603496",
 } do
 	sounds[name] = make("Sound", { Name = "LavaRush_" .. name, SoundId = id, Volume = 0.6 }, SoundService)
 end
@@ -860,4 +861,117 @@ UIS.InputBegan:Connect(function(input, processed)
 	if spectating and not processed and (LOOK_KEYS[input.KeyCode] or input.UserInputType == Enum.UserInputType.MouseButton2 or input.UserInputType == Enum.UserInputType.Touch) then
 		stopSpectate()
 	end
+end)
+
+-- Climb meter: a slim bar on the right edge. The floor marker climbs toward the crown at the top while the
+-- lava fills up from below, so you can see at a glance how high you are and how close the lava is.
+
+local meter: Frame = make("Frame", {
+	Name = "ClimbMeter",
+	AnchorPoint = Vector2.new(1, 0.5),
+	Position = UDim2.new(1, -18, 0.43, 0),
+	Size = UDim2.new(0, 22, 0.38, 0),
+	BackgroundColor3 = Color3.fromRGB(35, 20, 30),
+	BackgroundTransparency = 0.25,
+	Visible = false,
+}, gui)
+make("UISizeConstraint", { MinSize = Vector2.new(22, 150), MaxSize = Vector2.new(22, 320) }, meter)
+make("UICorner", { CornerRadius = UDim.new(1, 0) }, meter)
+make("UIStroke", { Thickness = 3, Color = Color3.fromRGB(110, 25, 5) }, meter)
+local meterLava: Frame = make("Frame", {
+	AnchorPoint = Vector2.new(0, 1),
+	Position = UDim2.fromScale(0, 1),
+	Size = UDim2.fromScale(1, 0),
+	BackgroundColor3 = Color3.new(1, 1, 1),
+	BorderSizePixel = 0,
+}, meter)
+make("UICorner", { CornerRadius = UDim.new(1, 0) }, meterLava)
+make("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(255, 200, 60), Color3.fromRGB(230, 50, 20)) }, meterLava)
+local meterCrown: TextLabel = make("TextLabel", {
+	AnchorPoint = Vector2.new(0.5, 1),
+	Position = UDim2.new(0.5, 0, 0, -4),
+	Size = UDim2.fromOffset(34, 30),
+	BackgroundTransparency = 1,
+	Font = FONT,
+	TextScaled = true,
+	Text = "👑",
+}, meter)
+local meterFloor: Frame = make("Frame", {
+	AnchorPoint = Vector2.new(0.5, 0.5),
+	Position = UDim2.fromScale(0.5, 1),
+	Size = UDim2.fromOffset(40, 12),
+	BackgroundColor3 = Color3.new(1, 1, 1),
+	ZIndex = 3,
+}, meter)
+make("UICorner", { CornerRadius = UDim.new(0, 4) }, meterFloor)
+local meterFloorStroke: UIStroke = make("UIStroke", { Thickness = 2.5, Color = Color3.fromRGB(40, 20, 30) }, meterFloor)
+local meterTicks: { Frame } = {}
+
+local meterLavaY: number? = nil
+local meterFloorFrac = 0
+local riseY: number? = nil
+local rising = false
+
+Run.RenderStepped:Connect(function(dt: number)
+	local floors = workspace:FindFirstChild("SkySprout") and workspace.SkySprout:FindFirstChild("Floors")
+	local arena = floors and floors:FindFirstChild("Floor_1") and floors.Floor_1:FindFirstChild("LavaRush")
+	local tower = arena and arena:FindFirstChild("LavaRushTower")
+	local watching = me.Running or spectating
+	local show = tower ~= nil and state.Phase == "Round" and watching and (player:GetAttribute("VisitFloor") or 1) == 1
+	meter.Visible = show
+	if not show or not tower then
+		meterLavaY, riseY, rising = nil, nil, false
+		return
+	end
+	local t = workspace:GetServerTimeNow()
+	local _, gridY = Grid.Pose(tower, t)
+	local bottom, top = state.BaseY, state.CrownY
+	local span = math.max(1, top - bottom)
+	local function frac(y: number): number
+		return math.clamp((y - bottom) / span, 0, 1)
+	end
+
+	-- One tick per rise, so the bar shows how many steps are left to the crown.
+	local base, step, phases = tower:GetAttribute("BaseY"), tower:GetAttribute("RiseStep"), tower:GetAttribute("Phases")
+	if type(base) == "number" and type(step) == "number" and type(phases) == "number" and #meterTicks ~= phases then
+		for _, tick in meterTicks do
+			tick:Destroy()
+		end
+		table.clear(meterTicks)
+		for p = 1, phases do
+			table.insert(meterTicks, make("Frame", {
+				AnchorPoint = Vector2.new(0.5, 0.5),
+				Position = UDim2.fromScale(0.5, 1 - frac(base + step * p)),
+				Size = UDim2.new(1, -8, 0, 2),
+				BackgroundColor3 = Color3.new(1, 1, 1),
+				BackgroundTransparency = 0.55,
+				BorderSizePixel = 0,
+				ZIndex = 2,
+			}, meter))
+		end
+	end
+
+	meterLavaY = if meterLavaY then meterLavaY + (state.LavaY - meterLavaY) * math.min(1, dt * 4) else state.LavaY
+	local lavaFrac = frac(meterLavaY :: number)
+	meterLava.Size = UDim2.fromScale(1, lavaFrac)
+	meterFloorFrac += (frac(gridY) - meterFloorFrac) * math.min(1, dt * 10)
+	meterFloor.Position = UDim2.fromScale(0.5, 1 - meterFloorFrac)
+	local theme = LavaThemes.Get(workspace:GetAttribute("LavaTheme"))
+	local danger = math.clamp(1 - (meterFloorFrac - lavaFrac) / 0.12, 0, 1)
+	local blink = danger > 0.5 and math.floor(t * 6) % 2 == 0
+	meterFloor.BackgroundColor3 = if blink then Color3.fromRGB(255, 70, 40) else Color3.fromHSV(theme.TileHue or 0.05, 0.35, 1)
+	meterFloorStroke.Color = if danger > 0.5 then Color3.fromRGB(120, 10, 0) else Color3.fromRGB(40, 20, 30)
+	meterCrown.TextTransparency = if meterFloorFrac > 0.97 then 0 else 0.35
+
+	-- Whoosh + a little pop on the marker each time the floor starts to rise.
+	if riseY and gridY > riseY + 0.05 then
+		if not rising then
+			rising = true
+			play("Rise", 0.95 + math.random() * 0.1)
+			pop(meterFloor)
+		end
+	elseif riseY and gridY <= riseY + 0.001 then
+		rising = false
+	end
+	riseY = gridY
 end)
