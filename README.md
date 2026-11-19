@@ -68,9 +68,30 @@ To work on the scripts from the repo, serve them with [Rojo](https://rojo.space)
 rojo serve
 ```
 
+## Monetization
+
+Everything that affects play can be earned. Robux only buys coins (which you can also earn), cosmetics and
+VIP comfort perks. Nothing is random and there are no fake timers.
+
+| What | Type | Where it's set |
+|---|---|---|
+| ⭐ VIP: VIP tag (head + chat), Golden Apple hat, golden shimmer, 2x daily reward, +25% round coins | Subscription | `VipSubscriptionId` |
+| 🎟️ Lava Pass Premium: unlocks the premium track (extra coins, Dragon Fruit and Star Fruit hats) | Game pass | `LavaPassPremiumId` |
+| 2x Lava Coins | Game pass | `DoubleLavaPassId` |
+| Aurora Gloves | Game pass | `PassId` |
+| Coin packs: 100 / 500 / 2,000 / 6,000 | Developer products | `ProductIds.Coins*` |
+| 💖 Tips: 25 / 100 / 500 / 1,000 Robux, shown on the Top Supporters board | Developer products | `ProductIds.Tip*` |
+| 📺 Watch an ad for 100 coins (only shown when Roblox has an ad for that player) | Rewarded video | uses `ProductIds.Coins100` |
+
+The free Lava Pass track (20 tiers, XP from playing, surviving, crowns and strawberries) is free for everyone.
+
 ## Before publishing
 
-- Set the game pass, product and badge IDs in `SkySproutConfig` (they are 0 until set).
+- Create the subscription, passes and products above on the Creator Dashboard and paste the IDs into
+  `SkySproutConfig` (anything left at 0 or "" stays hidden in game).
+- Turn on Price Optimization for the passes and products, and set a private server price.
+- Rewarded video ads only start once the game is public and meets Roblox's eligibility rules.
+- Set the badge IDs in `SkySproutConfig`.
 - Set Lighting → Technology to **Future** in Studio.
 
 ## Credits

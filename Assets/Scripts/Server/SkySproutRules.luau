@@ -1,7 +1,7 @@
 local C=require(game.ReplicatedStorage.SkySproutConfig)
 local R={}
 function R.floor(points)return math.clamp(1+math.floor(points/C.PointsPerFloor),1,C.MaxFloor)end
-function R.new()return {Version=8,Waystones={},Contracts={},XP=0,Style="Vanguard",Relic="Ember",BossClears={},Hunts={},Stories={},Coins=0,Points=0,BestFloor=1,Wins=0,Losses=0,Knockouts=0,Skin="Mint",Owned={Mint=true},FloorQuests={},Receipts={},LastDaily=0,DailyStreak=0,Crowns=0,Hat="",OwnedHats={}}end
+function R.new()return {Version=8,Waystones={},Contracts={},XP=0,Style="Vanguard",Relic="Ember",BossClears={},Hunts={},Stories={},Coins=0,Points=0,BestFloor=1,Wins=0,Losses=0,Knockouts=0,Skin="Mint",Owned={Mint=true},FloorQuests={},Receipts={},LastDaily=0,DailyStreak=0,Crowns=0,Hat="",OwnedHats={},PassSeason=0,PassXP=0,PassFree={},PassPrem={},Tipped=0}end
 function R.clean(raw)
  local p=R.new();if type(raw)~="table"then return p end
  for _,k in ipairs({"Coins","Points","Wins","Losses","Knockouts","BestFloor","XP","Crowns"})do
@@ -11,7 +11,18 @@ function R.clean(raw)
  for _,s in ipairs(C.Skins)do if not s.Premium and type(raw.Owned)=="table"and raw.Owned[s.Id]==true then p.Owned[s.Id]=true end end
  if type(raw.Skin)=="string"and(p.Owned[raw.Skin]or raw.Skin=="Aurora")then p.Skin=raw.Skin end
  for _,h in ipairs(C.Hats)do if type(raw.OwnedHats)=="table"and raw.OwnedHats[h.Id]==true then p.OwnedHats[h.Id]=true end end
- if type(raw.Hat)=="string"and p.OwnedHats[raw.Hat]then p.Hat=raw.Hat end
+ if type(raw.Hat)=="string"and(p.OwnedHats[raw.Hat]or raw.Hat==(C.Vip and C.Vip.Hat))then p.Hat=raw.Hat end
+ local season=C.LavaPass and C.LavaPass.Season or 0
+ if raw.PassSeason==season then
+  p.PassSeason=season
+  if type(raw.PassXP)=="number"and raw.PassXP==raw.PassXP then p.PassXP=math.clamp(math.floor(raw.PassXP),0,1000000)end
+  for _,track in ipairs({"PassFree","PassPrem"})do
+   if type(raw[track])=="table"then for tier=1,#C.LavaPass.Tiers do if raw[track][tostring(tier)]==true then p[track][tostring(tier)]=true end end end
+  end
+ else
+  p.PassSeason=season
+ end
+ if type(raw.Tipped)=="number"and raw.Tipped==raw.Tipped then p.Tipped=math.clamp(math.floor(raw.Tipped),0,100000000)end
  if type(raw.FloorQuests)=="table"then for f=1,C.MaxFloor do
   local q=raw.FloorQuests[tostring(f)]
   if type(q)=="table"then local n=tonumber(q.Training)or 0;if n~=n or math.abs(n)==math.huge then n=0 end
@@ -89,10 +100,12 @@ function R.skin(p,id,premium)
  end end
  return false,"Unknown style."
 end
-function R.hat(p,id)
+function R.hat(p,id,vip)
  for _,h in ipairs(C.Hats)do if h.Id==id then
   if p.Hat==id then p.Hat="";return true,h.Name.." taken off."end
-  if not p.OwnedHats[id]then if p.Coins<h.Cost then return false,h.Cost.." coins needed."end;p.Coins-=h.Cost;p.OwnedHats[id]=true end
+  if h.VipOnly then if not vip then return false,"⭐ "..h.Name.." is a VIP perk."end
+  elseif h.PassOnly and not p.OwnedHats[id]then return false,"🎟️ Unlock "..h.Name.." in the Lava Pass."
+  elseif not p.OwnedHats[id]then if p.Coins<h.Cost then return false,h.Cost.." coins needed."end;p.Coins-=h.Cost;p.OwnedHats[id]=true end
   p.Hat=id;return true,h.Name.." on!"
  end end
  return false,"Unknown hat."

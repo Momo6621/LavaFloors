@@ -417,65 +417,85 @@ local function buildArena()
 		local toward = (Vector3.new(c.X, 0, c.Z) - Vector3.new(plazaPos.X, 0, plazaPos.Z)).Unit
 		local side = Vector3.new(-toward.Z, 0, toward.X)
 		local spawnAt = plazaPos + toward * 16
-		local at = plazaPos + toward * 10 + side * 13 + Vector3.new(0, 5.5, 0)
-		local board = part(arenaFolder, "TopClimbers", Vector3.new(13, 8.5, 0.8), CFrame.lookAt(at, Vector3.new(spawnAt.X, at.Y, spawnAt.Z)), Color3.fromRGB(48, 36, 36), Enum.Material.Basalt)
-		local post = part(arenaFolder, "TopClimbersPost", Vector3.new(0.8, 1.5, 0.8), CFrame.new(at.X, 0.75, at.Z), Color3.fromRGB(40, 30, 30), Enum.Material.Basalt)
-		post.CanCollide = false
-		local sg = Instance.new("SurfaceGui")
-		sg.Face = Enum.NormalId.Front
-		sg.PixelsPerStud = 40
-		sg.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
-		sg.Parent = board
-		local card = Instance.new("Frame")
-		card.Size = UDim2.new(1, -24, 1, -24)
-		card.Position = UDim2.fromOffset(12, 12)
-		card.BackgroundColor3 = Color3.fromRGB(255, 247, 232)
-		card.Parent = sg
-		local corner = Instance.new("UICorner")
-		corner.CornerRadius = UDim.new(0, 24)
-		corner.Parent = card
-		local stroke = Instance.new("UIStroke")
-		stroke.Thickness = 8
-		stroke.Color = Color3.fromRGB(62, 28, 14)
-		stroke.Parent = card
-		local list = Instance.new("UIListLayout")
-		list.Padding = UDim.new(0, 6)
-		list.HorizontalAlignment = Enum.HorizontalAlignment.Center
-		list.Parent = card
-		local pad = Instance.new("UIPadding")
-		pad.PaddingTop = UDim.new(0, 14)
-		pad.Parent = card
-		local lines = {}
-		for i = 0, 5 do
-			local l = Instance.new("TextLabel")
-			l.BackgroundTransparency = 1
-			l.Size = UDim2.new(1, -40, 0, if i == 0 then 70 else 44)
-			l.Font = Enum.Font.FredokaOne
-			l.TextScaled = true
-			l.TextColor3 = if i == 0 then Color3.fromRGB(235, 90, 20) else Color3.fromRGB(62, 28, 14)
-			l.Text = if i == 0 then "🏆 TOP CLIMBERS" else ""
-			l.LayoutOrder = i
-			l.Parent = card
-			if i > 0 then
-				table.insert(lines, l)
-			end
-		end
-		task.spawn(function()
-			while board.Parent do
-				local ranked = Players:GetPlayers()
-				table.sort(ranked, function(a, b)
-					local ca, cb = a:GetAttribute("Crowns") or 0, b:GetAttribute("Crowns") or 0
-					if ca ~= cb then
-						return ca > cb
-					end
-					return (a:GetAttribute("Coins") or 0) > (b:GetAttribute("Coins") or 0)
-				end)
-				for i, l in lines do
-					local who = ranked[i]
-					l.Text = if who then string.format("%d. %s  👑 %d", i, who.DisplayName, who:GetAttribute("Crowns") or 0) else ""
+		local function board(name: string, offset: number, title: string, titleColor: Color3, fill: () -> { string })
+			local at = plazaPos + toward * 10 + side * offset + Vector3.new(0, 5.5, 0)
+			local slab = part(arenaFolder, name, Vector3.new(13, 8.5, 0.8), CFrame.lookAt(at, Vector3.new(spawnAt.X, at.Y, spawnAt.Z)), Color3.fromRGB(48, 36, 36), Enum.Material.Basalt)
+			local post = part(arenaFolder, name .. "Post", Vector3.new(0.8, 1.5, 0.8), CFrame.new(at.X, 0.75, at.Z), Color3.fromRGB(40, 30, 30), Enum.Material.Basalt)
+			post.CanCollide = false
+			local sg = Instance.new("SurfaceGui")
+			sg.Face = Enum.NormalId.Front
+			sg.PixelsPerStud = 40
+			sg.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+			sg.Parent = slab
+			local card = Instance.new("Frame")
+			card.Size = UDim2.new(1, -24, 1, -24)
+			card.Position = UDim2.fromOffset(12, 12)
+			card.BackgroundColor3 = Color3.fromRGB(255, 247, 232)
+			card.Parent = sg
+			local corner = Instance.new("UICorner")
+			corner.CornerRadius = UDim.new(0, 24)
+			corner.Parent = card
+			local stroke = Instance.new("UIStroke")
+			stroke.Thickness = 8
+			stroke.Color = Color3.fromRGB(62, 28, 14)
+			stroke.Parent = card
+			local list = Instance.new("UIListLayout")
+			list.Padding = UDim.new(0, 6)
+			list.HorizontalAlignment = Enum.HorizontalAlignment.Center
+			list.Parent = card
+			local pad = Instance.new("UIPadding")
+			pad.PaddingTop = UDim.new(0, 14)
+			pad.Parent = card
+			local lines = {}
+			for i = 0, 5 do
+				local l = Instance.new("TextLabel")
+				l.BackgroundTransparency = 1
+				l.Size = UDim2.new(1, -40, 0, if i == 0 then 70 else 44)
+				l.Font = Enum.Font.FredokaOne
+				l.TextScaled = true
+				l.TextColor3 = if i == 0 then titleColor else Color3.fromRGB(62, 28, 14)
+				l.Text = if i == 0 then title else ""
+				l.LayoutOrder = i
+				l.Parent = card
+				if i > 0 then
+					table.insert(lines, l)
 				end
-				task.wait(4)
 			end
+			task.spawn(function()
+				while slab.Parent do
+					local rows = fill()
+					for i, l in lines do
+						l.Text = rows[i] or ""
+					end
+					task.wait(4)
+				end
+			end)
+		end
+		board("TopClimbers", 13, "🏆 TOP CLIMBERS", Color3.fromRGB(235, 90, 20), function()
+			local ranked = Players:GetPlayers()
+			table.sort(ranked, function(a, b)
+				local ca, cb = a:GetAttribute("Crowns") or 0, b:GetAttribute("Crowns") or 0
+				if ca ~= cb then
+					return ca > cb
+				end
+				return (a:GetAttribute("Coins") or 0) > (b:GetAttribute("Coins") or 0)
+			end)
+			local rows = {}
+			for i = 1, math.min(5, #ranked) do
+				table.insert(rows, string.format("%d. %s  👑 %d", i, ranked[i].DisplayName, ranked[i]:GetAttribute("Crowns") or 0))
+			end
+			return rows
+		end)
+		board("TopSupporters", -13, "💖 TOP SUPPORTERS", Color3.fromRGB(235, 60, 130), function()
+			local top = A and A.Shop and A.Shop.TopSupporters() or {}
+			local rows = {}
+			for i = 1, math.min(5, #top) do
+				table.insert(rows, string.format("%d. %s  💖 %d", i, top[i].Name, top[i].Amount))
+			end
+			if #rows == 0 then
+				rows[1] = "Be the first supporter!"
+			end
+			return rows
 		end)
 	end
 
@@ -1772,7 +1792,15 @@ local function payout()
 			if boosted then
 				coins *= 2
 			end
+			local isVip = A.Pass and A.Pass.Has and A.Pass.Has(p, "VIP") or false
+			if isVip and GameConfig.Vip then
+				coins = math.floor(coins * (1 + GameConfig.Vip.CoinBonus))
+			end
 			d.Coins = math.min(100000000, d.Coins + coins)
+			if A.Season and GameConfig.LavaPass then
+				local xp = GameConfig.LavaPass.XP
+				A.Season.AddXP(p, xp.Played + (if r.crowned then xp.Crowned elseif r.alive then xp.Survived else 0) + (if r.crowned or r.alive then r.embers * xp.Berry else 0))
+			end
 			pushStats(p)
 			event:FireClient(p, "LavaResult", {
 				Outcome = if r.crowned then "CROWNED" elseif r.alive then "SURVIVED" else "SCORCHED",
@@ -1782,6 +1810,7 @@ local function payout()
 				Coins = coins,
 				Boosted = boosted,
 				Friends = withFriend,
+				Vip = isVip,
 			})
 		end
 	end

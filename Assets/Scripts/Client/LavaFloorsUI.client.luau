@@ -1,5 +1,5 @@
 --!strict
--- Main HUD: coins, shop, invite, music and shove button.
+-- Main HUD: coins, shop, Lava Pass, VIP, invite, music and shove button.
 local Players = game:GetService("Players")
 local RS = game:GetService("ReplicatedStorage")
 local UIS = game:GetService("UserInputService")
@@ -135,6 +135,7 @@ foot.Position = UDim2.new(0.5, 0, 1, -10)
 foot.Size = UDim2.new(1, -24, 0, 26)
 foot.TextWrapped = true
 
+local openPanel: (string) -> ()
 type Card = { refresh: () -> () }
 local cards: { Card } = {}
 local function card(order: number, swatch: Color3, title: string): (Frame, TextButton)
@@ -203,14 +204,24 @@ for i, h in C.Hats do
 	end
 	local id = h.Id
 	b.Activated:Connect(function()
-		event:FireServer("Hat", id)
+		if h.VipOnly and not player:GetAttribute("VIP") then
+			openPanel("VIP")
+		elseif h.PassOnly and not player:GetAttribute("OwnsHat" .. id) then
+			openPanel("Pass")
+		else
+			event:FireServer("Hat", id)
+		end
 	end)
 	table.insert(cards, {
 		refresh = function()
 			if player:GetAttribute("HatStyle") == id then
 				setButton(b, "✓ ON", GREEN)
-			elseif player:GetAttribute("OwnsHat" .. id) then
+			elseif player:GetAttribute("OwnsHat" .. id) or (h.VipOnly and player:GetAttribute("VIP")) then
 				setButton(b, "WEAR", ORANGE)
+			elseif h.VipOnly then
+				setButton(b, "⭐ VIP", GOLD)
+			elseif h.PassOnly then
+				setButton(b, "🎟️ PASS", Color3.fromRGB(150, 90, 255))
 			else
 				local afford = (player:GetAttribute("Coins") or 0) >= h.Cost
 				setButton(b, "💰 " .. h.Cost, if afford then ORANGE else Color3.fromRGB(170, 150, 140))
@@ -269,7 +280,40 @@ if (C.DoubleLavaPassId or 0) > 0 then
 		end,
 	})
 end
-for i, pack in { { "Coins500", 500 }, { "Coins2000", 2000 }, { "Coins6000", 6000 } } do
+local AdService = game:GetService("AdService")
+local adCard: Frame? = nil
+if (C.ProductIds and C.ProductIds.Coins100 or 0) > 0 then
+	local f, b = card(199, Color3.fromRGB(90, 200, 255), "📺 Free 100 coins")
+	setButton(b, "WATCH AD", Color3.fromRGB(60, 160, 240))
+	b.Activated:Connect(function()
+		event:FireServer("WatchAd")
+	end)
+	f.Visible = false
+	adCard = f
+end
+local function checkAd()
+	local f = adCard
+	if not f then
+		return
+	end
+	task.spawn(function()
+		local ok, result = pcall(function()
+			return AdService:GetAdAvailabilityNowAsync(Enum.AdFormat.RewardedVideo)
+		end)
+		f.Visible = ok and result and result.AdAvailabilityResult == Enum.AdAvailabilityResult.IsAvailable or false
+	end)
+end
+for i, tip in { { "Tip25", 25 }, { "Tip100", 100 }, { "Tip500", 500 }, { "Tip1000", 1000 } } do
+	local id = C.ProductIds and C.ProductIds[tip[1]] or 0
+	if id > 0 then
+		local _, b = card(300 + i, Color3.fromRGB(255, 90, 150), "💖 Tip " .. tip[2])
+		setButton(b, "R$ " .. tip[2], Color3.fromRGB(235, 60, 130))
+		b.Activated:Connect(function()
+			MPS:PromptProductPurchase(player, id)
+		end)
+	end
+end
+for i, pack in { { "Coins100", 100 }, { "Coins500", 500 }, { "Coins2000", 2000 }, { "Coins6000", 6000 } } do
 	local id = C.ProductIds and C.ProductIds[pack[1]] or 0
 	if id > 0 then
 		local _, b = card(200 + i, GOLD, "💰 " .. pack[2] .. " coins")
@@ -285,7 +329,7 @@ local function refreshShop()
 		c.refresh()
 	end
 end
-for _, attr in { "Coins", "GloveStyle", "HatStyle", "AuroraPass", "DoubleLavaPass" } do
+for _, attr in { "Coins", "GloveStyle", "HatStyle", "AuroraPass", "DoubleLavaPass", "VIP", "LavaPassPremium" } do
 	player:GetAttributeChangedSignal(attr):Connect(refreshShop)
 end
 for _, s in C.Skins do
@@ -299,6 +343,7 @@ refreshShop()
 local shopScale = make("UIScale", {}, shop)
 local function setShop(open: boolean)
 	if open then
+		checkAd()
 		shop.Visible = true
 		shopScale.Scale = 0.85
 		TweenService:Create(shopScale, TweenInfo.new(0.22, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = 1 }):Play()
@@ -332,6 +377,220 @@ local function pill(color: Color3): { any }
 		{ "IconLabel", "TextColor3", Color3.new(1, 1, 1) },
 		{ "IconLabel", "FontFace", Font.fromEnum(Enum.Font.FredokaOne) },
 	}
+end
+
+-- Lava Pass and VIP panels
+
+local FRUIT_ICON = { Strawberry = "🍓", Banana = "🍌", Pineapple = "🍍", Watermelon = "🍉", Coconut = "🥥", Blueberry = "🫐", DragonFruit = "🐉", StarFruit = "🌟", GoldenApple = "🍎" }
+local PURPLE = Color3.fromRGB(150, 90, 255)
+
+local function panel(title: string, top: Color3, bottom: Color3): (Frame, Frame)
+	local f: Frame = make("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.56), Size = UDim2.new(0.94, 0, 0.82, 0), BackgroundColor3 = CREAM, Visible = false }, gui)
+	make("UISizeConstraint", { MaxSize = Vector2.new(560, 440) }, f)
+	corner(f, 22)
+	outline(f, 4)
+	local bar = make("Frame", { Size = UDim2.new(1, 0, 0, 56), BackgroundColor3 = top }, f)
+	corner(bar, 22)
+	make("UIGradient", { Rotation = 90, Color = ColorSequence.new(top, bottom) }, bar)
+	local head = label(bar, title, 28, Color3.new(1, 1, 1))
+	head.TextStrokeColor3 = INK
+	head.TextStrokeTransparency = 0.2
+	local x = button(bar, "X", RED, UDim2.fromOffset(40, 40))
+	x.AnchorPoint = Vector2.new(1, 0.5)
+	x.Position = UDim2.new(1, -10, 0.5, 0)
+	x.Activated:Connect(function()
+		f.Visible = false
+	end)
+	local body = make("Frame", { Position = UDim2.fromOffset(12, 66), Size = UDim2.new(1, -24, 1, -78), BackgroundTransparency = 1 }, f)
+	return f, body
+end
+
+local function rewardText(reward: any): string
+	if reward.Coins then
+		return "💰 " .. reward.Coins
+	elseif reward.Hat then
+		return (FRUIT_ICON[reward.Hat] or "🎩") .. " Hat"
+	end
+	return "?"
+end
+
+local function claimedSet(attr: string): { [number]: boolean }
+	local out = {}
+	for n in string.gmatch(tostring(player:GetAttribute(attr) or ""), "%d+") do
+		out[tonumber(n) :: number] = true
+	end
+	return out
+end
+
+local passPanel, passBody = panel("🎟️ LAVA PASS", Color3.fromRGB(175, 110, 255), Color3.fromRGB(110, 60, 220))
+local xpBack = make("Frame", { Size = UDim2.new(1, -150, 0, 26), BackgroundColor3 = Color3.fromRGB(225, 210, 200) }, passBody)
+corner(xpBack, 13)
+outline(xpBack, 3)
+local xpFill = make("Frame", { Size = UDim2.fromScale(0, 1), BackgroundColor3 = PURPLE }, xpBack)
+corner(xpFill, 13)
+local xpText = label(xpBack, "", 16, Color3.new(1, 1, 1))
+xpText.TextStrokeColor3 = INK
+xpText.TextStrokeTransparency = 0.3
+local premiumButton = button(passBody, "⭐ PREMIUM", GOLD, UDim2.fromOffset(140, 30))
+premiumButton.AnchorPoint = Vector2.new(1, 0)
+premiumButton.Position = UDim2.new(1, 0, 0, -2)
+premiumButton.TextSize = 16
+premiumButton.Activated:Connect(function()
+	if (C.LavaPassPremiumId or 0) > 0 and not player:GetAttribute("LavaPassPremium") then
+		MPS:PromptGamePassPurchase(player, C.LavaPassPremiumId)
+	elseif (C.LavaPassPremiumId or 0) <= 0 then
+		notify("Lava Pass Premium isn't on sale yet.")
+	end
+end)
+local track = make("ScrollingFrame", { Position = UDim2.fromOffset(0, 40), Size = UDim2.new(1, 0, 1, -40), BackgroundTransparency = 1, BorderSizePixel = 0, ScrollBarThickness = 6, ScrollBarImageColor3 = INK, CanvasSize = UDim2.new(), AutomaticCanvasSize = Enum.AutomaticSize.X, ScrollingDirection = Enum.ScrollingDirection.X }, passBody)
+make("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder }, track)
+make("UIPadding", { PaddingLeft = UDim.new(0, 4), PaddingRight = UDim.new(0, 4), PaddingTop = UDim.new(0, 4) }, track)
+type TierCard = { freeButton: TextButton, premButton: TextButton, frame: Frame }
+local tierCards: { TierCard } = {}
+for tier, row in (C.LavaPass and C.LavaPass.Tiers or {}) do
+	local f: Frame = make("Frame", { LayoutOrder = tier, Size = UDim2.new(0, 112, 1, -14), BackgroundColor3 = Color3.new(1, 1, 1) }, track)
+	corner(f, 14)
+	outline(f, 3)
+	local n = label(f, "Tier " .. tier, 18)
+	n.Size = UDim2.new(1, 0, 0, 26)
+	local freeText = label(f, rewardText(row.Free), 18)
+	freeText.Position = UDim2.fromOffset(0, 30)
+	freeText.Size = UDim2.new(1, 0, 0, 26)
+	local freeButton = button(f, "", ORANGE, UDim2.new(1, -14, 0, 32))
+	freeButton.Position = UDim2.fromOffset(7, 58)
+	freeButton.TextSize = 15
+	local line = make("Frame", { Position = UDim2.new(0, 8, 0, 98), Size = UDim2.new(1, -16, 0, 2), BackgroundColor3 = INK:Lerp(CREAM, 0.6), BorderSizePixel = 0 }, f)
+	local premTag = label(f, "⭐ Premium", 13, PURPLE)
+	premTag.Position = UDim2.fromOffset(0, 104)
+	premTag.Size = UDim2.new(1, 0, 0, 18)
+	local premText = label(f, rewardText(row.Premium), 18)
+	premText.Position = UDim2.fromOffset(0, 122)
+	premText.Size = UDim2.new(1, 0, 0, 26)
+	local premButton = button(f, "", PURPLE, UDim2.new(1, -14, 0, 32))
+	premButton.Position = UDim2.fromOffset(7, 150)
+	premButton.TextSize = 15
+	freeButton.Activated:Connect(function()
+		event:FireServer("PassClaim", { Tier = tier, Track = "Free" })
+	end)
+	premButton.Activated:Connect(function()
+		if player:GetAttribute("LavaPassPremium") then
+			event:FireServer("PassClaim", { Tier = tier, Track = "Premium" })
+		elseif (C.LavaPassPremiumId or 0) > 0 then
+			MPS:PromptGamePassPurchase(player, C.LavaPassPremiumId)
+		end
+	end)
+	local _ = line
+	table.insert(tierCards, { freeButton = freeButton, premButton = premButton, frame = f })
+end
+local function refreshPass()
+	local xp = player:GetAttribute("PassXP") or 0
+	local per = C.LavaPass and C.LavaPass.XPPerTier or 100
+	local tier = player:GetAttribute("PassTier") or 0
+	local maxed = tier >= #tierCards
+	xpFill.Size = UDim2.fromScale(if maxed then 1 else (xp % per) / per, 1)
+	xpText.Text = if maxed then "MAX TIER!" else string.format("Tier %d  •  %d / %d XP", tier, xp % per, per)
+	local premium = player:GetAttribute("LavaPassPremium") == true
+	setButton(premiumButton, if premium then "⭐ PREMIUM ✓" else "⭐ PREMIUM", if premium then GREEN else GOLD)
+	local freeDone, premDone = claimedSet("PassFreeClaimed"), claimedSet("PassPremClaimed")
+	for i, c in tierCards do
+		local unlocked = tier >= i
+		if freeDone[i] then
+			setButton(c.freeButton, "✓", GREEN)
+		elseif unlocked then
+			setButton(c.freeButton, "CLAIM", ORANGE)
+		else
+			setButton(c.freeButton, "🔒", Color3.fromRGB(170, 150, 140))
+		end
+		if premDone[i] then
+			setButton(c.premButton, "✓", GREEN)
+		elseif not premium then
+			setButton(c.premButton, "🔒 ⭐", Color3.fromRGB(170, 150, 140))
+		elseif unlocked then
+			setButton(c.premButton, "CLAIM", PURPLE)
+		else
+			setButton(c.premButton, "🔒", Color3.fromRGB(170, 150, 140))
+		end
+	end
+end
+for _, attr in { "PassXP", "PassTier", "PassFreeClaimed", "PassPremClaimed", "LavaPassPremium" } do
+	player:GetAttributeChangedSignal(attr):Connect(refreshPass)
+end
+refreshPass()
+
+local vipPanel, vipBody = panel("⭐ VIP", Color3.fromRGB(255, 215, 70), Color3.fromRGB(240, 150, 20))
+local perks = label(vipBody, "⭐  VIP tag over your head and in chat\n🍎  Golden Apple hat (VIP only)\n🎁  Double daily rewards\n💰  +25% coins every round\n✨  Golden shimmer\n\nJust for looks and comfort. Everything else in LAVA Floors can be earned by playing.", 20)
+perks.Size = UDim2.new(1, 0, 1, -60)
+perks.TextWrapped = true
+perks.TextYAlignment = Enum.TextYAlignment.Top
+local vipButton = button(vipBody, "SUBSCRIBE", GOLD, UDim2.new(1, 0, 0, 48))
+vipButton.AnchorPoint = Vector2.new(0, 1)
+vipButton.Position = UDim2.fromScale(0, 1)
+vipButton.TextSize = 24
+local function refreshVip()
+	if player:GetAttribute("VIP") then
+		setButton(vipButton, "⭐ YOU'RE VIP — THANK YOU!", GREEN)
+	elseif type(C.VipSubscriptionId) == "string" and C.VipSubscriptionId ~= "" then
+		setButton(vipButton, "SUBSCRIBE", GOLD)
+	else
+		setButton(vipButton, "COMING SOON", Color3.fromRGB(170, 150, 140))
+	end
+end
+vipButton.Activated:Connect(function()
+	if not player:GetAttribute("VIP") and type(C.VipSubscriptionId) == "string" and C.VipSubscriptionId ~= "" then
+		pcall(function()
+			MPS:PromptSubscriptionPurchase(player, C.VipSubscriptionId)
+		end)
+	end
+end)
+player:GetAttributeChangedSignal("VIP"):Connect(refreshVip)
+refreshVip()
+
+openPanel = function(which: string)
+	shop.Visible = false
+	passPanel.Visible = which == "Pass"
+	vipPanel.Visible = which == "VIP"
+	if which == "Pass" then
+		refreshPass()
+	end
+end
+
+Icon.new()
+	:setName("LavaPass")
+	:setLabel("🎟️ Pass")
+	:align("Left")
+	:oneClick()
+	:modifyTheme(pill(PURPLE))
+	:bindEvent("selected", function()
+		if passPanel.Visible then
+			passPanel.Visible = false
+		else
+			openPanel("Pass")
+		end
+	end)
+Icon.new()
+	:setName("Vip")
+	:setLabel("⭐ VIP")
+	:align("Left")
+	:oneClick()
+	:modifyTheme(pill(Color3.fromRGB(240, 170, 20)))
+	:bindEvent("selected", function()
+		if vipPanel.Visible then
+			vipPanel.Visible = false
+		else
+			openPanel("VIP")
+		end
+	end)
+
+-- VIP chat tag
+local TextChatService = game:GetService("TextChatService")
+TextChatService.OnIncomingMessage = function(message: TextChatMessage)
+	local props = Instance.new("TextChatMessageProperties")
+	local source = message.TextSource
+	local who = source and Players:GetPlayerByUserId(source.UserId)
+	if who and who:GetAttribute("VIP") then
+		props.PrefixText = '<font color="#FFD24A">[⭐ VIP]</font> ' .. message.PrefixText
+	end
+	return props
 end
 
 local SocialService = game:GetService("SocialService")

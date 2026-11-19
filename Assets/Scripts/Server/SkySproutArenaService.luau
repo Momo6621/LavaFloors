@@ -219,7 +219,11 @@ function A.HandleAction(p,action,value)
   local ok,msg=Rules.skin(data(p),value,A.Pass~=nil and A.Pass.Owns(p));if ok then stats(p);equip(p)end;tell(p,msg)
  elseif action=="Hat"then
   if type(value)~="string"then return end
-  local ok,msg=Rules.hat(data(p),value);if ok then stats(p);if A.OnHat then A.OnHat(p)end end;tell(p,msg)
+  local ok,msg=Rules.hat(data(p),value,A.Pass~=nil and A.Pass.Has(p,"VIP"));if ok then stats(p);if A.OnHat then A.OnHat(p)end end;tell(p,msg)
+ elseif action=="PassClaim"then
+  if A.Season then A.Season.Claim(p,value)end
+ elseif action=="WatchAd"then
+  if A.Shop then task.spawn(A.Shop.ShowAd,p)end
  elseif action=="Punch"or action=="Heavy"then
   if C.PartyMode and not f then return end
   if f then attack(p,f,action=="Heavy")else practice(p,action=="Heavy")end
@@ -272,6 +276,7 @@ function A.Start()
  A.Lava=require(script.Parent.SkySproutLavaService);A.Lava.Start(A,event,stats,tell)
  A.Pass=require(script.Parent.SkySproutPassService);A.Pass.Start(A,tell)
  A.Shop=require(script.Parent.SkySproutShopService);A.Shop.Start(A,stats,tell)
+ A.Season=require(script.Parent.SkySproutSeasonService);A.Season.Start(A,stats,tell)
  local function character(p,ch)
   ch.DescendantAdded:Connect(function(d)if d:IsA("BasePart")then d.CollisionGroup=A.Fighters[p]and"ArenaFighter"or"TowerVisitor"elseif d:IsA("Script")and d.Name=="Health"then d.Disabled=true end end)
   local h=ch:WaitForChild("Humanoid");ch:WaitForChild("HumanoidRootPart");h.MaxHealth=100;h.Health=100
