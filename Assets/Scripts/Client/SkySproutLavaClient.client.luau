@@ -561,6 +561,8 @@ wearTile = function(tile: BasePart, moved: CFrame, crumble: number?, state: stri
 	elseif tile.Material ~= look.material then
 		tile.Color = look.color
 		tile.Material = look.material
+	else
+		look.color = tile.Color -- not worn: follow the server's colour (the world theme recolours tiles)
 	end
 	return moved
 end

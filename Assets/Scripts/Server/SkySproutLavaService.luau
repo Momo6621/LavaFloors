@@ -12,6 +12,7 @@ local Grid = require(game.ReplicatedStorage:WaitForChild("LavaGrid")) :: any
 local FruitModels = game.ReplicatedStorage:WaitForChild("FruitModels")
 local applyHat: (Player) -> ()
 local wear: { [number]: number } = {}
+local tileColour: (any, number, boolean) -> Color3
 
 local CFG = {
 	-- Arena
@@ -954,7 +955,20 @@ local function isRock(p: BasePart): boolean
 	return v < 0.5
 end
 
+-- Floor tiles are shades of the world's one hue: the centre is brightest, outer rings a little deeper, and the
+-- checker only changes lightness.
+tileColour = function(theme: any, ring: number, light: boolean): Color3
+	local t = ring / math.max(1, (CFG.GridSize - 1) / 2)
+	local colour = Color3.fromHSV(theme.TileHue or 0.05, 0.42 + 0.16 * t, 0.96 - 0.26 * t)
+	return if light then colour:Lerp(Color3.new(1, 1, 1), 0.14) else colour
+end
+
 local function themeColor(d: Instance, theme: any)
+	local ring = d:GetAttribute("TileRing")
+	if type(ring) == "number" and d:IsA("BasePart") then
+		d.Color = tileColour(theme, ring, d:GetAttribute("TileLight") == true)
+		return
+	end
 	if d:GetAttribute("NoTheme") then
 		return
 	end
@@ -1376,13 +1390,6 @@ end
 
 -- Grid
 
-local TILE_COLOURS = {
-	Color3.fromRGB(240, 180, 40),
-	Color3.fromRGB(130, 200, 50),
-	Color3.fromRGB(40, 185, 160),
-	Color3.fromRGB(60, 135, 235),
-	Color3.fromRGB(145, 85, 235),
-}
 
 local function buildTower()
 	local model = Instance.new("Model")
@@ -1424,10 +1431,10 @@ local function buildTower()
 	for row = 1, size do
 		for col = 1, size do
 			local index = (row - 1) * size + col
-			local base = TILE_COLOURS[Grid.Ring(size, row, col) + 1]
-			local color = if (row + col) % 2 == 0 then base else base:Lerp(Color3.new(1, 1, 1), 0.2)
-			local tile = part(model, "Tile" .. index, Vector3.new(CFG.GridTile, 1.2, CFG.GridTile), Grid.TileCFrame(model, row, col, -math.huge), color, Enum.Material.SmoothPlastic)
-			tile:SetAttribute("NoTheme", true)
+			local ring, light = Grid.Ring(size, row, col), (row + col) % 2 == 1
+			local tile = part(model, "Tile" .. index, Vector3.new(CFG.GridTile, 1.2, CFG.GridTile), Grid.TileCFrame(model, row, col, -math.huge), tileColour(Themes.Get(L.Theme), ring, light), Enum.Material.SmoothPlastic)
+			tile:SetAttribute("TileRing", ring)
+			tile:SetAttribute("TileLight", light)
 			tile:SetAttribute("StepIndex", index)
 			tile:SetAttribute("Row", row)
 			tile:SetAttribute("Col", col)
