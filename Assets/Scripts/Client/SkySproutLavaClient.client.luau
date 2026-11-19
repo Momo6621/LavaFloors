@@ -650,10 +650,12 @@ type Layer = { Count: number, Radius: NumberRange, Span: number, Drift: number, 
 type Floater = { part: BasePart, layer: Layer, angle: number, radius: number, y: number, spin: number }
 
 local LAYERS: { [string]: Layer } = {
-	Streak = { Count = 40, Radius = NumberRange.new(60, 90), Span = 70, Drift = 10, Rush = 7 },
-	Rock = { Count = 28, Radius = NumberRange.new(95, 145), Span = 110, Drift = 4.5, Rush = 3.2 },
-	Cloud = { Count = 12, Radius = NumberRange.new(150, 230), Span = 160, Drift = 1.6, Rush = 1.2 },
+	Streak = { Count = 70, Radius = NumberRange.new(54, 95), Span = 70, Drift = 18, Rush = 13 },
+	Rock = { Count = 40, Radius = NumberRange.new(95, 150), Span = 110, Drift = 8, Rush = 5.5 },
+	Cloud = { Count = 18, Radius = NumberRange.new(150, 230), Span = 160, Drift = 3, Rush = 2.2 },
 }
+local FOV_KICK = 9 -- extra field of view at full rush, the classic "speeding up" cue
+local fovApplied = 0
 
 local climbFolder: Folder? = nil
 local floaters: { Floater } = {}
@@ -707,6 +709,8 @@ local function clearClimb()
 	climbTheme = nil
 	lastGridY = nil
 	rush = 0
+	workspace.CurrentCamera.FieldOfView -= fovApplied
+	fovApplied = 0
 end
 
 local function buildClimb(gridY: number)
@@ -760,11 +764,16 @@ Run.RenderStepped:Connect(function(dt: number)
 	local climbing = if lastGridY and dt > 0 then math.max(0, (gridY - lastGridY) / dt) else 0
 	lastGridY = gridY
 	rush += (climbing - rush) * math.min(1, dt * 5)
+	local camera = workspace.CurrentCamera
+	local kick = math.clamp(rush / 5, 0, 1) * FOV_KICK
+	camera.FieldOfView += kick - fovApplied
+	fovApplied = kick
 	local cx, cz = tower:GetAttribute("CenterX"), tower:GetAttribute("CenterZ")
 	if type(cx) ~= "number" or type(cz) ~= "number" then
 		return
 	end
-	local cameraY = workspace.CurrentCamera.CFrame.Position.Y
+	local cameraPos = camera.CFrame.Position
+	local cameraY = cameraPos.Y
 	local centreY = math.max(gridY, cameraY - 10)
 	for _, f in floaters do
 		local layer = f.layer
@@ -778,8 +787,10 @@ Run.RenderStepped:Connect(function(dt: number)
 		local pos = Vector3.new(cx + math.cos(f.angle) * f.radius, f.y, cz + math.sin(f.angle) * f.radius)
 		if f.part.Name == "Streak" then
 			-- Streaks stretch with the rush, like speed lines.
-			f.part.Size = Vector3.new(0.35, math.clamp(6 + rush * 1.6, 6, 26), 0.35)
-			f.part.Transparency = math.clamp(0.6 - rush * 0.04, 0.25, 0.6)
+			f.part.Size = Vector3.new(0.4, math.clamp(8 + rush * 3, 8, 40), 0.4)
+			-- Fade streaks that pass close to the camera so they never cut across the view.
+			local close = math.clamp((40 - (pos - cameraPos).Magnitude) / 25, 0, 1)
+			f.part.Transparency = math.min(1, math.clamp(0.5 - rush * 0.06, 0.15, 0.5) + close * 0.85)
 			f.part.CFrame = CFrame.new(pos)
 		elseif f.part.Name == "Cloud" then
 			f.part.CFrame = CFrame.new(pos) * CFrame.Angles(0, f.angle, 0)
