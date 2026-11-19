@@ -74,6 +74,16 @@ local CFG = {
 	ShieldOrbs = 2,
 	ShieldTime = 10,
 
+	-- Hot Potato twist: one climber carries a ticking bomb and passes it by touching someone.
+	BombTime = 9,
+	BombMinLeft = 3,
+	BombPassRange = 5,
+	BombPassCooldown = 0.8,
+	BombGap = 3,
+	BombSpeed = 4,
+	BombBlast = 70,
+	BombLift = 40,
+
 	-- Drops
 	DropEvery = 8,
 	DropPartyEvery = 3.5,
@@ -106,6 +116,7 @@ local MUTATORS: { Mutator } = {
 	{ Id = "SpeedRush", Name = "💨 Speed Rush", Weight = 2 },
 	{ Id = "ShieldParty", Name = "🛡️ Shield Party", Weight = 1 },
 	{ Id = "DropParty", Name = "🎁 Drop Party", Weight = 2 },
+	{ Id = "HotPotato", Name = "💣 Hot Potato", Weight = 3 },
 }
 local function pickMutator(previous: Mutator?): Mutator
 	local total = 0
@@ -1785,6 +1796,193 @@ local function shove(p: Player)
 	end
 end
 
+-- Hot Potato: a ticking bomb rides on one climber's head. Touch someone to pass it on; whoever holds it when it
+-- blows gets launched off the grid (a bubble shield soaks the blast). The holder runs a little faster to chase.
+
+type Bomb = { holder: Player?, endsAt: number, passedAt: number, from: Player?, nextAt: number, model: Model?, label: TextLabel?, shown: string }
+local bomb: Bomb = { holder = nil, endsAt = 0, passedAt = 0, from = nil, nextAt = 0, model = nil, label = nil, shown = "" }
+
+local function dropBombLook()
+	if bomb.model then
+		bomb.model:Destroy()
+	end
+	bomb.model, bomb.label, bomb.shown = nil, nil, ""
+	local holder = bomb.holder
+	local character = holder and holder.Character
+	local glow = character and character:FindFirstChild("BombGlow")
+	if glow then
+		glow:Destroy()
+	end
+	local hum = character and character:FindFirstChildOfClass("Humanoid")
+	if hum then
+		hum.WalkSpeed = baseWalkSpeed()
+	end
+end
+
+local function bombLook(p: Player)
+	local character = p.Character
+	local head = character and character:FindFirstChild("Head")
+	if not character or not head or not head:IsA("BasePart") then
+		return
+	end
+	local model = Instance.new("Model")
+	model.Name = "LavaBomb"
+	local ball = Instance.new("Part")
+	ball.Name = "Ball"
+	ball.Shape = Enum.PartType.Ball
+	ball.Size = Vector3.new(1.8, 1.8, 1.8)
+	ball.Color = Color3.fromRGB(35, 30, 40)
+	ball.Material = Enum.Material.SmoothPlastic
+	ball.CanCollide, ball.CanQuery, ball.CanTouch, ball.Massless = false, false, false, true
+	ball.CFrame = head.CFrame * CFrame.new(0, 2.4, 0)
+	ball.Parent = model
+	local fuse = Instance.new("Part")
+	fuse.Name = "Fuse"
+	fuse.Size = Vector3.new(0.25, 0.6, 0.25)
+	fuse.Color = Color3.fromRGB(255, 170, 60)
+	fuse.Material = Enum.Material.Neon
+	fuse.CanCollide, fuse.CanQuery, fuse.CanTouch, fuse.Massless = false, false, false, true
+	fuse.CFrame = ball.CFrame * CFrame.new(0, 1.1, 0)
+	fuse.Parent = model
+	local sparks = Instance.new("ParticleEmitter")
+	sparks.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+	sparks.Color = ColorSequence.new(Color3.fromRGB(255, 240, 150), Color3.fromRGB(255, 90, 20))
+	sparks.LightEmission = 1
+	sparks.Rate = 30
+	sparks.Lifetime = NumberRange.new(0.2, 0.45)
+	sparks.Speed = NumberRange.new(3, 6)
+	sparks.SpreadAngle = Vector2.new(60, 60)
+	sparks.Size = NumberSequence.new(0.35, 0)
+	sparks.Parent = fuse
+	for _, piece in { ball, fuse } do
+		local weld = Instance.new("WeldConstraint")
+		weld.Part0, weld.Part1 = piece, head
+		weld.Parent = piece
+	end
+	local tag = Instance.new("BillboardGui")
+	tag.Size = UDim2.fromOffset(70, 34)
+	tag.StudsOffset = Vector3.new(0, 2, 0)
+	tag.AlwaysOnTop = true
+	tag.Parent = ball
+	local label = Instance.new("TextLabel")
+	label.BackgroundTransparency = 1
+	label.Size = UDim2.fromScale(1, 1)
+	label.Font = Enum.Font.FredokaOne
+	label.TextScaled = true
+	label.TextColor3 = Color3.fromRGB(255, 235, 120)
+	label.TextStrokeTransparency = 0
+	label.TextStrokeColor3 = Color3.fromRGB(90, 10, 0)
+	label.Text = ""
+	label.Parent = tag
+	model.Parent = character
+	local glow = Instance.new("Highlight")
+	glow.Name = "BombGlow"
+	glow.FillColor = Color3.fromRGB(255, 60, 30)
+	glow.FillTransparency = 0.65
+	glow.OutlineColor = Color3.fromRGB(255, 200, 60)
+	glow.Parent = character
+	local hum = character:FindFirstChildOfClass("Humanoid")
+	if hum then
+		hum.WalkSpeed = baseWalkSpeed() + CFG.BombSpeed
+	end
+	bomb.model, bomb.label = model, label
+end
+
+local function giveBomb(p: Player, from: Player?)
+	dropBombLook()
+	bomb.holder, bomb.from, bomb.passedAt = p, from, now()
+	bomb.endsAt = math.max(bomb.endsAt, now() + CFG.BombMinLeft)
+	bombLook(p)
+	local me = root(p)
+	event:FireClient(p, "LavaFX", { Kind = "Bomb", Position = me and me.Position })
+	if from then
+		tell(p, "💣 " .. from.DisplayName .. " passed you the bomb! Tag someone fast!")
+		tell(from, "✅ Passed it to " .. p.DisplayName .. "!")
+	else
+		tell(p, "💣 You have the bomb! Touch someone to pass it!")
+	end
+end
+
+local function resetBomb()
+	dropBombLook()
+	bomb.holder, bomb.from, bomb.endsAt, bomb.nextAt = nil, nil, 0, 0
+end
+
+local function bombTick(active: number)
+	local holder = bomb.holder
+	local hr = holder and L.Runners[holder]
+	if holder and (not hr or not hr.alive or hr.crowned or not holder.Parent or not root(holder)) then
+		dropBombLook()
+		bomb.holder, bomb.nextAt = nil, now() + CFG.BombGap
+		holder = nil
+	end
+	if not holder or not hr then
+		if active >= 2 and gridPhase() >= 1 and now() >= bomb.nextAt then
+			local pool = {}
+			for p, r in L.Runners do
+				if r.alive and not r.crowned and root(p) then
+					table.insert(pool, p)
+				end
+			end
+			if #pool >= 2 then
+				bomb.endsAt = now() + CFG.BombTime
+				giveBomb(pool[math.random(#pool)], nil)
+			end
+		end
+		return
+	end
+	local holderPlayer = holder :: Player
+	local me = root(holderPlayer) :: BasePart
+	if not bomb.model or bomb.model.Parent ~= holderPlayer.Character then
+		dropBombLook()
+		bombLook(holderPlayer) -- respawned or rescued: put the bomb back on
+	end
+	local left = math.max(0, bomb.endsAt - now())
+	local text = string.format("💣 %d", math.ceil(left))
+	if bomb.label and text ~= bomb.shown then
+		bomb.shown = text
+		bomb.label.Text = text
+		bomb.label.TextColor3 = if left <= 3 then Color3.fromRGB(255, 80, 60) else Color3.fromRGB(255, 235, 120)
+	end
+	if now() - bomb.passedAt >= CFG.BombPassCooldown then
+		for other, o in L.Runners do
+			local them = root(other)
+			if other ~= holderPlayer and o.alive and not o.crowned and them and (other ~= bomb.from or now() - bomb.passedAt > 2) then
+				local delta = them.Position - me.Position
+				if Vector3.new(delta.X, 0, delta.Z).Magnitude < CFG.BombPassRange and math.abs(delta.Y) < 5 then
+					giveBomb(other, holderPlayer)
+					return
+				end
+			end
+		end
+	end
+	if left > 0 then
+		return
+	end
+	-- BOOM
+	local at = me.Position
+	dropBombLook()
+	bomb.holder, bomb.from, bomb.nextAt = nil, nil, now() + CFG.BombGap
+	for p in L.Runners do
+		if p.Parent then
+			event:FireClient(p, "LavaFX", { Kind = "Boom", Position = at })
+		end
+	end
+	if now() < hr.shieldUntil then
+		tell(holderPlayer, "🛡️ Your bubble shield soaked the blast!")
+		return
+	end
+	local centre = CFG.Center
+	local out = Vector3.new(at.X - centre.X, 0, at.Z - centre.Z)
+	out = if out.Magnitude > 0.5 then out.Unit else Vector3.new(math.random() - 0.5, 0, math.random() - 0.5).Unit
+	event:FireClient(holderPlayer, "LavaShove", out * CFG.BombBlast + Vector3.new(0, CFG.BombLift, 0))
+	for p in L.Runners do
+		if p.Parent then
+			tell(p, if p == holderPlayer then "💥 BOOM! The bomb went off in your hands!" else "💥 BOOM! " .. holderPlayer.DisplayName .. " got blasted!")
+		end
+	end
+end
+
 -- Round
 
 local function payout()
@@ -1954,6 +2152,7 @@ local function runRound()
 	workspace.Gravity = if L.Mutator.Id == "LowGravity" then 115 else DEFAULT_GRAVITY
 	local lastBroadcast = 0
 	clearDrops()
+	resetBomb()
 	local dropEvery = if L.Mutator.Id == "DropParty" then CFG.DropPartyEvery else CFG.DropEvery
 	local nextDrop = started + CFG.DropFirstAt
 	local lastPhase = 0
@@ -2033,6 +2232,9 @@ local function runRound()
 			end
 		end
 		updateWear(occupied, dt)
+		if L.Mutator.Id == "HotPotato" then
+			bombTick(active)
+		end
 		if now() - lastBroadcast > 0.5 then
 			lastBroadcast = now()
 			broadcast()
@@ -2055,6 +2257,7 @@ local function runRound()
 			break
 		end
 	end
+	resetBomb()
 	if now() >= L.EndsAt - 0.1 then
 		local winners = {}
 		for p, r in L.Runners do
@@ -2110,6 +2313,12 @@ local function loop()
 			task.wait(0.5)
 		end
 		L.Mutator = pickMutator(L.Mutator)
+		local forcedTwist = if Run:IsStudio() then workspace:GetAttribute("StudioForceMutator") else nil
+		for _, m in MUTATORS do
+			if m.Id == forcedTwist then
+				L.Mutator = m
+			end
+		end
 		L.Phase = "Countdown"
 		L.EndsAt = now() + CFG.Countdown
 		local theme = Themes.Pick(L.Theme)

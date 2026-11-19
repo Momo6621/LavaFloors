@@ -27,7 +27,7 @@ straight away, so nobody waits out a long round after falling. You can shove oth
 pop onto tiles in a bright flash as fruit: banana (speed), pineapple (super jump), blueberry (shield), coconut (rescue) and
 watermelon (berry bag). Strawberries on the tiles are bonus points if you survive. Fruit hats are in the shop.
 
-Every round also rolls a twist (Low Gravity, Turbo Spin, Hole Party, Speed Rush, Shield Party, Drop Party)
+Every round also rolls a twist (Low Gravity, Turbo Spin, Hole Party, Speed Rush, Shield Party, Drop Party, Hot Potato)
 and a world theme (Sunset, Blue Inferno, Purple Moon, Starry Night).
 
 | | |

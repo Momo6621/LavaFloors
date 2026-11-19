@@ -262,6 +262,23 @@ event.OnClientEvent:Connect(function(kind: string, v: any)
 				floatText(v.Position + Vector3.new(0, 2, 0), tostring(v.Text or "BOOST!"))
 			end
 			pop(title)
+		elseif v.Kind == "Bomb" then
+			play("Beep", 2)
+			tint.BackgroundTransparency = 0.55
+			if v.Position then
+				floatText(v.Position + Vector3.new(0, 3, 0), "💣 YOU'RE IT!")
+				burst(v.Position + Vector3.new(0, 3, 0), FIRE, 24, 10)
+			end
+		elseif v.Kind == "Boom" then
+			play("Scorch", 0.8)
+			if v.Position then
+				burst(v.Position, FIRE, 140, 45)
+				burst(v.Position, ColorSequence.new(Color3.fromRGB(80, 70, 70), Color3.fromRGB(30, 25, 25)), 40, 18)
+				local r = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+				if r and r:IsA("BasePart") and (r.Position - v.Position).Magnitude < 40 then
+					tint.BackgroundTransparency = 0.35
+				end
+			end
 		elseif v.Kind == "Crown" then
 			play("Crown")
 			if v.Position then
@@ -348,7 +365,7 @@ Run.RenderStepped:Connect(function(dt)
 			local twist = state.Mutator
 			title.Text = if twist and twist ~= "Classic" then string.format("%s IN %d", string.upper(twist), secs) else string.format("🔥 LAVA RUSH STARTS IN %d", secs)
 			local shoveTip = if game:GetService("UserInputService").TouchEnabled then "💥 Tap SHOVE to push rivals" else "🖱️ Click to SHOVE rivals"
-			local tips = { shoveTip,"🌀 The floor spins, grows, then rises — stay on!", "🛡️ Blue bubbles block shoves", "🔴 Red tiles fall or get left behind — move!", "🍉 Stay on one tile too long and it cracks!", "⬆️ Press E or tap RAISE to pop your tile up (40 coins)", "🏆 Get to the middle and survive every phase!", "🎁 Grab falling crates for boosts!" }
+			local tips = { shoveTip,"🌀 The floor spins, grows, then rises — stay on!", "🛡️ Blue bubbles block shoves", "🔴 Red tiles fall or get left behind — move!", "🍉 Stay on one tile too long and it cracks!", "⬆️ Press E or tap RAISE to pop your tile up (40 coins)", "🏆 Get to the middle and survive every phase!", "🎁 Grab falling crates for boosts!", "💣 Hot Potato: touch someone to pass the bomb!" }
 			info.Text = string.format("%s%d climber%s ready  •  %s", if state.Theme then state.Theme .. "  •  " else "", state.Queued, if state.Queued == 1 then "" else "s", tips[math.floor(t / 2.5) % #tips + 1])
 			if secs <= 3 and secs > 0 and secs ~= lastBeep then
 				lastBeep = secs
@@ -974,4 +991,21 @@ Run.RenderStepped:Connect(function(dt: number)
 		rising = false
 	end
 	riseY = gridY
+end)
+
+-- Hot Potato: a quick beep each second for the last 3 seconds while you hold the bomb.
+local lastBombText = ""
+Run.Heartbeat:Connect(function()
+	local character = player.Character
+	local bombModel = character and character:FindFirstChild("LavaBomb")
+	local label = bombModel and bombModel:FindFirstChild("TextLabel", true)
+	local text = if label and label:IsA("TextLabel") then label.Text else ""
+	if text ~= lastBombText then
+		lastBombText = text
+		local secs = tonumber(string.match(text, "%d+"))
+		if secs and secs <= 3 and secs > 0 then
+			play("Beep", 1.6 + (3 - secs) * 0.2)
+			tint.BackgroundTransparency = 0.7
+		end
+	end
 end)
