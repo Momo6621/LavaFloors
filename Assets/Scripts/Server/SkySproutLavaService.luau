@@ -500,28 +500,42 @@ local function buildArena()
 		end)
 	end
 
-	local beamBase = part(arenaFolder, "LandmarkBase", Vector3.new(1, 1, 1), CFrame.new(c + Vector3.new(0, 2, 0)), Color3.new(), Enum.Material.SmoothPlastic)
-	beamBase.Transparency = 1
-	beamBase.CanCollide = false
-	beamBase.CanQuery = false
-	beamBase.CanTouch = false
-	local a0 = Instance.new("Attachment")
-	a0.Parent = beamBase
-	local a1 = Instance.new("Attachment")
-	a1.Position = Vector3.new(0, 230, 0)
-	a1.Parent = beamBase
-	local beam = Instance.new("Beam")
-	beam.Name = "LandmarkBeam"
-	beam.Attachment0 = a0
-	beam.Attachment1 = a1
-	beam.Width0 = 10
-	beam.Width1 = 3
-	beam.FaceCamera = true
-	beam.LightEmission = 0.25
-	beam.LightInfluence = 0
-	beam.Color = ColorSequence.new(Color3.fromRGB(255, 80, 20), Color3.fromRGB(255, 170, 40))
-	beam.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.05), NumberSequenceKeypoint.new(0.75, 0.35), NumberSequenceKeypoint.new(1, 1) })
-	beam.Parent = beamBase
+	-- A glowing lava strip across the middle of the arena floor, under the floating grid. It runs side to side as
+	-- seen from the lobby and shows through the holes as tiles break. Lava-coloured, so the themes recolour it.
+	do
+		local toward = (Vector3.new(c.X, 0, c.Z) - Vector3.new(CFG.Beacon.X, 0, CFG.Beacon.Z)).Unit
+		local across = CFrame.lookAt(c + Vector3.new(0, 1.05, 0), c + Vector3.new(0, 1.05, 0) + Vector3.new(-toward.Z, 0, toward.X))
+		local core = part(arenaFolder, "LavaStrip", Vector3.new(7, 0.3, 74), across, Color3.fromRGB(235, 80, 15), Enum.Material.Neon)
+		local crust = part(arenaFolder, "LavaStripCrust", Vector3.new(7.2, 0.12, 74.2), across * CFrame.new(0, 0.2, 0), Color3.fromRGB(255, 120, 40), Enum.Material.CrackedLava)
+		crust.Transparency = 0.4
+		for _, edge in { -1, 1 } do
+			local lip = part(arenaFolder, "LavaStripEdge", Vector3.new(1.2, 0.6, 74.4), across * CFrame.new(edge * 4, 0.1, 0), Color3.fromRGB(40, 30, 30), Enum.Material.Basalt)
+			lip.CanCollide = false
+		end
+		for _, piece in { core, crust } do
+			piece.CanCollide = false
+			piece.CanQuery = false
+			piece.CanTouch = false
+			piece.CastShadow = false
+		end
+		local glow = Instance.new("SurfaceLight")
+		glow.Face = Enum.NormalId.Top
+		glow.Range = 18
+		glow.Angle = 150
+		glow.Brightness = 3
+		glow.Color = Color3.fromRGB(255, 120, 40)
+		glow.Parent = core
+		local sparks = Instance.new("ParticleEmitter")
+		sparks.Rate = 14
+		sparks.Lifetime = NumberRange.new(1, 2)
+		sparks.Speed = NumberRange.new(2, 5)
+		sparks.EmissionDirection = Enum.NormalId.Top
+		sparks.SpreadAngle = Vector2.new(20, 20)
+		sparks.Color = ColorSequence.new(Color3.fromRGB(255, 200, 60), Color3.fromRGB(255, 70, 10))
+		sparks.Size = NumberSequence.new(0.5, 0)
+		sparks.LightEmission = 1
+		sparks.Parent = core
+	end
 
 	local scenery = Instance.new("Model")
 	scenery.Name = "Volcanic"
