@@ -19,9 +19,12 @@ Don't camp: any tile you stand on starts wearing out, and after about 6 seconds 
 spend 40 coins (earned in rounds) to **raise** your tile for 10 seconds (E, Y on a controller, or the RAISE
 button). A raised tile doesn't wear.
 
+If you fall while others are still going, the camera swings out to spectate the floor until the round ends.
+When it does, everyone sees a winner banner with confetti over the winners.
+
 Whoever is still standing after phase 7 gets crowned. With two or more players, the last one standing wins
 straight away, so nobody waits out a long round after falling. You can shove other players off, and supply crates
-parachute in as fruit: banana (speed), pineapple (super jump), blueberry (shield), coconut (rescue) and
+pop onto tiles in a bright flash as fruit: banana (speed), pineapple (super jump), blueberry (shield), coconut (rescue) and
 watermelon (berry bag). Strawberries on the tiles are bonus points if you survive. Fruit hats are in the shop.
 
 Every round also rolls a twist (Low Gravity, Turbo Spin, Hole Party, Speed Rush, Shield Party, Drop Party)

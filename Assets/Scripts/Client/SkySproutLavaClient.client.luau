@@ -125,6 +125,35 @@ stroked(resultTitle, 3)
 local resultBody: TextLabel = make("TextLabel", { BackgroundTransparency = 1, Position = UDim2.fromOffset(10, 76), Size = UDim2.new(1, -20, 0, 80), Font = FONT, TextScaled = true, TextColor3 = Color3.new(1, 1, 1), Text = "" }, result)
 stroked(resultBody)
 
+local banner: Frame = make("Frame", {
+	AnchorPoint = Vector2.new(0.5, 0),
+	Position = UDim2.new(0.5, 0, 0, 150),
+	Size = UDim2.new(1, -24, 0, 120),
+	BackgroundColor3 = Color3.new(1, 1, 1),
+	Visible = false,
+}, gui)
+make("UISizeConstraint", { MaxSize = Vector2.new(520, 120) }, banner)
+make("UICorner", { CornerRadius = UDim.new(0, 22) }, banner)
+make("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(255, 225, 80), Color3.fromRGB(255, 150, 30)) }, banner)
+make("UIStroke", { Thickness = 5, Color = Color3.fromRGB(120, 60, 0), ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, banner)
+local bannerTitle: TextLabel = make("TextLabel", { BackgroundTransparency = 1, Position = UDim2.fromOffset(10, 8), Size = UDim2.new(1, -20, 0, 54), Font = FONT, TextScaled = true, TextColor3 = Color3.new(1, 1, 1), Text = "" }, banner)
+stroked(bannerTitle, 3)
+local bannerNames: TextLabel = make("TextLabel", { BackgroundTransparency = 1, Position = UDim2.fromOffset(10, 64), Size = UDim2.new(1, -20, 0, 44), Font = FONT, TextScaled = true, TextColor3 = Color3.new(1, 1, 1), Text = "" }, banner)
+stroked(bannerNames)
+
+local spectateLabel: TextLabel = make("TextLabel", {
+	AnchorPoint = Vector2.new(0.5, 1),
+	Position = UDim2.new(0.5, 0, 1, -24),
+	Size = UDim2.fromOffset(420, 34),
+	BackgroundTransparency = 1,
+	Font = FONT,
+	TextScaled = true,
+	TextColor3 = Color3.new(1, 1, 1),
+	Text = "👀 Spectating · move to look around",
+	Visible = false,
+}, gui)
+stroked(spectateLabel)
+
 local function pop(target: GuiObject)
 	local scale = target:FindFirstChildOfClass("UIScale") or make("UIScale", {}, target)
 	scale.Scale = 1.2
@@ -238,6 +267,23 @@ event.OnClientEvent:Connect(function(kind: string, v: any)
 				burst(v.Position + Vector3.new(0, 3, 0), PARTY, 160, 40)
 			end
 		end
+	elseif kind == "LavaWinners" then
+		local names = if type(v.Names) == "table" then v.Names else {}
+		bannerTitle.Text = if #names == 0 then "🌋 THE LAVA WINS!" elseif #names == 1 then "👑 WINNER!" else "👑 WINNERS!"
+		bannerNames.Text = if #names == 0 then "Nobody survived this time" else table.concat(names, "  •  ")
+		banner.Visible = true
+		pop(banner)
+		play("Crown", 1.1)
+		if type(v.Positions) == "table" then
+			for _, at in v.Positions do
+				if typeof(at) == "Vector3" then
+					burst(at + Vector3.new(0, 4, 0), PARTY, 120, 36)
+				end
+			end
+		end
+		task.delay(5, function()
+			banner.Visible = false
+		end)
 	elseif kind == "LavaResult" then
 		resultTitle.Text = if v.Outcome == "CROWNED" then "👑 CROWNED!" elseif v.Outcome == "SURVIVED" then "🔥 SURVIVED!" else "💀 SCORCHED"
 		resultTitle.TextColor3 = if v.Outcome == "SCORCHED" then Color3.new(1, 1, 1) else TITLE
@@ -398,9 +444,51 @@ local wearTile: (BasePart, CFrame, number?, string, number) -> CFrame
 
 type Rider = { tower: Instance?, tile: Instance? }
 local riders: { [BasePart]: Rider } = {}
+-- Fruit crates appear with a bright flash: a white-hot ball that blooms out in the boost's colour, sparks and a
+-- quick burst of light.
+local function spawnFlash(crate: BasePart)
+	task.wait(0.05) -- let the grid move it onto its tile first
+	if not crate.Parent then
+		return
+	end
+	local at = crate.Position
+	local tint = crate:GetAttribute("FlashColor")
+	local colour = if typeof(tint) == "Color3" then tint else Color3.fromRGB(255, 230, 120)
+	local ball = Instance.new("Part")
+	ball.Shape = Enum.PartType.Ball
+	ball.Material = Enum.Material.Neon
+	ball.Color = Color3.new(1, 1, 1)
+	ball.Size = Vector3.new(1, 1, 1)
+	ball.CFrame = CFrame.new(at)
+	ball.Anchored = true
+	ball.CanCollide = false
+	ball.CanQuery = false
+	ball.CanTouch = false
+	ball.CastShadow = false
+	ball.Parent = workspace
+	local light = Instance.new("PointLight")
+	light.Color = colour
+	light.Range = 24
+	light.Brightness = 8
+	light.Parent = ball
+	local info = TweenInfo.new(0.45, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	TweenService:Create(ball, info, { Size = Vector3.new(9, 9, 9), Transparency = 1, Color = colour }):Play()
+	TweenService:Create(light, info, { Brightness = 0 }):Play()
+	Debris:AddItem(ball, 0.5)
+	burst(at, ColorSequence.new(Color3.new(1, 1, 1), colour), 40, 22)
+	local character = player.Character
+	local me = character and character:FindFirstChild("HumanoidRootPart")
+	if me and me:IsA("BasePart") and (me.Position - at).Magnitude < 80 then
+		play("Crown", 1.8)
+	end
+end
+
 local function addRider(item: Instance)
 	if item:IsA("BasePart") then
 		riders[item] = { tower = item:FindFirstAncestor("LavaRushTower"), tile = nil }
+		if item:GetAttribute("SpawnFlash") then
+			task.spawn(spawnFlash, item)
+		end
 	end
 end
 for _, item in CollectionService:GetTagged("LavaRider") do
@@ -538,8 +626,6 @@ Run.PreSimulation:Connect(function()
 		if item.Name == "WarnPlate" then
 			-- Red only for rings about to be left behind; tiles that break show wear and cracks instead.
 			item.Transparency = if state == "Warning" and crumble == nil then (if blink then 0.05 else 0.6) else 1
-		elseif item.Name == "Chute" then
-			item.Transparency = if fall > 0 then 0.15 else 1
 		end
 	end
 	local character = player.Character
@@ -553,4 +639,66 @@ Run.PreSimulation:Connect(function()
 	end
 	standingOn = tileUnderFeet()
 	standingCFrame = if standingOn then standingOn.CFrame else nil
+end)
+
+-- Spectate
+
+local UIS = game:GetService("UserInputService")
+local spectating = false
+local function stopSpectate()
+	if not spectating then
+		return
+	end
+	spectating = false
+	spectateLabel.Visible = false
+	Run:UnbindFromRenderStep("LavaSpectate")
+	workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
+end
+local function startSpectate()
+	if spectating then
+		return
+	end
+	spectating = true
+	spectateLabel.Visible = true
+	local started = os.clock()
+	Run:BindToRenderStep("LavaSpectate", Enum.RenderPriority.Camera.Value + 1, function()
+		local floors = workspace:FindFirstChild("SkySprout") and workspace.SkySprout:FindFirstChild("Floors")
+		local arena = floors and floors:FindFirstChild("Floor_1") and floors.Floor_1:FindFirstChild("LavaRush")
+		local towerModel = arena and arena:FindFirstChild("LavaRushTower")
+		local size = towerModel and towerModel:GetAttribute("Size")
+		local centre = towerModel and type(size) == "number" and towerModel:FindFirstChild("Tile" .. (size * size + 1) / 2)
+		if not centre or not centre:IsA("BasePart") or state.Phase ~= "Round" then
+			stopSpectate()
+			return
+		end
+		local a = (os.clock() - started) * 0.15
+		local cam = workspace.CurrentCamera
+		cam.CameraType = Enum.CameraType.Scriptable
+		cam.CFrame = CFrame.lookAt(centre.Position + Vector3.new(math.cos(a) * 70, 38, math.sin(a) * 70), centre.Position)
+	end)
+end
+player:GetAttributeChangedSignal("ArenaMode"):Connect(function()
+	local mode = player:GetAttribute("ArenaMode")
+	if mode == "LavaRush" then
+		stopSpectate()
+	elseif mode == "Lobby" and state.Phase == "Round" then
+		task.delay(1.2, function()
+			if player:GetAttribute("ArenaMode") == "Lobby" and state.Phase == "Round" then
+				startSpectate()
+			end
+		end)
+	end
+end)
+local LOOK_KEYS = {
+	[Enum.KeyCode.W] = true,
+	[Enum.KeyCode.A] = true,
+	[Enum.KeyCode.S] = true,
+	[Enum.KeyCode.D] = true,
+	[Enum.KeyCode.Space] = true,
+	[Enum.KeyCode.Thumbstick1] = true,
+}
+UIS.InputBegan:Connect(function(input, processed)
+	if spectating and not processed and (LOOK_KEYS[input.KeyCode] or input.UserInputType == Enum.UserInputType.MouseButton2 or input.UserInputType == Enum.UserInputType.Touch) then
+		stopSpectate()
+	end
 end)

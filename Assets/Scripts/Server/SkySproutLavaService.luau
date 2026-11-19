@@ -77,8 +77,6 @@ local CFG = {
 	DropPartyEvery = 3.5,
 	DropFirstAt = 6,
 	DropMaxLive = 3,
-	DropFallHeight = 45,
-	DropFallSpeed = 15,
 	DropLifetime = 16,
 	SpeedBoost = 10,
 	SpeedTime = 6,
@@ -1223,17 +1221,14 @@ local function spawnDrop()
 	local crate = part(drop, "Crate", Vector3.new(2.2, 2.2, 2.2), CFrame.new(landAt), Color3.fromRGB(255, 250, 235), Enum.Material.SmoothPlastic)
 	crate.Transparency = 1
 	local treat = fruit(boost.Fruit, 1.5, crate.CFrame, drop).PrimaryPart :: BasePart
-	local chute = part(drop, "Chute", Vector3.new(5, 2.4, 5), crate.CFrame * CFrame.new(0, 4.6, 0), boost.Color, Enum.Material.SmoothPlastic)
-	chute.Shape = Enum.PartType.Ball
-	chute.Transparency = 0.15
-	for _, piece in { crate, treat, chute } do
+	for _, piece in { crate, treat } do
 		piece.CanCollide = false
 		piece.CanQuery = false
 		piece.CanTouch = false
-		piece:SetAttribute("FallFrom", CFG.DropFallHeight)
-		piece:SetAttribute("FallStart", born)
-		piece:SetAttribute("FallSpeed", CFG.DropFallSpeed)
 	end
+	-- Clients pop it in with a bright flash (no parachute).
+	crate:SetAttribute("SpawnFlash", true)
+	crate:SetAttribute("FlashColor", boost.Color)
 	local icon = Instance.new("BillboardGui")
 	icon.Size = UDim2.fromOffset(52, 52)
 	icon.StudsOffset = Vector3.new(0, 2.4, 0)
@@ -1912,6 +1907,7 @@ local function runRound()
 	local nextDrop = started + CFG.DropFirstAt
 	local lastPhase = 0
 	local starters = 0
+	local roundWinners: { Player } = {}
 	while now() < L.EndsAt do
 		local dt = Run.Heartbeat:Wait()
 		if now() >= nextDrop then
@@ -1998,6 +1994,7 @@ local function runRound()
 			local r = L.Runners[winner]
 			if r and r.alive and not r.crowned then
 				crownPlayer(winner, r)
+				table.insert(roundWinners, winner)
 				for other in L.Runners do
 					if other.Parent then
 						tell(other, "👑 " .. winner.DisplayName .. " is the last one standing!")
@@ -2013,6 +2010,7 @@ local function runRound()
 			if p.Parent and r.alive and not r.crowned and p:GetAttribute("ArenaMode") == "LavaRush" then
 				crownPlayer(p, r)
 				table.insert(winners, p.DisplayName)
+				table.insert(roundWinners, p)
 			end
 		end
 		if #winners > 0 then
@@ -2021,6 +2019,20 @@ local function runRound()
 					tell(p, "👑 Survivors: " .. table.concat(winners, ", "))
 				end
 			end
+		end
+	end
+	-- Everyone in the server sees who won (or that the lava did), with confetti over the winners.
+	if starters > 0 then
+		local names, positions = {}, {}
+		for _, p in roundWinners do
+			table.insert(names, p.DisplayName)
+			local me = root(p)
+			if me then
+				table.insert(positions, me.Position)
+			end
+		end
+		for _, p in Players:GetPlayers() do
+			event:FireClient(p, "LavaWinners", { Names = names, Positions = positions })
 		end
 	end
 end
