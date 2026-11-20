@@ -84,6 +84,16 @@ local CFG = {
 	-- Cheers: knocked-out players tap a preset emoji (no typing) that floats up on everyone's screen.
 	Cheers = { "🔥", "👏", "😂", "😱", "💪", "🎉" },
 	CheerCooldown = 1.2,
+	-- Lava Chest: every round fills a bar (a bit for playing, more for climbing, surviving or winning). A full bar opens
+	-- a chest of coins; every 5th chest is a big one. Fixed rewards, nothing random, nothing to buy.
+	ChestGoal = 150, -- about one chest every 4 rounds for an average player
+	ChestPlay = 12,
+	ChestClimb = 30, -- scaled by how high you got (crown height = all of it)
+	ChestSurvive = 15,
+	ChestCrown = 30,
+	ChestCoins = 100,
+	ChestBigEvery = 5,
+	ChestBigCoins = 300,
 
 	-- Shove
 	ShoveRange = 9,
@@ -2654,6 +2664,23 @@ local function payout()
 			end
 			d.Coins = math.min(100000000, d.Coins + coins)
 			logCoins(p, "Gameplay", coins, "RoundPayout")
+			-- Lava Chest progress (flat coins, the same for everyone, added after the round multipliers).
+			local fill = CFG.ChestPlay + math.floor(math.clamp(r.peak / crownHeight, 0, 1) * CFG.ChestClimb)
+				+ (if r.crowned then CFG.ChestCrown elseif r.alive then CFG.ChestSurvive else 0)
+			local chestBefore = math.clamp(tonumber(d.Chest) or 0, 0, CFG.ChestGoal - 1)
+			local chestAfter = chestBefore + fill
+			local chestCoins = 0
+			if chestAfter >= CFG.ChestGoal then
+				chestAfter -= CFG.ChestGoal
+				d.ChestsOpened = (tonumber(d.ChestsOpened) or 0) + 1
+				chestCoins = if d.ChestsOpened % CFG.ChestBigEvery == 0 then CFG.ChestBigCoins else CFG.ChestCoins
+				d.Coins = math.min(100000000, d.Coins + chestCoins)
+				logCoins(p, "Gameplay", chestCoins, "LavaChest")
+			end
+			d.Chest = math.min(chestAfter, CFG.ChestGoal - 1)
+			local opened = tonumber(d.ChestsOpened) or 0
+			-- Near miss: how many rises were left when you went out (your character stands ~3 studs above its tile).
+			local reached = math.clamp(math.floor((r.peak - 3 - CFG.GridBaseY) / CFG.GridRise + 0.5), 0, #CFG.GridSpins)
 			if A.Season and GameConfig.LavaPass then
 				local xp = GameConfig.LavaPass.XP
 				A.Season.AddXP(p, xp.Played + (if r.crowned then xp.Crowned elseif r.alive then xp.Survived else 0) + (if r.crowned or r.alive then r.embers * xp.Berry else 0))
@@ -2665,6 +2692,15 @@ local function payout()
 				Best = tonumber(d.BestHeight) or height,
 				NewBest = newBest,
 				PrevBest = prevBest,
+				RisesLeft = #CFG.GridSpins - reached,
+				Chest = {
+					Before = chestBefore,
+					After = d.Chest,
+					Fill = fill,
+					Goal = CFG.ChestGoal,
+					Opened = chestCoins,
+					BigIn = CFG.ChestBigEvery - opened % CFG.ChestBigEvery,
+				},
 				Embers = if r.crowned or r.alive then r.embers else 0,
 				Doubled = r.crowned,
 				Coins = coins,

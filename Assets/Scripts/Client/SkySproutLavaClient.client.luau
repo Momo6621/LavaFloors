@@ -155,11 +155,11 @@ local endScale: UIScale = make("UIScale", {}, endStack)
 
 local result: Frame = make("Frame", {
 	LayoutOrder = 2,
-	Size = UDim2.new(1, 0, 0, 170),
+	Size = UDim2.new(1, 0, 0, 210),
 	BackgroundColor3 = Color3.new(1, 1, 1),
 	Visible = false,
 }, endStack)
-make("UISizeConstraint", { MaxSize = Vector2.new(380, 170) }, result)
+make("UISizeConstraint", { MaxSize = Vector2.new(380, 210) }, result)
 make("UICorner", { CornerRadius = UDim.new(0, 20) }, result)
 make("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(255, 150, 40), Color3.fromRGB(235, 60, 25)) }, result)
 make("UIStroke", { Thickness = 5, Color = Color3.fromRGB(110, 25, 5), ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, result)
@@ -170,6 +170,62 @@ stroked(resultBody)
 UI.glass(result, 20)
 UI.text(resultTitle, "title")
 UI.text(resultBody, "body")
+
+-- Lava Chest bar: fills a little every round and pops a chest of coins when full. It always says how close the next
+-- chest is, which is where "one more round" comes from.
+local chestTrack: Frame = make("Frame", { Name = "ChestBar", BackgroundColor3 = Color3.fromRGB(40, 15, 10), BackgroundTransparency = 0.2, Position = UDim2.fromOffset(14, 166), Size = UDim2.new(1, -28, 0, 32), Visible = false }, result)
+make("UICorner", { CornerRadius = UDim.new(1, 0) }, chestTrack)
+make("UIStroke", { Thickness = 2, Color = Color3.fromRGB(255, 200, 90), Transparency = 0.3 }, chestTrack)
+local chestFill: Frame = make("Frame", { Name = "Fill", BackgroundColor3 = Color3.new(1, 1, 1), Size = UDim2.fromScale(0, 1), BorderSizePixel = 0 }, chestTrack)
+make("UICorner", { CornerRadius = UDim.new(1, 0) }, chestFill)
+make("UIGradient", { Color = ColorSequence.new(Color3.fromRGB(255, 225, 90), Color3.fromRGB(255, 120, 30)) }, chestFill)
+local chestLabel: TextLabel = make("TextLabel", { Name = "Label", BackgroundTransparency = 1, Position = UDim2.fromOffset(10, 3), Size = UDim2.new(1, -20, 1, -6), Font = FONT, TextScaled = true, TextColor3 = Color3.new(1, 1, 1), Text = "", ZIndex = 2 }, chestTrack)
+stroked(chestLabel, 1.5)
+local chestBounce: UIScale = make("UIScale", {}, chestTrack)
+local chestShown = 0
+local function chestRestText(chest: any): string
+	local goal = math.max(1, tonumber(chest.Goal) or 100)
+	local after = tonumber(chest.After) or 0
+	local perRound = math.max(1, tonumber(chest.Fill) or 25)
+	local rounds = math.max(1, math.ceil((goal - after) / perRound))
+	local big = if tonumber(chest.BigIn) == 1 then "BIG chest" else "chest"
+	return string.format("🎁 %d%% · %s", math.floor(after / goal * 100), if rounds == 1 then "one more round to the " .. big .. "!" else "about " .. rounds .. " rounds to the " .. big)
+end
+local function showChest(chest: any)
+	chestTrack.Visible = type(chest) == "table"
+	if type(chest) ~= "table" then
+		return
+	end
+	chestShown += 1
+	local my = chestShown
+	local goal = math.max(1, tonumber(chest.Goal) or 100)
+	local before, after = (tonumber(chest.Before) or 0) / goal, (tonumber(chest.After) or 0) / goal
+	local opened = tonumber(chest.Opened) or 0
+	chestFill.Size = UDim2.fromScale(before, 1)
+	chestLabel.Text = string.format("🎁 Lava Chest +%d", tonumber(chest.Fill) or 0)
+	task.delay(0.6, function()
+		if my ~= chestShown then
+			return
+		end
+		if opened > 0 then
+			TweenService:Create(chestFill, TweenInfo.new(0.6, Enum.EasingStyle.Quad), { Size = UDim2.fromScale(1, 1) }):Play()
+			task.wait(0.7)
+			play("Crown", 1.1)
+			chestBounce.Scale = 1.25 -- pop() is declared further down, so bounce locally
+			TweenService:Create(chestBounce, TweenInfo.new(0.35, Enum.EasingStyle.Back), { Scale = 1 }):Play()
+			chestLabel.Text = string.format("🎁 CHEST OPEN! +%d coins%s", opened, if opened >= 300 then " (BIG!)" else "")
+			task.wait(1.6)
+			chestFill.Size = UDim2.fromScale(0, 1)
+		end
+		if my ~= chestShown then
+			return
+		end
+		TweenService:Create(chestFill, TweenInfo.new(0.7, Enum.EasingStyle.Quad), { Size = UDim2.fromScale(after, 1) }):Play()
+		task.wait(0.8)
+		chestFill.Size = UDim2.fromScale(after, 1) -- land exactly, even if the tween was skipped
+		chestLabel.Text = chestRestText(chest)
+	end)
+end
 
 local banner: Frame = make("Frame", {
 	LayoutOrder = 1,
@@ -184,7 +240,7 @@ local function fitEndStack()
 	local fit = if fitScale and fitScale:IsA("UIScale") then fitScale.Scale else 1
 	local top = GuiService:GetGuiInset().Y / fit + NOTICE_BOTTOM + 10
 	endStack.Position = UDim2.new(0.5, 0, 0, top)
-	local need = (if banner.Visible then 120 else 0) + (if result.Visible then 170 else 0) + (if banner.Visible and result.Visible then 10 else 0)
+	local need = (if banner.Visible then 120 else 0) + (if result.Visible then 210 else 0) + (if banner.Visible and result.Visible then 10 else 0)
 	local room = workspace.CurrentCamera.ViewportSize.Y / fit - top - 12
 	endScale.Scale = if need > 0 then math.clamp(room / need, 0.45, 1) else 1
 end
@@ -709,10 +765,18 @@ event.OnClientEvent:Connect(function(kind: string, v: any)
 		if v.NewBest and (tonumber(v.PrevBest) or 0) > 0 then
 			play("Crown", 1.2)
 		end
+		local left = tonumber(v.RisesLeft)
+		if v.Outcome == "SCORCHED" and left and left >= 1 and left <= 2 then
+			resultTitle.Text = if left == 1 then "😱 SO CLOSE! 1 rise left" else "😱 SO CLOSE! 2 rises left"
+		end
+		showChest(v.Chest)
 		result.Visible = true
 		pop(result)
-		task.delay(4.5, function()
-			result.Visible = false
+		local shownFor = chestShown
+		task.delay(if type(v.Chest) == "table" and (tonumber(v.Chest.Opened) or 0) > 0 then 7 else 5.5, function()
+			if shownFor == chestShown then
+				result.Visible = false
+			end
 		end)
 	end
 end)

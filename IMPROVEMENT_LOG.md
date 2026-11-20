@@ -3,6 +3,37 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 7. "One more round": Lava Chest and near misses
+
+**Why.** Asked for directly: a mechanic that makes players say "one more run". The two classic drivers are a progress
+bar that is almost full when the round ends, and a near miss that makes the next try feel winnable. Both had to be
+kid-fair: fixed rewards, nothing random, nothing to buy, and no timer or streak that punishes taking a break.
+
+**Built.**
+- **Lava Chest.** Every round fills a bar on the result card:
+  - 12 for playing;
+  - up to 30 for how high you climbed;
+  - +15 for surviving, +30 for the crown.
+- At 150 the chest opens for 100 coins (every 5th chest: 300), and the leftover carries over. The card animates the
+  fill, celebrates an open chest, then says how close the next one is: "🎁 69% · one more round to the chest!" or
+  "about 3 rounds to the BIG chest". Chest coins are flat (no VIP or pass multiplier), so it's the same for everyone.
+- **Near miss.** Knocked out one or two rises from the crown, the title reads "😱 SO CLOSE! 2 rises left" instead of
+  "💀 SCORCHED".
+
+**Balance.** The first test with a goal of 100 opened 2 chests in 4 rounds, roughly doubling an average player's
+coins against shop prices of 160–4,000. The goal is now 150: about one chest every 4 rounds for an average player and
+every 2–3 for a good one.
+
+**Verified.** Studio play tests with real rounds:
+- Crowned → chest 0 → 69 (+69), "69% · one more round to the chest!".
+- Next round +42 → chest opened, +100 coins, 11 carried over; then 11 → 53.
+- Stepping off at phase 5 (height 66) → "😱 SO CLOSE! 2 rises left", RisesLeft = 2.
+- After the goal change: 0 → 22 of 150, fill bar landed at 0.15, "14% · about 6 rounds to the chest".
+- The console showed no errors, and Studio matches the repo by chunk hash.
+
+Not verified: the fill animation itself. Tweens don't run while Studio is in the background, so the code now also sets
+the final width directly.
+
 ## 6. Cheers from the sidelines
 
 **Research.**
