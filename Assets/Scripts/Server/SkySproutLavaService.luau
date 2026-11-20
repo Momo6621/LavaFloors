@@ -22,6 +22,8 @@ local CFG = {
 	MinPlayers = 1,
 	Countdown = 4,
 	ResultsTime = 3,
+	VoteTime = 7, -- vote for the next twist, counted from when results show
+	VoteOptions = 3,
 
 	-- Grid
 	GridSize = 9,
@@ -138,6 +140,25 @@ local MUTATORS: { Mutator } = {
 	{ Id = "DropParty", Name = "🎁 Drop Party", Weight = 2 },
 	{ Id = "HotPotato", Name = "💣 Hot Potato", Weight = 3 },
 }
+-- Twist vote: when a round ends everyone gets a few twists to pick from; the most votes wins (ties and no votes are
+-- settled at random among the options).
+type Vote = { options: { Mutator }, votes: { [Player]: string }, endsAt: number }
+local vote: Vote? = nil
+local votedNext: Mutator? = nil
+
+local function voteCounts(v: Vote): { [string]: number }
+	local counts = {}
+	for _, m in v.options do
+		counts[m.Id] = 0
+	end
+	for p, id in v.votes do
+		if p.Parent and counts[id] then
+			counts[id] += 1
+		end
+	end
+	return counts
+end
+
 local function pickMutator(previous: Mutator?): Mutator
 	local total = 0
 	for _, m in MUTATORS do
@@ -2562,7 +2583,9 @@ local function loop()
 			autoQueue()
 			task.wait(0.5)
 		end
-		L.Mutator = pickMutator(L.Mutator)
+		local wasVoted = votedNext ~= nil
+		L.Mutator = if votedNext then votedNext else pickMutator(L.Mutator)
+		votedNext = nil
 		local forcedTwist = if Run:IsStudio() then workspace:GetAttribute("StudioForceMutator") else nil
 		for _, m in MUTATORS do
 			if m.Id == forcedTwist then
@@ -2592,6 +2615,9 @@ local function loop()
 			end
 		end
 		if next(L.Queue) == nil then
+			if wasVoted then
+				votedNext = L.Mutator -- nobody was ready this time: keep the voted twist for the next round that starts
+			end
 			continue
 		end
 		local ok, err = pcall(runRound)
@@ -2602,6 +2628,25 @@ local function loop()
 		L.EndsAt = now() + CFG.ResultsTime
 		pcall(payout)
 		broadcast()
+		do
+			local pool = {}
+			for _, m in MUTATORS do
+				if m.Id ~= L.Mutator.Id then
+					table.insert(pool, m)
+				end
+			end
+			local options = {}
+			while #options < CFG.VoteOptions and #pool > 0 do
+				table.insert(options, table.remove(pool, math.random(#pool)))
+			end
+			local v: Vote = { options = options, votes = {}, endsAt = now() + CFG.VoteTime }
+			vote = v
+			local payload = { Options = {}, EndsAt = v.endsAt }
+			for _, m in options do
+				table.insert(payload.Options, { Id = m.Id, Name = m.Name })
+			end
+			event:FireAllClients("LavaVote", payload)
+		end
 		local finished = {}
 		for p in L.Runners do
 			table.insert(finished, p)
@@ -2613,6 +2658,30 @@ local function loop()
 		table.clear(L.Runners)
 		workspace.Gravity = DEFAULT_GRAVITY
 		setLava(CFG.Center.Y + CFG.LavaStart)
+		local v = vote
+		if v then
+			while now() < v.endsAt do
+				task.wait(0.2)
+			end
+			local counts = voteCounts(v)
+			local best, bestCount = {}, -1
+			for _, m in v.options do
+				local c = counts[m.Id]
+				if c > bestCount then
+					best, bestCount = { m }, c
+				elseif c == bestCount then
+					table.insert(best, m)
+				end
+			end
+			votedNext = if #best > 0 then best[math.random(#best)] else nil
+			vote = nil
+			event:FireAllClients("LavaVoteResult", { Id = votedNext and votedNext.Id, Name = votedNext and votedNext.Name, Votes = bestCount })
+			if votedNext then
+				for _, p in Players:GetPlayers() do
+					tell(p, "🗳️ Next twist: " .. votedNext.Name .. (if bestCount > 0 then " (" .. bestCount .. " vote" .. (if bestCount == 1 then "" else "s") .. ")" else ""))
+				end
+			end
+		end
 	end
 end
 
@@ -2709,6 +2778,19 @@ end
 function L.HandleAction(p: Player, action: unknown, _value: unknown): boolean
 	if action == "LavaJoin" then
 		toggleJoin(p)
+		return true
+	end
+	if action == "LavaVote" then
+		local v = vote
+		if v and now() < v.endsAt and type(_value) == "string" then
+			for _, m in v.options do
+				if m.Id == _value then
+					v.votes[p] = m.Id
+					event:FireAllClients("LavaVoteCounts", voteCounts(v))
+					break
+				end
+			end
+		end
 		return true
 	end
 	local r = L.Runners[p]

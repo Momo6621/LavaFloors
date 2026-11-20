@@ -185,6 +185,25 @@ UI.glass(showdownCard, 22, UI.Lava)
 UI.text(showdownTitle, "title")
 UI.text(showdownNames, "body")
 
+-- Twist vote: a glass card along the bottom with one button per twist and live counts.
+local voteCard: Frame = make("Frame", {
+	AnchorPoint = Vector2.new(0.5, 1),
+	Position = UDim2.new(0.5, 0, 1, -70),
+	Size = UDim2.new(0.94, 0, 0, 104),
+	Visible = false,
+	ZIndex = 4,
+}, gui)
+make("UISizeConstraint", { MaxSize = Vector2.new(600, 104) }, voteCard)
+local voteTitle: TextLabel = make("TextLabel", { BackgroundTransparency = 1, Position = UDim2.fromOffset(10, 4), Size = UDim2.new(1, -20, 0, 28), Font = FONT, TextScaled = true, Text = "🗳️ VOTE THE NEXT TWIST", ZIndex = 5 }, voteCard)
+UI.glass(voteCard, 18)
+UI.text(voteTitle, "title")
+local voteRow: Frame = make("Frame", { BackgroundTransparency = 1, Position = UDim2.fromOffset(10, 38), Size = UDim2.new(1, -20, 0, 56), ZIndex = 5 }, voteCard)
+make("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Center, Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder }, voteRow)
+local voteButtons: { [string]: TextButton } = {}
+local voteNames: { [string]: string } = {}
+local myVote: string? = nil
+local voteEndsAt = 0
+
 local spectateLabel: TextLabel = make("TextLabel", {
 	AnchorPoint = Vector2.new(0.5, 1),
 	Position = UDim2.new(0.5, 0, 1, -24),
@@ -354,6 +373,55 @@ event.OnClientEvent:Connect(function(kind: string, v: any)
 			if v.Position then
 				burst(v.Position + Vector3.new(0, 3, 0), PARTY, 160, 40)
 			end
+		end
+	elseif kind == "LavaVote" then
+		for _, b in voteButtons do
+			b:Destroy()
+		end
+		table.clear(voteButtons)
+		table.clear(voteNames)
+		myVote = nil
+		voteEndsAt = tonumber(v.EndsAt) or 0
+		local options = if type(v.Options) == "table" then v.Options else {}
+		for i, o in options do
+			local id, name = tostring(o.Id), tostring(o.Name)
+			local b: TextButton = make("TextButton", {
+				LayoutOrder = i,
+				Size = UDim2.new(1 / math.max(1, #options), -8, 1, 0),
+				AutoButtonColor = false,
+				Font = FONT,
+				TextScaled = true,
+				Text = name,
+				ZIndex = 6,
+			}, voteRow)
+			make("UICorner", { CornerRadius = UDim.new(0, 12) }, b)
+			make("UIPadding", { PaddingLeft = UDim.new(0, 6), PaddingRight = UDim.new(0, 6), PaddingTop = UDim.new(0, 4), PaddingBottom = UDim.new(0, 4) }, b)
+			UI.button(b, UI.Lava)
+			make("UITextSizeConstraint", { MaxTextSize = 22 }, b)
+			b.Activated:Connect(function()
+				myVote = id
+				event:FireServer("LavaVote", id)
+				for otherId, other in voteButtons do
+					UI.button(other, if otherId == id then Color3.fromRGB(70, 200, 90) else UI.Lava)
+				end
+				play("Beep", 1.4)
+			end)
+			voteButtons[id] = b
+			voteNames[id] = name
+		end
+		voteCard.Visible = #options > 0
+		pop(voteCard)
+	elseif kind == "LavaVoteCounts" then
+		if type(v) == "table" then
+			for id, b in voteButtons do
+				local n = tonumber(v[id]) or 0
+				b.Text = if n > 0 then string.format("%s  ·  %d", voteNames[id] or id, n) else (voteNames[id] or id)
+			end
+		end
+	elseif kind == "LavaVoteResult" then
+		voteCard.Visible = false
+		if v.Id and myVote == v.Id then
+			play("Crown", 1.6)
 		end
 	elseif kind == "LavaWinners" then
 		local names = if type(v.Names) == "table" then v.Names else {}
