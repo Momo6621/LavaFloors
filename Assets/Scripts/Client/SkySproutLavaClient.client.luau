@@ -374,9 +374,33 @@ event.OnClientEvent:Connect(function(kind: string, v: any)
 			end
 			pop(title)
 		elseif v.Kind == "Crown" then
-			play("Crown")
+			play("Crown", if v.Mine then 1 else 1.15)
 			if v.Position then
-				burst(v.Position + Vector3.new(0, 3, 0), PARTY, 160, 40)
+				local at: Vector3 = v.Position
+				burst(at + Vector3.new(0, 3, 0), PARTY, 160, 40)
+				-- A gold pillar of light and three fireworks over the winner.
+				local pillar = Instance.new("Part")
+				pillar.Shape = Enum.PartType.Cylinder
+				pillar.Material = Enum.Material.Neon
+				pillar.Color = Color3.fromRGB(255, 215, 90)
+				pillar.Anchored = true
+				pillar.CanCollide = false
+				pillar.CanQuery = false
+				pillar.CanTouch = false
+				pillar.CastShadow = false
+				pillar.Size = Vector3.new(60, 4, 4)
+				pillar.CFrame = CFrame.new(at + Vector3.new(0, 30, 0)) * CFrame.Angles(0, 0, math.rad(90))
+				pillar.Transparency = 0.3
+				pillar.Parent = workspace
+				TweenService:Create(pillar, TweenInfo.new(1.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Size = Vector3.new(60, 0.3, 0.3), Transparency = 1 }):Play()
+				Debris:AddItem(pillar, 1.7)
+				for i = 1, 3 do
+					task.delay(0.25 * i, function()
+						local sky = at + Vector3.new((math.random() - 0.5) * 16, 14 + math.random() * 8, (math.random() - 0.5) * 16)
+						burst(sky, ColorSequence.new(Color3.fromHSV(math.random(), 0.6, 1), Color3.fromRGB(255, 230, 120)), 90, 30)
+						play("Shove", 1.6 + math.random() * 0.3)
+					end)
+				end
 			end
 		end
 	elseif kind == "LavaVote" then

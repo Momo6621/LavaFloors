@@ -125,6 +125,15 @@ local CFG = {
 	JumpTime = 7,
 	EmberBag = 3,
 
+	-- Titles shown over your head, earned by total crowns (highest one you qualify for)
+	Titles = {
+		{ Crowns = 1, Text = "🔥 Lava Walker", Color = Color3.fromRGB(255, 170, 90) },
+		{ Crowns = 5, Text = "🌋 Crater Climber", Color = Color3.fromRGB(255, 120, 60) },
+		{ Crowns = 15, Text = "👑 Volcano King", Color = Color3.fromRGB(255, 215, 80) },
+		{ Crowns = 40, Text = "💎 Magma Legend", Color = Color3.fromRGB(120, 220, 255) },
+		{ Crowns = 100, Text = "⭐ Eternal Flame", Color = Color3.fromRGB(255, 240, 160) },
+	},
+
 	-- Redeemable codes: CODE = { Coins = n, Until = optional os.time() expiry }. Server-only, once per account.
 	Codes = {
 		LAVA = { Coins = 100 },
@@ -2496,9 +2505,54 @@ local function crownPlayer(p: Player, r: Runner)
 	tell(p, "👑 YOU SURVIVED ALL " .. #CFG.GridSpins .. " PHASES! Embers pay double.")
 	local me = root(p)
 	if me then
-		event:FireClient(p, "LavaFX", { Kind = "Crown", Position = me.Position })
+		for _, other in Players:GetPlayers() do
+			event:FireClient(other, "LavaFX", { Kind = "Crown", Position = me.Position, Mine = other == p })
+		end
 	end
 	personal(p)
+end
+
+-- Title tag: the best title your crowns have earned, floating over your head everywhere.
+local function applyTitle(p: Player)
+	local character = p.Character
+	local head = character and character:FindFirstChild("Head")
+	if not head then
+		return
+	end
+	local crowns = tonumber(p:GetAttribute("Crowns")) or 0
+	local best = nil
+	for _, t in CFG.Titles do
+		if crowns >= t.Crowns then
+			best = t
+		end
+	end
+	local tag = head:FindFirstChild("LavaTitle")
+	if not best then
+		if tag then
+			tag:Destroy()
+		end
+		return
+	end
+	if not tag then
+		tag = Instance.new("BillboardGui")
+		tag.Name = "LavaTitle"
+		tag.Size = UDim2.fromOffset(150, 22)
+		tag.StudsOffset = Vector3.new(0, 1.9, 0)
+		tag.MaxDistance = 70
+		tag.Parent = head
+		local text = Instance.new("TextLabel")
+		text.Name = "Text"
+		text.BackgroundTransparency = 1
+		text.Size = UDim2.fromScale(1, 1)
+		text.Font = Enum.Font.FredokaOne
+		text.TextScaled = true
+		text.TextStrokeTransparency = 0.25
+		text.TextStrokeColor3 = Color3.fromRGB(30, 10, 0)
+		text.Parent = tag
+	end
+	local text = tag:FindFirstChild("Text") :: TextLabel
+	text.Text = best.Text
+	text.TextColor3 = best.Color
 end
 
 local function lavaFor(t: number): number
@@ -3543,6 +3597,21 @@ function L.Start(arena: any, remote: RemoteEvent, stats: (Player) -> (), notice:
 				end)
 			end)
 		end
+	end
+	local function titleWatch(p: Player)
+		p:GetAttributeChangedSignal("Crowns"):Connect(function()
+			applyTitle(p)
+		end)
+		p.CharacterAdded:Connect(function(character)
+			character:WaitForChild("Head", 10)
+			task.wait(0.5)
+			applyTitle(p)
+		end)
+		applyTitle(p)
+	end
+	Players.PlayerAdded:Connect(titleWatch)
+	for _, p in Players:GetPlayers() do
+		titleWatch(p)
 	end
 	Players.PlayerAdded:Connect(function(p)
 		task.spawn(checkReferral, p)
