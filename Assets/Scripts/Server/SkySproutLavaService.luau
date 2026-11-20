@@ -257,6 +257,7 @@ type Runner = {
 	embers: number,
 	shoves: number,
 	drops: number,
+	picked: number, -- strawberries picked this round; unlike embers, not lost when you're scorched
 	enteredAt: number,
 	nextShove: number,
 	shieldUntil: number,
@@ -1316,6 +1317,7 @@ local function makeEmber(parent: Instance, position: Vector3, stepIndex: number)
 		radius = 3.5,
 		take = function(p: Player, r: any)
 			r.embers += 1
+			r.picked += 1
 			challenge(p, "Berries", 1)
 			event:FireClient(p, "LavaFX", { Kind = "Ember", Position = pickupPosition(ember) })
 			ember:Destroy()
@@ -2401,6 +2403,7 @@ local function enter(p: Player): boolean
 		embers = 0,
 		shoves = if existing then existing.shoves else 0,
 		drops = if existing then existing.drops else 0,
+		picked = if existing then existing.picked else 0,
 		enteredAt = now(),
 		nextShove = 0,
 		shieldUntil = if existing then existing.shieldUntil else 0,
@@ -3733,7 +3736,7 @@ local function runRound()
 				return r.shoves
 			end)
 			award("🍓", "Berry Picker", function(r)
-				return r.embers
+				return r.picked
 			end)
 			award("🍍", "Fruit Grabber", function(r)
 				return r.drops

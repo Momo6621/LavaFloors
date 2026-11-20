@@ -3,6 +3,21 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 13. Fix: Berry Picker missed knocked-out players
+
+**Found** while building the underdog shield. The Berry Picker award (entry 9) counted `r.embers`, but a scorch
+empties `r.embers` (you drop the strawberries you were carrying). So a player who picked several strawberries and
+then fell never won Berry Picker, even though they did the most picking.
+
+**Fix.** A separate per-round `picked` counter goes up with each strawberry. A scorch doesn't clear it, and it carries
+over a phase-1 drop-back like shoves and drops. The award uses `picked`. Coins are unchanged: scorched players still
+lose the strawberries they carried.
+
+**Verified.** In a 2-player Studio multiplayer test, Player1 picked 6 strawberries, then stepped into the lava after
+phase 1. The awards were "🧗 Top Climber: Player2 | 🍓 Berry Picker: Player1". With the old code no one could have
+got Berry Picker that round, because Player2 picked none and Player1's count was reset to 0. The server console
+showed no errors, and Studio matches the repo by chunk hash.
+
 ## 12. Underdog shield
 
 **Research.**
