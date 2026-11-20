@@ -53,6 +53,8 @@ Progression and live-ops:
 - Daily challenges: three a day for everyone (CFG.Challenges), paid on completion; shown in the Challenges panel.
 - Codes: typed into the Challenges panel, once per account (CFG.Codes, server-only). Launch codes LAVA, VOLCANO, ESCAPE.
 - Titles over your head from total crowns (CFG.Titles), and a gold pillar with fireworks over every winner.
+- Weekly Top Climbers board in the lobby: crowns won this week across all servers (OrderedDataStore
+  `LavaWeeklyCrowns_v1`, one scope per week), merged with the climbers in the server. Resets Monday 00:00 UTC.
 - Seasonal events (SkySproutConfig.Events): Spooky Eruption (Oct 20 - Nov 3) and Frostfire Festival (Dec 18 - Jan 4)
   give +50% round coins, favour a theme, show a top bar pill, and Frostfire brings snow. Force one in Studio with
   the workspace attribute `StudioForceEvent`.

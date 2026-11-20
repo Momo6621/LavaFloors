@@ -309,6 +309,86 @@ local function logEvent(p: Player, name: string, field: string)
 	end)
 end
 
+-- Weekly Top Climbers: crowns won this week, saved to a per-week OrderedDataStore so the lobby board ranks climbers
+-- across every server. Weeks start Monday 00:00 UTC; a fresh board each week gives new players a real shot.
+local WEEK_START = 4 * 86400 -- 1 Jan 1970 was a Thursday, so this lands on the first Monday
+local function weekNumber(): number
+	return (os.time() - WEEK_START) // 604800
+end
+local function weekCrowns(d: any): number
+	return if d and d.WeekNo == weekNumber() then tonumber(d.WeekCrowns) or 0 else 0
+end
+local weeklyStores: { [number]: OrderedDataStore } = {}
+local function weeklyStore(): OrderedDataStore?
+	if Run:IsStudio() then
+		return nil -- Studio API access is off for this place; the board falls back to this server's climbers
+	end
+	local w = weekNumber()
+	if not weeklyStores[w] then
+		local ok, store = pcall(function()
+			return game:GetService("DataStoreService"):GetOrderedDataStore("LavaWeeklyCrowns_v1", "W" .. w)
+		end)
+		if not ok then
+			return nil
+		end
+		weeklyStores[w] = store
+	end
+	return weeklyStores[w]
+end
+local weeklyTop: { { Id: number, Name: string, Crowns: number } } = {}
+local weeklyTopWeek = -1
+local weeklyNames: { [number]: string } = {}
+local function refreshWeeklyTop()
+	local store = weeklyStore()
+	if not store then
+		return
+	end
+	local ok, page = pcall(function()
+		return (store :: OrderedDataStore):GetSortedAsync(false, 5):GetCurrentPage()
+	end)
+	if not ok or type(page) ~= "table" then
+		return
+	end
+	local rows = {}
+	for _, entry in page do
+		local id = tonumber(entry.key)
+		if id then
+			local name = weeklyNames[id]
+			if not name then
+				local okName, n = pcall(Players.GetNameFromUserIdAsync, Players, id)
+				name = if okName and type(n) == "string" then n else "Climber"
+				weeklyNames[id] = name
+			end
+			table.insert(rows, { Id = id, Name = name :: string, Crowns = tonumber(entry.value) or 0 })
+		end
+	end
+	weeklyTop = rows
+	weeklyTopWeek = weekNumber()
+end
+task.spawn(function()
+	while true do
+		refreshWeeklyTop()
+		task.wait(60)
+	end
+end)
+local function addWeekCrown(p: Player, d: any)
+	local w = weekNumber()
+	if d.WeekNo ~= w then
+		d.WeekNo = w
+		d.WeekCrowns = 0
+	end
+	d.WeekCrowns = math.min(100000, (tonumber(d.WeekCrowns) or 0) + 1)
+	local count = d.WeekCrowns
+	local store = weeklyStore()
+	if store then
+		task.spawn(function()
+			pcall(function()
+				(store :: OrderedDataStore):SetAsync(tostring(p.UserId), count)
+			end)
+		end)
+	end
+end
+
 local function root(p: Player): BasePart?
 	local r = p.Character and p.Character:FindFirstChild("HumanoidRootPart")
 	return if r and r:IsA("BasePart") then r else nil
@@ -724,19 +804,43 @@ local function buildArena()
 				end
 			end)
 		end
-		board("TopClimbers", 13, "🏆 TOP CLIMBERS", Color3.fromRGB(235, 90, 20), function()
-			local ranked = Players:GetPlayers()
-			table.sort(ranked, function(a, b)
-				local ca, cb = a:GetAttribute("Crowns") or 0, b:GetAttribute("Crowns") or 0
-				if ca ~= cb then
-					return ca > cb
+		board("TopClimbers", 13, "🏆 WEEKLY TOP CLIMBERS", Color3.fromRGB(235, 90, 20), function()
+			-- This week's crowns: the all-server top (when the data store answers) merged with everyone here now.
+			local best: { [number]: { Name: string, Crowns: number } } = {}
+			if weeklyTopWeek == weekNumber() then
+				for _, e in weeklyTop do
+					best[e.Id] = { Name = e.Name, Crowns = e.Crowns }
 				end
-				return (a:GetAttribute("Coins") or 0) > (b:GetAttribute("Coins") or 0)
+			end
+			for _, p in Players:GetPlayers() do
+				local crowns = weekCrowns(data(p))
+				local e = best[p.UserId]
+				if e then
+					e.Name = p.DisplayName
+					e.Crowns = math.max(e.Crowns, crowns)
+				elseif crowns > 0 then
+					best[p.UserId] = { Name = p.DisplayName, Crowns = crowns }
+				end
+			end
+			local ranked = {}
+			for _, e in best do
+				table.insert(ranked, e)
+			end
+			table.sort(ranked, function(a, b)
+				if a.Crowns ~= b.Crowns then
+					return a.Crowns > b.Crowns
+				end
+				return a.Name < b.Name
 			end)
 			local rows = {}
-			for i = 1, math.min(5, #ranked) do
-				table.insert(rows, string.format("%d. %s  👑 %d", i, ranked[i].DisplayName, ranked[i]:GetAttribute("Crowns") or 0))
+			for i = 1, math.min(4, #ranked) do
+				table.insert(rows, string.format("%d. %s  👑 %d", i, ranked[i].Name, ranked[i].Crowns))
 			end
+			if #rows == 0 then
+				rows[1] = "Win a round to get on the board!"
+			end
+			local left = 604800 - (os.time() - WEEK_START) % 604800
+			rows[5] = string.format("⏳ New week in %dd %dh", left // 86400, (left % 86400) // 3600)
 			return rows
 		end)
 		board("TopSupporters", -13, "💖 TOP SUPPORTERS", Color3.fromRGB(235, 60, 130), function()
@@ -2634,6 +2738,7 @@ local function crownPlayer(p: Player, r: Runner)
 	local d = data(p)
 	if d then
 		d.Crowns = (d.Crowns or 0) + 1
+		addWeekCrown(p, d)
 		if d.Crowns >= 10 then
 			badge(p, "TenCrowns")
 		end
