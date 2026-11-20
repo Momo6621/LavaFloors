@@ -2436,6 +2436,10 @@ local function loop()
 		L.Phase = "Countdown"
 		L.EndsAt = now() + CFG.Countdown
 		local theme = Themes.Pick(L.Theme)
+		local forcedTheme = if Run:IsStudio() then workspace:GetAttribute("StudioForceTheme") else nil
+		if type(forcedTheme) == "string" and Themes.ById[forcedTheme] then
+			theme = Themes.ById[forcedTheme]
+		end
 		L.Theme = theme.Id
 		broadcast()
 		task.spawn(setTheme, theme.Id)

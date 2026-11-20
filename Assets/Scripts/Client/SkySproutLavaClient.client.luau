@@ -444,14 +444,22 @@ Run.RenderStepped:Connect(function(dt)
 		Perception.SetMood(wantMood)
 	end
 	if lava then
+		-- The lava's lights bleach the tiles to near-white once it's just below the floor, so fade them as it closes in.
+		-- The lava itself still glows, and the red warning plates still carry the danger.
+		local closeness = 1
+		if tower and lava:IsA("BasePart") then
+			local _, floorY = Grid.Pose(tower, t)
+			local gap = floorY - (lava.Position.Y + lava.Size.Y / 2)
+			closeness = math.clamp((gap - 4) / 18, 0.25, 1)
+		end
 		local light = lava:FindFirstChildOfClass("SurfaceLight")
 		if light then
-			light.Brightness = 3 + math.noise(t * 2.3, 0.5) * 1.6
+			light.Brightness = (3 + math.noise(t * 2.3, 0.5) * 1.6) * closeness
 		end
 		local point = lava:FindFirstChild("LavaGlowPoint")
 		local rising = point and point:FindFirstChild("LavaGlow")
 		if rising and rising:IsA("PointLight") then
-			rising.Brightness = 2.2 + math.noise(t * 1.1, 3.7) * 0.9
+			rising.Brightness = (2.2 + math.noise(t * 1.1, 3.7) * 0.9) * closeness
 		end
 	end
 
