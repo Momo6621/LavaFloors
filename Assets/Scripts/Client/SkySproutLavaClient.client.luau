@@ -173,7 +173,7 @@ local spectateLabel: TextLabel = make("TextLabel", {
 	Font = FONT,
 	TextScaled = true,
 	TextColor3 = Color3.new(1, 1, 1),
-	Text = "👀 Spectating · move to look around",
+	Text = "👀 Spectating from above · next round soon",
 	Visible = false,
 }, gui)
 stroked(spectateLabel)
@@ -981,10 +981,13 @@ local function startSpectate()
 			stopSpectate()
 			return
 		end
-		local a = (os.clock() - started) * 0.15
+		local a = (os.clock() - started) * 0.08
+		local ease = math.min(1, (os.clock() - started) / 1.2) -- swoop up into the overhead view
 		local cam = workspace.CurrentCamera
 		cam.CameraType = Enum.CameraType.Scriptable
-		cam.CFrame = CFrame.lookAt(centre.Position + Vector3.new(math.cos(a) * 70, 38, math.sin(a) * 70), centre.Position)
+		local overhead = centre.Position + Vector3.new(math.cos(a) * 16, 62 + 8 * ease, math.sin(a) * 16)
+		local swoop = centre.Position + Vector3.new(math.cos(a) * 40, 20, math.sin(a) * 40)
+		cam.CFrame = CFrame.lookAt(swoop:Lerp(overhead, ease * ease * (3 - 2 * ease)), centre.Position)
 	end)
 end
 player:GetAttributeChangedSignal("ArenaMode"):Connect(function()

@@ -20,8 +20,8 @@ local CFG = {
 	Center = Vector3.new(-250, 0, 300),
 	Beacon = Vector3.new(-200.7, 0, 262.4),
 	MinPlayers = 1,
-	Countdown = 6,
-	ResultsTime = 4,
+	Countdown = 4,
+	ResultsTime = 3,
 
 	-- Grid
 	GridSize = 9,
@@ -30,18 +30,20 @@ local CFG = {
 	StartRings = 2,
 	GridBaseY = 12,
 	GridRise = 10,
-	PhaseTime = 10,
-	StartDelay = 4,
+	PhaseTime = 7,
+	StartDelay = 3,
 	GridSpins = { 90, -90, 180, 45, -90, 135, -180 },
 	GridGrow = { 1, 1, 0, 0, 0, 0, 0 },
 	GridShrink = { 0, 0, 1, 0, 1, 1, 0 },
-	GridDrops = { 1, 2, 3, 4, 3, 2, 2 },
+	GridDrops = { 2, 3, 4, 5, 4, 3, 3 },
 	RoundJumpPower = 48,
-	CharacterScale = 0.8,
+	CharacterScale = 0.62,
+	RoundWalkSpeed = 24,
+	SpeedRushWalkSpeed = 30,
 
 	-- Lava
 	LavaBelow = 7,
-	LavaLag = 1.5,
+	LavaLag = 1,
 	LavaPool = 92,
 	LavaStart = -6,
 	LavaGlowRange = 60,
@@ -59,7 +61,7 @@ local CFG = {
 	-- Shove
 	ShoveRange = 9,
 	ShoveCooldown = 0.8,
-	ShoveSpeed = 55,
+	ShoveSpeed = 66,
 	ShoveLift = 18,
 
 	-- Rewards
@@ -71,11 +73,11 @@ local CFG = {
 	FriendBonus = (GameConfig.FriendDeal and GameConfig.FriendDeal.Bonus) or 0.25,
 
 	-- Shield
-	ShieldOrbs = 2,
-	ShieldTime = 10,
+	ShieldOrbs = 1,
+	ShieldTime = 7,
 
 	-- Hot Potato twist: one climber carries a ticking bomb and passes it by touching someone.
-	BombTime = 9,
+	BombTime = 7,
 	BombMinLeft = 3,
 	BombPassRange = 5,
 	BombPassCooldown = 0.8,
@@ -109,7 +111,7 @@ local CFG = {
 	EmberBag = 3,
 
 	-- Keep moving
-	CampTime = 6,
+	CampTime = 4,
 	CampRespawn = 6,
 
 	-- Raise
@@ -714,7 +716,9 @@ local function buildArena()
 		flank.Parent = crater
 	end
 	-- A slow column of smoke and ash above the crater, visible from anywhere on the island.
-	local plume = part(crater, "Plume", Vector3.new(1, 1, 1), CFrame.new(c + Vector3.new(0, CFG.CraterHeight + 45, 0)), Color3.new(0, 0, 0), Enum.Material.SmoothPlastic)
+	-- Off to the far side of the rim, so it never clouds the overhead spectator view of the grid.
+	local plumeAt = c + Vector3.new(-math.cos(toTown), 0, -math.sin(toTown)) * (CFG.CraterRadius + 10) + Vector3.new(0, CFG.CraterHeight + 20, 0)
+	local plume = part(crater, "Plume", Vector3.new(1, 1, 1), CFrame.new(plumeAt), Color3.new(0, 0, 0), Enum.Material.SmoothPlastic)
 	plume.Transparency = 1
 	plume.CanCollide = false
 	plume.CanQuery = false
@@ -1205,7 +1209,7 @@ local function grantShield(p: Player, character: Model, r: Runner, position: Vec
 end
 
 local function baseWalkSpeed(): number
-	return if L.Mutator.Id == "SpeedRush" then 26 else GameConfig.WalkSpeed
+	return if L.Mutator.Id == "SpeedRush" then CFG.SpeedRushWalkSpeed else CFG.RoundWalkSpeed
 end
 
 local function restoreJump(hum: Humanoid)
