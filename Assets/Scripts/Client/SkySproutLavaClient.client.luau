@@ -70,6 +70,18 @@ local Config = require(RS:WaitForChild("SkySproutConfig")) :: any
 local Perception = require(RS:WaitForChild("SkySproutPerception")) :: any
 local moodNow: string? = nil
 local UI = require(RS:WaitForChild("LavaUI")) :: any
+-- Low-end mode: phones/tablets and low graphics settings get about half the ambient effects (parallax, ash,
+-- sparks, fountains) so the frame rate holds up. Gameplay effects are unchanged.
+local LOW_END = (function(): boolean
+	if game:GetService("UserInputService").TouchEnabled then
+		return true
+	end
+	local ok, quality = pcall(function()
+		return UserSettings().GameSettings.SavedQualityLevel
+	end)
+	return ok and quality ~= Enum.SavedQualitySetting.Automatic and quality.Value <= 3
+end)()
+local EFFECTS = if LOW_END then 0.5 else 1
 local function fieryPill(color: Color3): { any }
 	return UI.pill(color)
 end
@@ -963,9 +975,9 @@ type Layer = { Count: number, Radius: NumberRange, Span: number, Drift: number, 
 type Floater = { part: BasePart, layer: Layer, angle: number, radius: number, y: number, spin: number }
 
 local LAYERS: { [string]: Layer } = {
-	Streak = { Count = 70, Radius = NumberRange.new(54, 95), Span = 70, Drift = 18, Rush = 13 },
-	Rock = { Count = 28, Radius = NumberRange.new(66, 94), Span = 110, Drift = 8, Rush = 5.5 },
-	Cloud = { Count = 18, Radius = NumberRange.new(150, 230), Span = 160, Drift = 3, Rush = 2.2 },
+	Streak = { Count = math.ceil(70 * EFFECTS), Radius = NumberRange.new(54, 95), Span = 70, Drift = 18, Rush = 13 },
+	Rock = { Count = math.ceil(28 * EFFECTS), Radius = NumberRange.new(66, 94), Span = 110, Drift = 8, Rush = 5.5 },
+	Cloud = { Count = math.ceil(18 * EFFECTS), Radius = NumberRange.new(150, 230), Span = 160, Drift = 3, Rush = 2.2 },
 }
 local FOV_KICK = 9 -- extra field of view at full rush, the classic "speeding up" cue
 local fovApplied = 0
@@ -1208,7 +1220,7 @@ local function buildVolcanoAir(crater: Instance, cx: number, cz: number)
 	ash.Shape = Enum.ParticleEmitterShape.Box
 	ash.ShapeStyle = Enum.ParticleEmitterShapeStyle.Volume
 	ash.EmissionDirection = Enum.NormalId.Bottom
-	ash.Rate = 45
+	ash.Rate = 45 * EFFECTS
 	ash.Lifetime = NumberRange.new(10, 16)
 	ash.Speed = NumberRange.new(3, 6)
 	ash.SpreadAngle = Vector2.new(20, 20)
@@ -1223,7 +1235,7 @@ local function buildVolcanoAir(crater: Instance, cx: number, cz: number)
 	sparks.Shape = Enum.ParticleEmitterShape.Box
 	sparks.ShapeStyle = Enum.ParticleEmitterShapeStyle.Volume
 	sparks.EmissionDirection = Enum.NormalId.Top
-	sparks.Rate = 70
+	sparks.Rate = 70 * EFFECTS
 	sparks.Lifetime = NumberRange.new(3, 6)
 	sparks.Speed = NumberRange.new(2, 5)
 	sparks.SpreadAngle = Vector2.new(35, 35)
@@ -1289,7 +1301,7 @@ local function fountain(lava: BasePart, cx: number, cz: number)
 	if me and me:IsA("BasePart") and (me.Position - at).Magnitude < 90 then
 		play("Scorch", 0.55 + math.random() * 0.1)
 	end
-	for _ = 1, 9 do
+	for _ = 1, if LOW_END then 5 else 9 do
 		local blob = Instance.new("Part")
 		blob.Shape = Enum.PartType.Ball
 		blob.Material = Enum.Material.Neon
@@ -1332,7 +1344,7 @@ Run.RenderStepped:Connect(function(dt: number)
 	end
 	local lava = tower and tower:FindFirstChild("Lava")
 	if lava and lava:IsA("BasePart") and type(cx) == "number" and type(cz) == "number" and state.Phase == "Round" and os.clock() >= nextFountain then
-		nextFountain = os.clock() + 3 + math.random() * 3
+		nextFountain = os.clock() + (if LOW_END then 5 else 3) + math.random() * 3
 		fountain(lava, cx, cz)
 	end
 	for i = #blobs, 1, -1 do
