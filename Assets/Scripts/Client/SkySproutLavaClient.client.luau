@@ -270,6 +270,69 @@ local voteNames: { [string]: string } = {}
 local myVote: string? = nil
 local voteEndsAt = 0
 
+-- Pick the winner: while you're out, tap one of the climbers still standing; if they win you get a few coins.
+local predictCard: Frame = make("Frame", {
+	AnchorPoint = Vector2.new(0, 0.5),
+	Position = UDim2.new(0, 16, 0.55, 0),
+	Size = UDim2.fromOffset(220, 40),
+	AutomaticSize = Enum.AutomaticSize.Y,
+	Visible = false,
+	ZIndex = 4,
+}, gui)
+UI.glass(predictCard, 16)
+make("UIPadding", { PaddingTop = UDim.new(0, 8), PaddingBottom = UDim.new(0, 10), PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10) }, predictCard)
+make("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder }, predictCard)
+local predictTitle: TextLabel = make("TextLabel", { LayoutOrder = 0, BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 22), Font = FONT, TextScaled = true, Text = "🔮 WHO WILL WIN?", ZIndex = 5 }, predictCard)
+UI.text(predictTitle, "title")
+local predictHint: TextLabel = make("TextLabel", { LayoutOrder = 1, BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 16), Font = FONT, TextScaled = true, Text = "", ZIndex = 5 }, predictCard)
+UI.text(predictHint, "muted")
+local predictButtons: { TextButton } = {}
+local predictShown = ""
+local myPrediction: string? = nil
+local function refreshPredict()
+	if state.Phase ~= "Round" then
+		myPrediction = nil
+	end
+	local names = {}
+	for _, n in (if type((state :: any).Contenders) == "table" then (state :: any).Contenders else {}) do
+		if n ~= player.DisplayName then -- the list can lag a moment behind your own knock-out
+			table.insert(names, n)
+		end
+	end
+	local show = state.Phase == "Round" and not me.Running and #names >= 2 and #names <= 8
+	predictCard.Visible = show
+	if not show then
+		return
+	end
+	predictHint.Text = if myPrediction then "Your pick: " .. myPrediction else string.format("Free pick · +%d 💰 if right", 15)
+	local key = table.concat(names, "|") .. "|" .. tostring(myPrediction)
+	if key == predictShown then
+		return
+	end
+	predictShown = key
+	for _, b in predictButtons do
+		b:Destroy()
+	end
+	table.clear(predictButtons)
+	for i, name in names do
+		local b: TextButton = make("TextButton", { LayoutOrder = 1 + i, Size = UDim2.new(1, 0, 0, 30), AutoButtonColor = false, Font = FONT, TextScaled = true, Text = tostring(name), ZIndex = 5 }, predictCard)
+		make("UICorner", { CornerRadius = UDim.new(0, 10) }, b)
+		make("UIPadding", { PaddingLeft = UDim.new(0, 6), PaddingRight = UDim.new(0, 6), PaddingTop = UDim.new(0, 3), PaddingBottom = UDim.new(0, 3) }, b)
+		UI.button(b, if myPrediction == name then Color3.fromRGB(70, 200, 90) else UI.Lava)
+		b.AutoButtonColor = false
+		b.Active = myPrediction == nil
+		b.Activated:Connect(function()
+			if myPrediction == nil then
+				myPrediction = name
+				event:FireServer("LavaPredict", name)
+				predictShown = ""
+				refreshPredict()
+			end
+		end)
+		table.insert(predictButtons, b)
+	end
+end
+
 local spectateLabel: TextLabel = make("TextLabel", {
 	AnchorPoint = Vector2.new(0.5, 1),
 	Position = UDim2.new(0.5, 0, 1, -24),
@@ -335,12 +398,14 @@ event.OnClientEvent:Connect(function(kind: string, v: any)
 		if state.Phase == "Countdown" or state.Phase == "Round" then
 			runCoach()
 		end
+		refreshPredict()
 		if state.Phase == "Round" and wasPhase ~= "Round" and (me.Queued or me.Running) then
 			play("Beep", 1.5)
 		end
 	elseif kind == "LavaMe" then
 		local wasRunning = me.Running
 		me = v
+		refreshPredict()
 		if me.Running and not wasRunning then
 			result.Visible = false
 		end

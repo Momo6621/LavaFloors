@@ -77,6 +77,9 @@ local CFG = {
 	TeleportJump = 12,
 	OffGridLimit = 4,
 
+	-- Pick the winner: knocked-out players guess who wins (free, no stake) for a small coin reward.
+	PredictCoins = 15,
+
 	-- Shove
 	ShoveRange = 9,
 	ShoveCooldown = 0.8,
@@ -250,6 +253,7 @@ local L = {
 	Theme = "Sunset",
 	ShowdownAt = 0, -- 0 = no showdown this round
 	RoundId = 0, -- counts rounds on this server (analytics funnel sessions)
+	Predictions = {} :: { [Player]: string }, -- knocked-out players' free "pick the winner" guesses this round
 }
 local friends: { [Player]: { [number]: boolean } } = {}
 
@@ -426,6 +430,9 @@ local function count(t: { [Player]: any }): number
 	return n
 end
 
+local aliveBotNames: () -> { string } = function()
+	return {}
+end
 local aliveBotCount: () -> number = function()
 	return 0
 end
@@ -462,6 +469,16 @@ local function broadcast()
 		GridPhase = gridPhase(),
 		GridPhases = #CFG.GridSpins,
 		Showdown = L.ShowdownAt > 0,
+		Contenders = if L.Phase == "Round" then (function()
+			local names = aliveBotNames()
+			for p, r in L.Runners do
+				if r.alive and not r.crowned and p.Parent and p:GetAttribute("ArenaMode") == "LavaRush" then
+					table.insert(names, p.DisplayName)
+				end
+			end
+			table.sort(names)
+			return names
+		end)() else nil,
 	}
 	for _, p in Players:GetPlayers() do
 		event:FireClient(p, "LavaState", payload)
@@ -2691,6 +2708,15 @@ end
 type Bot = { name: string, model: Model, root: BasePart, row: number, col: number, alive: boolean, nextThink: number, stand: number }
 local bots: { Bot } = {}
 local botStarters = 0
+aliveBotNames = function()
+	local names = {}
+	for _, b in bots do
+		if b.alive then
+			table.insert(names, "🤖 " .. b.name)
+		end
+	end
+	return names
+end
 aliveBotCount = function()
 	local n = 0
 	for _, b in bots do
@@ -3089,6 +3115,7 @@ end
 
 local function runRound()
 	L.RoundId += 1
+	table.clear(L.Predictions)
 	clearTower()
 	buildTower()
 	applyTheme(tower)
@@ -3348,6 +3375,21 @@ local function runRound()
 		for _, p in Players:GetPlayers() do
 			event:FireClient(p, "LavaWinners", { Names = names, Positions = positions })
 		end
+		for p, pick in L.Predictions do
+			local d = data(p)
+			if p.Parent and d then
+				if table.find(names, pick) then
+					d.Coins = math.min(100000000, d.Coins + CFG.PredictCoins)
+					pushStats(p)
+					logCoins(p, "Gameplay", CFG.PredictCoins, "Prediction")
+					event:FireClient(p, "LavaFX", { Kind = "Invite", Text = "🔮 You called it!", Coins = CFG.PredictCoins })
+					tell(p, "🔮 You called it! " .. pick .. " won: +" .. CFG.PredictCoins .. " coins")
+				else
+					tell(p, "🔮 Not this time: " .. pick .. " didn't win. Try again next round!")
+				end
+			end
+		end
+		table.clear(L.Predictions)
 	end
 end
 
@@ -3593,6 +3635,24 @@ function L.HandleAction(p: Player, action: unknown, _value: unknown): boolean
 			pushStats(p)
 			event:FireClient(p, "LavaFX", { Kind = "Invite", Text = "🎁 Code " .. code, Coins = info.Coins })
 			tell(p, "🎁 Code " .. code .. " redeemed: +" .. info.Coins .. " coins!")
+		end
+		return true
+	end
+	if action == "LavaPredict" then
+		local r = L.Runners[p]
+		local stillIn = r ~= nil and r.alive and not r.crowned and p:GetAttribute("ArenaMode") == "LavaRush"
+		if L.Phase == "Round" and not stillIn and not L.Predictions[p] and type(_value) == "string" then
+			local names = aliveBotNames()
+			for other, o in L.Runners do
+				if o.alive and not o.crowned and other.Parent and other:GetAttribute("ArenaMode") == "LavaRush" then
+					table.insert(names, other.DisplayName)
+				end
+			end
+			if #names >= 2 and table.find(names, _value) then
+				L.Predictions[p] = _value
+				logEvent(p, "Prediction", if string.sub(_value, 1, 4) == "🤖" then "Bot" else "Player")
+				tell(p, "🔮 You picked " .. _value .. ". +" .. CFG.PredictCoins .. " coins if they win!")
+			end
 		end
 		return true
 	end
