@@ -1212,6 +1212,32 @@ local function buildVolcanoAir(crater: Instance, cx: number, cz: number)
 	sparks.Color = ColorSequence.new(Color3.fromRGB(255, 220, 110), Color3.fromRGB(255, 70, 15))
 	sparks.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.35), NumberSequenceKeypoint.new(1, 0) })
 	sparks.Parent = sparkPart
+	local snow = Instance.new("ParticleEmitter")
+	snow.Name = "Snow"
+	snow.Shape = Enum.ParticleEmitterShape.Box
+	snow.ShapeStyle = Enum.ParticleEmitterShapeStyle.Volume
+	snow.EmissionDirection = Enum.NormalId.Bottom
+	snow.Rate = 120
+	snow.Lifetime = NumberRange.new(8, 12)
+	snow.Speed = NumberRange.new(5, 9)
+	snow.SpreadAngle = Vector2.new(25, 25)
+	snow.Color = ColorSequence.new(Color3.new(1, 1, 1))
+	snow.LightEmission = 0.4
+	snow.Size = NumberSequence.new(0.3)
+	snow.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.1, 0.1), NumberSequenceKeypoint.new(1, 0.4) })
+	snow.Parent = ashPart
+	local function snowing()
+		local id = workspace:GetAttribute("LavaEvent")
+		local on = false
+		for _, e in Config.Events or {} do
+			if e.Id == id and e.Snow then
+				on = true
+			end
+		end
+		snow.Enabled = on
+	end
+	workspace:GetAttributeChangedSignal("LavaEvent"):Connect(snowing)
+	snowing()
 	air.Parent = workspace.CurrentCamera
 	volcanoAir = air
 	table.clear(fallTextures)

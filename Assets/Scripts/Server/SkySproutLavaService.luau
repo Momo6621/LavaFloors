@@ -2361,6 +2361,47 @@ end
 
 -- Round
 
+
+-- Seasonal events (GameConfig.Events): the one running today, if any. Studio can force one with the workspace
+-- attribute StudioForceEvent. The id is published as workspace attribute "LavaEvent" with its end time.
+local function eventEnd(e: any, t: number): number
+	local d = os.date("!*t", t)
+	local year = d.year
+	if e.To[1] < e.From[1] and d.month >= e.From[1] then
+		year += 1
+	end
+	local ends = os.time({ year = year, month = e.To[1], day = e.To[2], hour = 23, min = 59, sec = 59 })
+	if ends < t then
+		ends = os.time({ year = year + 1, month = e.To[1], day = e.To[2], hour = 23, min = 59, sec = 59 })
+	end
+	return ends
+end
+
+local function activeEvent(): any?
+	local forced = if Run:IsStudio() then workspace:GetAttribute("StudioForceEvent") else nil
+	for _, e in GameConfig.Events or {} do
+		if forced == e.Id then
+			return e
+		end
+	end
+	local d = os.date("!*t", os.time())
+	local md = d.month * 100 + d.day
+	for _, e in GameConfig.Events or {} do
+		local from, to = e.From[1] * 100 + e.From[2], e.To[1] * 100 + e.To[2]
+		local inside = if from <= to then md >= from and md <= to else md >= from or md <= to
+		if inside then
+			return e
+		end
+	end
+	return nil
+end
+
+local function publishEvent()
+	local e = activeEvent()
+	workspace:SetAttribute("LavaEvent", e and e.Id)
+	workspace:SetAttribute("LavaEventEnds", e and eventEnd(e, os.time()))
+end
+
 local function payout()
 	for p, r in L.Runners do
 		local d = data(p)
@@ -2390,6 +2431,10 @@ local function payout()
 			if withFriend then
 				coins = math.floor(coins * (1 + CFG.FriendBonus))
 				badge(p, "PlayWithFriend")
+			end
+			local season = activeEvent()
+			if season and season.CoinBonus then
+				coins = math.floor(coins * (1 + season.CoinBonus))
 			end
 			badge(p, "FirstRound")
 			if boosted then
@@ -3077,6 +3122,11 @@ local function loop()
 		L.Phase = "Countdown"
 		L.EndsAt = now() + CFG.Countdown
 		local theme = Themes.Pick(L.Theme)
+		publishEvent()
+		local season = activeEvent()
+		if season and season.Theme and Themes.ById[season.Theme] and math.random() < 0.5 then
+			theme = Themes.ById[season.Theme]
+		end
 		local forcedTheme = if Run:IsStudio() then workspace:GetAttribute("StudioForceTheme") else nil
 		if type(forcedTheme) == "string" and Themes.ById[forcedTheme] then
 			theme = Themes.ById[forcedTheme]
@@ -3353,6 +3403,7 @@ end
 
 function L.Start(arena: any, remote: RemoteEvent, stats: (Player) -> (), notice: (Player, string) -> ())
 	A, event, pushStats, tell = arena, remote, stats, notice
+	publishEvent()
 	clearPreview()
 	buildArena()
 	buildBackdrop()

@@ -712,6 +712,37 @@ Icon.new()
 		end
 	end)
 
+-- Seasonal event pill: shows the running event, its coin bonus and how long is left.
+local eventIcon = Icon.new():setName("Event"):setLabel(""):align("Left"):lock():modifyTheme(pill(UI.Gold))
+local function refreshEvent()
+	local id = workspace:GetAttribute("LavaEvent")
+	local ends = workspace:GetAttribute("LavaEventEnds")
+	local found = nil
+	for _, e in C.Events or {} do
+		if e.Id == id then
+			found = e
+		end
+	end
+	if not found then
+		eventIcon:setEnabled(false)
+		return
+	end
+	local left = if type(ends) == "number" then math.max(0, ends - os.time()) else 0
+	local days = math.floor(left / 86400)
+	local when = if days >= 1 then days .. "d" else math.floor(left / 3600) .. "h"
+	eventIcon:setLabel(string.format("%s · +%d%% 💰 · %s", found.Short or found.Name, math.floor((found.CoinBonus or 0) * 100), when))
+	eventIcon:setEnabled(true)
+end
+workspace:GetAttributeChangedSignal("LavaEvent"):Connect(refreshEvent)
+workspace:GetAttributeChangedSignal("LavaEventEnds"):Connect(refreshEvent)
+refreshEvent()
+task.spawn(function()
+	while true do
+		task.wait(60)
+		refreshEvent()
+	end
+end)
+
 -- VIP chat tag
 local TextChatService = game:GetService("TextChatService")
 TextChatService.OnIncomingMessage = function(message: TextChatMessage)

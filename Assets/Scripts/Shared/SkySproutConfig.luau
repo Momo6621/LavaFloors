@@ -11,6 +11,12 @@ return {
  -- Friend deal: when someone joins from your invite you both get coins (once per friend; the welcome gift once per
  -- account). Playing with a friend, or someone you invited, gives +Bonus coins every round.
  FriendDeal={InviteCoins=150,WelcomeCoins=150,DailyCap=5,MinAccountAgeDays=3,Bonus=0.25},
+ -- Seasonal events: yearly date ranges (UTC, month/day, may wrap into the new year). While one runs, round coins get
+ -- CoinBonus, its Theme comes up more often, a top bar pill shows it, and Snow makes snow fall in the crater.
+ Events={
+  {Id="Spooky",Name="🎃 Spooky Eruption",Short="🎃 Spooky",From={10,20},To={11,3},CoinBonus=0.5,Theme="PurpleMoon"},
+  {Id="Frostfire",Name="❄️ Frostfire Festival",Short="❄️ Frostfire",From={12,18},To={1,4},CoinBonus=0.5,Theme="BlueInferno",Snow=true},
+ },
  BadgeIds={FirstRound=0,FirstCrown=0,TenCrowns=0,PlayWithFriend=0},
  PartyMode=true,
  SkipTowerApproach=true,
