@@ -84,6 +84,7 @@ local function button(parent: Instance, text: string, color: Color3, size: UDim2
 end
 
 local gui = make("ScreenGui", { Name = "LavaFloorsUI", ResetOnSpawn = false, DisplayOrder = 6, ZIndexBehavior = Enum.ZIndexBehavior.Sibling }, player:WaitForChild("PlayerGui"))
+UI.fitScreen(gui)
 
 local chip = make("Frame", { Position = UDim2.fromOffset(12, 8), Size = UDim2.fromOffset(200, 48), BackgroundColor3 = CREAM }, gui)
 corner(chip, 16)
@@ -398,7 +399,7 @@ end)
 
 Icon.new()
 	:setName("Gloves")
-	:setLabel("🧤 Gloves")
+	:setLabel(UI.short("🧤 Gloves", "🧤"))
 	:align("Left")
 	:oneClick()
 	:modifyTheme(UI.pill(Color3.fromRGB(255, 160, 40)))
@@ -599,7 +600,7 @@ end
 
 Icon.new()
 	:setName("LavaPass")
-	:setLabel("🎟️ Pass")
+	:setLabel(UI.short("🎟️ Pass", "🎟️"))
 	:align("Left")
 	:oneClick()
 	:modifyTheme(pill(PURPLE))
@@ -612,7 +613,7 @@ Icon.new()
 	end)
 Icon.new()
 	:setName("Vip")
-	:setLabel("⭐ VIP")
+	:setLabel(UI.short("⭐ VIP", "⭐"))
 	:align("Left")
 	:oneClick()
 	:modifyTheme(pill(Color3.fromRGB(240, 170, 20)))
@@ -700,7 +701,7 @@ player:GetAttributeChangedSignal("Challenges"):Connect(refreshChallenges)
 refreshChallenges()
 Icon.new()
 	:setName("Challenges")
-	:setLabel("📋 Challenges")
+	:setLabel(UI.short("📋 Challenges", "📋"))
 	:align("Left")
 	:oneClick()
 	:modifyTheme(pill(UI.Lava))
@@ -730,7 +731,8 @@ local function refreshEvent()
 	local left = if type(ends) == "number" then math.max(0, ends - os.time()) else 0
 	local days = math.floor(left / 86400)
 	local when = if days >= 1 then days .. "d" else math.floor(left / 3600) .. "h"
-	eventIcon:setLabel(string.format("%s · +%d%% 💰 · %s", found.Short or found.Name, math.floor((found.CoinBonus or 0) * 100), when))
+	local bonus = math.floor((found.CoinBonus or 0) * 100)
+	eventIcon:setLabel(UI.short(string.format("%s · +%d%% 💰 · %s", found.Short or found.Name, bonus, when), string.format("%s +%d%%", string.match(found.Short or found.Name, "^(%S+)") or "", bonus)))
 	eventIcon:setEnabled(true)
 end
 workspace:GetAttributeChangedSignal("LavaEvent"):Connect(refreshEvent)
@@ -760,7 +762,7 @@ local FRIEND_DEAL = (require(game.ReplicatedStorage:WaitForChild("SkySproutConfi
 	or { InviteCoins = 150, Bonus = 0.25 }
 Icon.new()
 	:setName("Invite")
-	:setLabel("👥 Invite +" .. tostring(FRIEND_DEAL.InviteCoins) .. "💰")
+	:setLabel(UI.short("👥 Invite +" .. tostring(FRIEND_DEAL.InviteCoins) .. "💰", "👥 +" .. tostring(FRIEND_DEAL.InviteCoins)))
 	:align("Right")
 	:oneClick()
 	:setCaption(string.format("Invite a friend: you BOTH get %d coins • Play together: +%d%% coins", FRIEND_DEAL.InviteCoins, math.floor(FRIEND_DEAL.Bonus * 100)))
@@ -814,7 +816,9 @@ end, false, Enum.KeyCode.ButtonR2)
 if UIS.TouchEnabled then
 	local b = button(gui, "💥\nSHOVE", RED, UDim2.fromOffset(96, 96))
 	b.AnchorPoint = Vector2.new(1, 1)
-	b.Position = UDim2.new(1, -24, 1, -150)
+	-- Clear of the climb meter on the right edge, and above Roblox's jump button (which is bigger on tablets).
+	b.Position = UDim2.new(1, -64, 1, if UI.isCompact() then -150 else -250)
+	b.Name = "ShoveButton"
 	b.TextSize = 20
 	(b:FindFirstChildOfClass("UICorner") :: UICorner).CornerRadius = UDim.new(0, 48)
 	b.Activated:Connect(shove)
@@ -831,12 +835,17 @@ CAS:BindAction("LavaRaise", function(_, state)
 end, false, Enum.KeyCode.E, Enum.KeyCode.ButtonY)
 local raiseButton = button(gui, "⬆️ RAISE" .. string.char(10) .. "40 💰", Color3.fromRGB(255, 185, 40), UDim2.fromOffset(96, 72))
 raiseButton.AnchorPoint = Vector2.new(1, 1)
-raiseButton.Position = if UIS.TouchEnabled then UDim2.new(1, -132, 1, -150) else UDim2.new(1, -24, 1, -150)
+raiseButton.Position = if UIS.TouchEnabled then UDim2.new(1, -172, 1, if UI.isCompact() then -150 else -250) else UDim2.new(1, -24, 1, -150)
 raiseButton.TextSize = 18
 raiseButton.Visible = false
 raiseButton.Activated:Connect(raise)
 local function showRaise()
-	raiseButton.Visible = player:GetAttribute("ArenaMode") == "LavaRush"
+	local inRound = player:GetAttribute("ArenaMode") == "LavaRush"
+	raiseButton.Visible = inRound
+	local shoveButton = gui:FindFirstChild("ShoveButton")
+	if shoveButton and shoveButton:IsA("GuiObject") then
+		shoveButton.Visible = inRound -- shoving only does something in a round
+	end
 end
 player:GetAttributeChangedSignal("ArenaMode"):Connect(showRaise)
 showRaise()

@@ -129,4 +129,49 @@ function U.pill(color: Color3): { any }
 	}
 end
 
+-- Small screens (phones in landscape) get the whole UI scaled down and short top bar labels.
+local COMPACT_HEIGHT = 500 -- viewport heights below this count as a phone
+local DESIGN_HEIGHT = 560 -- the height the UI was laid out for
+
+function U.isCompact(): boolean
+	-- Right after joining the camera can still report a tiny placeholder size; wait briefly for the real one.
+	local camera = workspace.CurrentCamera
+	local started = os.clock()
+	while camera.ViewportSize.Y < 100 and os.clock() - started < 3 do
+		task.wait()
+	end
+	return camera.ViewportSize.Y < COMPACT_HEIGHT
+end
+
+-- Scale a whole ScreenGui (sizes and positions) to the screen height, between 0.7 and 1.
+function U.fitScreen(gui: ScreenGui)
+	local scale = gui:FindFirstChild("ScreenFit") or Instance.new("UIScale")
+	scale.Name = "ScreenFit"
+	scale.Parent = gui
+	local function fit()
+		local camera = workspace.CurrentCamera
+		local height = camera and camera.ViewportSize.Y or 0
+		if height >= 100 then -- ignore placeholder sizes while the window is loading or hidden
+			scale.Scale = math.clamp(height / DESIGN_HEIGHT, 0.7, 1)
+		end
+	end
+	-- Follow the current camera: Roblox can swap the camera object, and its size changes with the window.
+	local watching: RBXScriptConnection? = nil
+	local function watch()
+		if watching then
+			watching:Disconnect()
+		end
+		local camera = workspace.CurrentCamera
+		watching = if camera then camera:GetPropertyChangedSignal("ViewportSize"):Connect(fit) else nil
+		fit()
+	end
+	workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(watch)
+	watch()
+end
+
+-- Top bar label: the full text on big screens, the short one on phones.
+function U.short(full: string, compact: string): string
+	return if U.isCompact() then compact else full
+end
+
 return U

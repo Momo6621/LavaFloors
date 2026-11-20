@@ -73,7 +73,10 @@ local UI = require(RS:WaitForChild("LavaUI")) :: any
 local function fieryPill(color: Color3): { any }
 	return UI.pill(color)
 end
-Icon.new():setName("LavaFloorsTitle"):setLabel("🔥 " .. Config.GameTitle):align("Left"):lock():modifyTheme(fieryPill(Color3.fromRGB(255, 120, 40)))
+UI.fitScreen(gui)
+if not UI.isCompact() then -- the title pill only fits on bigger screens
+	Icon.new():setName("LavaFloorsTitle"):setLabel("🔥 " .. Config.GameTitle):align("Left"):lock():modifyTheme(fieryPill(Color3.fromRGB(255, 120, 40)))
+end
 
 local rushIcon = Icon.new()
 	:setName("LavaRush")
@@ -149,10 +152,13 @@ local banner: Frame = make("Frame", {
 }, endStack)
 
 local function fitEndStack()
-	local top = GuiService:GetGuiInset().Y + NOTICE_BOTTOM + 10
+	-- Work in the HUD's own (screen-fit scaled) units so phones line up with the scaled notice strip.
+	local fitScale = gui:FindFirstChild("ScreenFit")
+	local fit = if fitScale and fitScale:IsA("UIScale") then fitScale.Scale else 1
+	local top = GuiService:GetGuiInset().Y / fit + NOTICE_BOTTOM + 10
 	endStack.Position = UDim2.new(0.5, 0, 0, top)
 	local need = (if banner.Visible then 120 else 0) + (if result.Visible then 170 else 0) + (if banner.Visible and result.Visible then 10 else 0)
-	local room = workspace.CurrentCamera.ViewportSize.Y - top - 12
+	local room = workspace.CurrentCamera.ViewportSize.Y / fit - top - 12
 	endScale.Scale = if need > 0 then math.clamp(room / need, 0.45, 1) else 1
 end
 banner:GetPropertyChangedSignal("Visible"):Connect(fitEndStack)
@@ -438,8 +444,21 @@ event.OnClientEvent:Connect(function(kind: string, v: any)
 			voteButtons[id] = b
 			voteNames[id] = name
 		end
-		voteCard.Visible = #options > 0
-		pop(voteCard)
+		if UI.isCompact() then
+			-- Phones can't fit results and the vote at once: show the results first, then swap to the vote.
+			voteCard.Visible = false
+			task.delay(2.5, function()
+				if #options > 0 and workspace:GetServerTimeNow() < voteEndsAt then
+					banner.Visible = false
+					result.Visible = false
+					voteCard.Visible = true
+					pop(voteCard)
+				end
+			end)
+		else
+			voteCard.Visible = #options > 0
+			pop(voteCard)
+		end
 	elseif kind == "LavaVoteCounts" then
 		if type(v) == "table" then
 			for id, b in voteButtons do
