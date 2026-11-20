@@ -16,8 +16,10 @@ require(RS:WaitForChild("SkySproutWaterClient")).Start()
 require(RS:WaitForChild("SkySproutPerception")).Start()
 require(RS:WaitForChild("SkySproutRendering")).Start()
 
-local CREAM = Color3.fromRGB(255, 247, 232)
-local INK = Color3.fromRGB(62, 28, 14)
+local UI = require(RS:WaitForChild("LavaUI")) :: any
+-- Dark glass + lava style (see Shared/LavaUI). CREAM is the panel glass and INK the light text on it.
+local CREAM = UI.Glass
+local INK = UI.Text
 local ORANGE = Color3.fromRGB(255, 122, 40)
 local GREEN = Color3.fromRGB(70, 200, 90)
 local GOLD = Color3.fromRGB(255, 196, 45)
@@ -36,9 +38,19 @@ local function make(className: string, props: { [string]: any }, parent: Instanc
 end
 local function corner(v: Instance, r: number)
 	make("UICorner", { CornerRadius = UDim.new(0, r) }, v)
+	if v:IsA("GuiObject") and not v:IsA("GuiButton") then
+		if v.BackgroundColor3 == UI.Glass then
+			v.BackgroundTransparency = UI.GlassTransparency
+		elseif v.BackgroundColor3 == Color3.new(1, 1, 1) then
+			v.BackgroundColor3 = UI.GlassLight
+			v.BackgroundTransparency = 0.08
+		end
+	end
 end
 local function outline(v: Instance, thickness: number, color: Color3?)
-	make("UIStroke", { Thickness = thickness, Color = color or INK, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, v)
+	if v:IsA("GuiObject") then
+		UI.lavaStroke(v, math.min(thickness, 2.5), color)
+	end
 end
 local function label(parent: Instance, text: string, size: number, color: Color3?): TextLabel
 	return make("TextLabel", { BackgroundTransparency = 1, Font = FONT, Text = text, TextSize = size, TextColor3 = color or INK, Size = UDim2.fromScale(1, 1) }, parent)
@@ -46,10 +58,9 @@ end
 
 local click = make("Sound", { SoundId = "rbxasset://sounds/clickfast.wav", Volume = 0.45 }, script)
 local function button(parent: Instance, text: string, color: Color3, size: UDim2): TextButton
-	local b: TextButton = make("TextButton", { Size = size, BackgroundColor3 = color, AutoButtonColor = false, Font = FONT, Text = text, TextSize = 18, TextColor3 = Color3.new(1, 1, 1), TextStrokeColor3 = INK, TextStrokeTransparency = 0.35 }, parent)
+	local b: TextButton = make("TextButton", { Size = size, BackgroundColor3 = color, AutoButtonColor = false, Font = FONT, Text = text, TextSize = 18 }, parent)
 	corner(b, 12)
-	outline(b, 3, color:Lerp(Color3.new(), 0.5))
-	make("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(210, 210, 210)) }, b)
+	UI.button(b, color)
 	local scale = make("UIScale", {}, b)
 	local function to(v: number, t: number?)
 		TweenService:Create(scale, TweenInfo.new(t or 0.14, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = v }):Play()
@@ -77,11 +88,11 @@ local gui = make("ScreenGui", { Name = "LavaFloorsUI", ResetOnSpawn = false, Dis
 local chip = make("Frame", { Position = UDim2.fromOffset(12, 8), Size = UDim2.fromOffset(200, 48), BackgroundColor3 = CREAM }, gui)
 corner(chip, 16)
 outline(chip, 3)
-local coinsText = label(chip, "💰 0", 26)
+local coinsText = label(chip, "💰 0", 26, UI.Gold)
 coinsText.Position = UDim2.fromOffset(14, 0)
 coinsText.Size = UDim2.new(0.62, -14, 1, 0)
 coinsText.TextXAlignment = Enum.TextXAlignment.Left
-local crownsText = label(chip, "👑 0", 22)
+local crownsText = label(chip, "👑 0", 22, UI.Gold)
 crownsText.Position = UDim2.new(0.62, 0, 0, 0)
 crownsText.Size = UDim2.new(0.38, -12, 1, 0)
 crownsText.TextXAlignment = Enum.TextXAlignment.Right
@@ -93,11 +104,11 @@ player:GetAttributeChangedSignal("Coins"):Connect(stats)
 player:GetAttributeChangedSignal("Crowns"):Connect(stats)
 stats()
 
-local boostChip = make("Frame", { Position = UDim2.fromOffset(12, 62), Size = UDim2.fromOffset(200, 28), BackgroundColor3 = Color3.fromRGB(70, 190, 90), Visible = false }, gui)
+local boostChip = make("Frame", { Position = UDim2.fromOffset(12, 62), Size = UDim2.fromOffset(200, 28), BackgroundColor3 = CREAM, Visible = false }, gui)
 corner(boostChip, 14)
-outline(boostChip, 3)
+outline(boostChip, 2, GREEN)
 local boostText = label(boostChip, "", 16)
-boostText.TextColor3 = Color3.new(1, 1, 1)
+boostText.TextColor3 = GREEN:Lerp(Color3.new(1, 1, 1), 0.35)
 local function friendBoost()
 	local cfg = (require(game.ReplicatedStorage:WaitForChild("SkySproutConfig")) :: any).FriendDeal
 	local pct = math.floor(((cfg and cfg.Bonus) or 0.25) * 100)
@@ -133,9 +144,9 @@ corner(shop, 22)
 outline(shop, 4)
 local ribbon = make("Frame", { Position = UDim2.fromOffset(0, 0), Size = UDim2.new(1, 0, 0, 56), BackgroundColor3 = ORANGE }, shop)
 corner(ribbon, 22)
-make("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(255, 160, 60), Color3.fromRGB(240, 90, 30)) }, ribbon)
+make("UIGradient", { Rotation = 90, Color = ColorSequence.new(UI.Lava, UI.LavaDeep:Lerp(UI.Glass, 0.3)) }, ribbon)
 local heading = label(ribbon, "🧤 GLOVES", 28, Color3.new(1, 1, 1))
-heading.TextStrokeColor3 = INK
+heading.TextStrokeColor3 = UI.Shadow
 heading.TextStrokeTransparency = 0.2
 local close = button(ribbon, "X", RED, UDim2.fromOffset(40, 40))
 close.AnchorPoint = Vector2.new(1, 0.5)
@@ -174,11 +185,7 @@ local function card(order: number, swatch: Color3, title: string): (Frame, TextB
 end
 local function setButton(b: TextButton, text: string, color: Color3)
 	b.Text = text
-	b.BackgroundColor3 = color
-	local s = b:FindFirstChildOfClass("UIStroke")
-	if s then
-		s.Color = color:Lerp(Color3.new(), 0.5)
-	end
+	UI.button(b, color)
 end
 
 for i, s in C.Skins do
@@ -374,23 +381,13 @@ Icon.new()
 	:setLabel("🧤 Gloves")
 	:align("Left")
 	:oneClick()
-	:modifyTheme({
-		{ "IconButton", "BackgroundColor3", Color3.fromRGB(255, 160, 40) },
-		{ "IconButton", "BackgroundTransparency", 0 },
-		{ "IconLabel", "TextColor3", Color3.new(1, 1, 1) },
-		{ "IconLabel", "FontFace", Font.fromEnum(Enum.Font.FredokaOne) },
-	})
+	:modifyTheme(UI.pill(Color3.fromRGB(255, 160, 40)))
 	:bindEvent("selected", function()
 		setShop(not shop.Visible)
 	end)
 
 local function pill(color: Color3): { any }
-	return {
-		{ "IconButton", "BackgroundColor3", color },
-		{ "IconButton", "BackgroundTransparency", 0 },
-		{ "IconLabel", "TextColor3", Color3.new(1, 1, 1) },
-		{ "IconLabel", "FontFace", Font.fromEnum(Enum.Font.FredokaOne) },
-	}
+	return UI.pill(color)
 end
 
 -- Lava Pass and VIP panels
@@ -405,9 +402,9 @@ local function panel(title: string, top: Color3, bottom: Color3): (Frame, Frame)
 	outline(f, 4)
 	local bar = make("Frame", { Size = UDim2.new(1, 0, 0, 56), BackgroundColor3 = top }, f)
 	corner(bar, 22)
-	make("UIGradient", { Rotation = 90, Color = ColorSequence.new(top, bottom) }, bar)
+	make("UIGradient", { Rotation = 90, Color = ColorSequence.new(top:Lerp(UI.Glass, 0.2), bottom:Lerp(UI.Glass, 0.5)) }, bar)
 	local head = label(bar, title, 28, Color3.new(1, 1, 1))
-	head.TextStrokeColor3 = INK
+	head.TextStrokeColor3 = UI.Shadow
 	head.TextStrokeTransparency = 0.2
 	local x = button(bar, "X", RED, UDim2.fromOffset(40, 40))
 	x.AnchorPoint = Vector2.new(1, 0.5)
@@ -437,13 +434,13 @@ local function claimedSet(attr: string): { [number]: boolean }
 end
 
 local passPanel, passBody = panel("🎟️ LAVA PASS", Color3.fromRGB(175, 110, 255), Color3.fromRGB(110, 60, 220))
-local xpBack = make("Frame", { Size = UDim2.new(1, -150, 0, 26), BackgroundColor3 = Color3.fromRGB(225, 210, 200) }, passBody)
+local xpBack = make("Frame", { Size = UDim2.new(1, -150, 0, 26), BackgroundColor3 = UI.GlassLight }, passBody)
 corner(xpBack, 13)
 outline(xpBack, 3)
 local xpFill = make("Frame", { Size = UDim2.fromScale(0, 1), BackgroundColor3 = PURPLE }, xpBack)
 corner(xpFill, 13)
 local xpText = label(xpBack, "", 16, Color3.new(1, 1, 1))
-xpText.TextStrokeColor3 = INK
+xpText.TextStrokeColor3 = UI.Shadow
 xpText.TextStrokeTransparency = 0.3
 local premiumButton = button(passBody, "⭐ PREMIUM", GOLD, UDim2.fromOffset(140, 30))
 premiumButton.AnchorPoint = Vector2.new(1, 0)

@@ -1,0 +1,132 @@
+--!strict
+-- Shared UI style: dark glass panels with glowing lava-gradient borders, light text and gold-to-lava titles.
+-- Both HUD scripts style their frames, labels and buttons through these helpers so the whole game looks the same.
+local U = {}
+
+U.Font = Enum.Font.FredokaOne
+U.Glass = Color3.fromRGB(24, 15, 17)
+U.GlassTransparency = 0.16
+U.GlassLight = Color3.fromRGB(54, 33, 31)
+U.Lava = Color3.fromRGB(255, 112, 36)
+U.LavaHot = Color3.fromRGB(255, 196, 92)
+U.LavaDeep = Color3.fromRGB(200, 45, 15)
+U.Gold = Color3.fromRGB(255, 208, 90)
+U.Text = Color3.fromRGB(255, 242, 228)
+U.Muted = Color3.fromRGB(205, 180, 170)
+U.Shadow = Color3.fromRGB(18, 6, 2)
+
+local WHITE = Color3.new(1, 1, 1)
+local BLACK = Color3.new(0, 0, 0)
+
+local function clear(obj: Instance, classes: { string })
+	for _, c in obj:GetChildren() do
+		for _, name in classes do
+			if c:IsA(name) then
+				c:Destroy()
+				break
+			end
+		end
+	end
+end
+
+-- A border that glows from hot yellow at the top to deep lava at the bottom.
+function U.lavaStroke(obj: GuiObject, thickness: number?, accent: Color3?): UIStroke
+	clear(obj, { "UIStroke" })
+	local a = accent or U.Lava
+	local s = Instance.new("UIStroke")
+	s.Thickness = thickness or 2
+	s.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	s.Color = WHITE
+	local g = Instance.new("UIGradient")
+	g.Rotation = 90
+	g.Color = ColorSequence.new(a:Lerp(WHITE, 0.4), a:Lerp(BLACK, 0.2))
+	g.Parent = s
+	s.Parent = obj
+	return s
+end
+
+-- Dark see-through panel with a soft top-to-bottom shade and a glowing border.
+function U.glass(obj: GuiObject, radius: number?, accent: Color3?)
+	clear(obj, { "UIGradient", "UIStroke" })
+	obj.BackgroundColor3 = U.Glass
+	obj.BackgroundTransparency = U.GlassTransparency
+	obj.BorderSizePixel = 0
+	local c = obj:FindFirstChildOfClass("UICorner") or Instance.new("UICorner")
+	if radius then
+		c.CornerRadius = UDim.new(0, radius)
+	end
+	c.Parent = obj
+	local shade = Instance.new("UIGradient")
+	shade.Rotation = 90
+	shade.Color = ColorSequence.new(Color3.fromRGB(255, 225, 215), Color3.fromRGB(150, 140, 140))
+	shade.Parent = obj
+	U.lavaStroke(obj, 2, accent)
+end
+
+-- Text styles: "title" is gold-to-lava, "body" is light, "muted" is soft. All get a dark outline for contrast.
+function U.text(label: TextLabel | TextButton, kind: string?)
+	label.Font = U.Font
+	if label.BackgroundTransparency < 1 then
+		-- It has its own glass background and border stroke, so outline the text the classic way.
+		label.TextStrokeColor3 = U.Shadow
+		label.TextStrokeTransparency = 0.25
+		clear(label, { "UIGradient" })
+	else
+		label.TextStrokeTransparency = 1
+		clear(label, { "UIStroke", "UIGradient" })
+		local outline = Instance.new("UIStroke")
+		outline.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
+		outline.Color = U.Shadow
+		outline.Thickness = if kind == "title" then 2.5 else 1.5
+		outline.Transparency = 0.15
+		outline.Parent = label
+	end
+	if kind == "title" then
+		label.TextColor3 = WHITE
+		local g = Instance.new("UIGradient")
+		g.Name = "TitleGradient"
+		g.Rotation = 90
+		g.Color = ColorSequence.new(Color3.fromRGB(255, 240, 170), Color3.fromRGB(255, 150, 50))
+		g.Parent = label
+	elseif kind == "muted" then
+		label.TextColor3 = U.Muted
+	else
+		label.TextColor3 = U.Text
+	end
+end
+
+-- Background and border colours for a button in an accent colour.
+function U.tone(color: Color3): (Color3, Color3)
+	return color:Lerp(U.Glass, 0.45), color:Lerp(WHITE, 0.2)
+end
+
+-- A dark button tinted by its accent, with a glowing accent border and light text.
+function U.button(b: GuiButton, accent: Color3)
+	clear(b, { "UIGradient", "UIStroke" })
+	local bg = U.tone(accent)
+	b.BackgroundColor3 = bg
+	b.BackgroundTransparency = 0.05
+	b.BorderSizePixel = 0
+	local shade = Instance.new("UIGradient")
+	shade.Rotation = 90
+	shade.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(175, 165, 165))
+	shade.Parent = b
+	U.lavaStroke(b, 2.5, accent)
+	if b:IsA("TextButton") then
+		b.TextColor3 = U.Text
+		b.TextStrokeColor3 = U.Shadow
+		b.TextStrokeTransparency = 0.3
+	end
+end
+
+-- TopbarPlus theme for a dark glass pill whose label glows in the accent colour.
+function U.pill(color: Color3): { any }
+	return {
+		{ "IconButton", "BackgroundColor3", U.Glass },
+		{ "IconButton", "BackgroundTransparency", 0.12 },
+		{ "IconLabel", "TextColor3", color:Lerp(WHITE, 0.4) },
+		{ "IconLabel", "FontFace", Font.fromEnum(U.Font) },
+	}
+end
+
+return U

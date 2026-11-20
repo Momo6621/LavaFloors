@@ -69,13 +69,9 @@ local Icon = require(RS:WaitForChild("Icon"))
 local Config = require(RS:WaitForChild("SkySproutConfig")) :: any
 local Perception = require(RS:WaitForChild("SkySproutPerception")) :: any
 local moodNow: string? = nil
+local UI = require(RS:WaitForChild("LavaUI")) :: any
 local function fieryPill(color: Color3): { any }
-	return {
-		{ "IconButton", "BackgroundColor3", color },
-		{ "IconButton", "BackgroundTransparency", 0 },
-		{ "IconLabel", "TextColor3", Color3.new(1, 1, 1) },
-		{ "IconLabel", "FontFace", Font.fromEnum(Enum.Font.FredokaOne) },
-	}
+	return UI.pill(color)
 end
 Icon.new():setName("LavaFloorsTitle"):setLabel("🔥 " .. Config.GameTitle):align("Left"):lock():modifyTheme(fieryPill(Color3.fromRGB(255, 120, 40)))
 
@@ -109,6 +105,9 @@ local title: TextLabel = make("TextLabel", { BackgroundTransparency = 1, Positio
 stroked(title)
 local info: TextLabel = make("TextLabel", { BackgroundTransparency = 1, Position = UDim2.fromOffset(12, 40), Size = UDim2.new(1, -24, 0, 24), Font = FONT, TextScaled = true, TextColor3 = Color3.new(1, 1, 1), Text = "" }, panel)
 stroked(info)
+UI.glass(panel, 16)
+UI.text(title, "title")
+UI.text(info, "body")
 
 -- End-of-round cards stack in one column (winner banner on top, your result under it) that starts just below the
 -- notice strip, so the notice, banner and result never cover each other. The column shrinks to fit short screens.
@@ -138,6 +137,9 @@ local resultTitle: TextLabel = make("TextLabel", { BackgroundTransparency = 1, P
 stroked(resultTitle, 3)
 local resultBody: TextLabel = make("TextLabel", { BackgroundTransparency = 1, Position = UDim2.fromOffset(10, 76), Size = UDim2.new(1, -20, 0, 80), Font = FONT, TextScaled = true, TextColor3 = Color3.new(1, 1, 1), Text = "" }, result)
 stroked(resultBody)
+UI.glass(result, 20)
+UI.text(resultTitle, "title")
+UI.text(resultBody, "body")
 
 local banner: Frame = make("Frame", {
 	LayoutOrder = 1,
@@ -164,6 +166,9 @@ local bannerTitle: TextLabel = make("TextLabel", { BackgroundTransparency = 1, P
 stroked(bannerTitle, 3)
 local bannerNames: TextLabel = make("TextLabel", { BackgroundTransparency = 1, Position = UDim2.fromOffset(10, 64), Size = UDim2.new(1, -20, 0, 44), Font = FONT, TextScaled = true, TextColor3 = Color3.new(1, 1, 1), Text = "" }, banner)
 stroked(bannerNames)
+UI.glass(banner, 22, UI.Gold)
+UI.text(bannerTitle, "title")
+UI.text(bannerNames, "body")
 
 local spectateLabel: TextLabel = make("TextLabel", {
 	AnchorPoint = Vector2.new(0.5, 1),
@@ -177,6 +182,9 @@ local spectateLabel: TextLabel = make("TextLabel", {
 	Visible = false,
 }, gui)
 stroked(spectateLabel)
+make("UIPadding", { PaddingLeft = UDim.new(0, 14), PaddingRight = UDim.new(0, 14), PaddingTop = UDim.new(0, 4), PaddingBottom = UDim.new(0, 4) }, spectateLabel)
+UI.glass(spectateLabel, 17)
+UI.text(spectateLabel, "body")
 
 local function pop(target: GuiObject)
 	local scale = target:FindFirstChildOfClass("UIScale") or make("UIScale", {}, target)
@@ -338,7 +346,11 @@ event.OnClientEvent:Connect(function(kind: string, v: any)
 		end)
 	elseif kind == "LavaResult" then
 		resultTitle.Text = if v.Outcome == "CROWNED" then "👑 ESCAPED!" elseif v.Outcome == "SURVIVED" then "🔥 SURVIVED!" else "💀 SCORCHED"
-		resultTitle.TextColor3 = if v.Outcome == "SCORCHED" then Color3.new(1, 1, 1) else TITLE
+		local titleGradient = resultTitle:FindFirstChild("TitleGradient")
+		if titleGradient and titleGradient:IsA("UIGradient") then
+			titleGradient.Enabled = v.Outcome ~= "SCORCHED"
+		end
+		resultTitle.TextColor3 = if v.Outcome == "SCORCHED" then Color3.fromRGB(255, 140, 120) else Color3.new(1, 1, 1)
 		local emberLine = if v.Embers > 0 then string.format("\n%d embers banked%s", v.Embers, if v.Doubled then " (x2!)" else "") else ""
 		resultBody.Text = string.format("Height %d  •  +%d coins%s%s%s", v.Height, v.Coins, if v.Boosted then " (2x)" else "", if v.Friends then " 👥+25%" else "", emberLine)
 		result.Visible = true
@@ -1258,7 +1270,7 @@ local meter: Frame = make("Frame", {
 }, gui)
 make("UISizeConstraint", { MinSize = Vector2.new(22, 150), MaxSize = Vector2.new(22, 320) }, meter)
 make("UICorner", { CornerRadius = UDim.new(1, 0) }, meter)
-make("UIStroke", { Thickness = 3, Color = Color3.fromRGB(110, 25, 5) }, meter)
+UI.glass(meter)
 local meterLava: Frame = make("Frame", {
 	AnchorPoint = Vector2.new(0, 1),
 	Position = UDim2.fromScale(0, 1),
