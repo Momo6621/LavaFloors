@@ -359,6 +359,11 @@ event.OnClientEvent:Connect(function(kind: string, v: any)
 			task.delay(2.8, function()
 				showdownCard.Visible = false
 			end)
+		elseif v.Kind == "BotOut" then
+			if v.Position then
+				burst(v.Position, FIRE, 50, 20)
+				floatText(v.Position + Vector3.new(0, 3, 0), tostring(v.Text or "🤖") .. " is out!")
+			end
 		elseif v.Kind == "Invite" then
 			-- Invite deal paid out: a gold burst over your head and the amount floating up.
 			play("Crown", 1.2)
@@ -425,7 +430,13 @@ event.OnClientEvent:Connect(function(kind: string, v: any)
 		end
 	elseif kind == "LavaWinners" then
 		local names = if type(v.Names) == "table" then v.Names else {}
-		bannerTitle.Text = if #names == 0 then "🌋 THE LAVA WINS!" elseif #names == 1 then "🌋 ESCAPED THE VOLCANO!" else "🌋 THEY ESCAPED!"
+		local onlyBots = #names > 0
+		for _, n in names do
+			if string.sub(tostring(n), 1, 4) ~= "🤖" then
+				onlyBots = false
+			end
+		end
+		bannerTitle.Text = if #names == 0 then "🌋 THE LAVA WINS!" elseif onlyBots then "🤖 THE BOTS WIN!" elseif #names == 1 then "🌋 ESCAPED THE VOLCANO!" else "🌋 THEY ESCAPED!"
 		bannerNames.Text = if #names == 0 then "Nobody survived this time" else table.concat(names, "  •  ")
 		banner.Visible = true
 		pop(banner)
@@ -1265,6 +1276,61 @@ Run.RenderStepped:Connect(function(dt: number)
 			table.remove(blobs, i)
 		else
 			b.part.CFrame = CFrame.new(pos)
+		end
+	end
+end)
+
+-- Bots ride their tile like everything else on the grid: the server only says which tile, so each client places
+-- them on the moving floor every frame, with a little hop arc between tiles and a tumble into the lava when out.
+type BotView = { row: number?, col: number?, from: CFrame?, at: number, last: CFrame? }
+local botViews: { [BasePart]: BotView } = {}
+Run.RenderStepped:Connect(function()
+	local floors = workspace:FindFirstChild("SkySprout") and workspace.SkySprout:FindFirstChild("Floors")
+	local arena = floors and floors:FindFirstChild("Floor_1") and floors.Floor_1:FindFirstChild("LavaRush")
+	local towerModel = arena and arena:FindFirstChild("LavaRushTower")
+	if not towerModel then
+		return
+	end
+	local t = workspace:GetServerTimeNow()
+	for _, item in CollectionService:GetTagged("LavaBot") do
+		if not item:IsA("BasePart") or not item:IsDescendantOf(towerModel) then
+			continue
+		end
+		local row, col, stand, yaw = item:GetAttribute("BotRow"), item:GetAttribute("BotCol"), item:GetAttribute("BotStand"), item:GetAttribute("BotYaw")
+		if type(row) ~= "number" or type(col) ~= "number" or type(stand) ~= "number" then
+			continue
+		end
+		local view = botViews[item]
+		if not view then
+			view = { at = 0 }
+			botViews[item] = view
+		end
+		local fallAt = item:GetAttribute("BotFalling")
+		if type(fallAt) == "number" then
+			local k = math.max(0, t - fallAt)
+			local base = view.last or item.CFrame
+			item.CFrame = (base - Vector3.new(0, 26 * k * k, 0)) * CFrame.Angles(k * 3, 0, k * 2)
+			continue
+		end
+		local target = Grid.TileCFrame(towerModel, row, col, t) * CFrame.new(0, 0.6 + stand, 0) * CFrame.Angles(0, if type(yaw) == "number" then yaw else 0, 0)
+		if view.row ~= row or view.col ~= col then
+			view.from = view.last
+			view.at = t
+			view.row, view.col = row, col
+		end
+		local cf = target
+		local from = view.from
+		if from and t - view.at < 0.3 then
+			local k = (t - view.at) / 0.3
+			local pos = from.Position:Lerp(target.Position, k) + Vector3.new(0, math.sin(k * math.pi) * 3, 0)
+			cf = CFrame.new(pos) * target.Rotation
+		end
+		item.CFrame = cf
+		view.last = cf
+	end
+	for item in botViews do
+		if not item.Parent then
+			botViews[item] = nil
 		end
 	end
 end)

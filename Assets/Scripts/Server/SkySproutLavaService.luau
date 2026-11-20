@@ -65,6 +65,13 @@ local CFG = {
 	ShowdownShove = 1.35,
 	ShowdownFromPhase = 4, -- in a 2-player round the showdown starts at this phase
 
+	-- Bots fill small rounds up to BotFillTo climbers (never more than BotMax bots)
+	BotFillTo = 4,
+	BotMax = 3,
+	BotThink = { 0.35, 1.0 }, -- seconds between decisions
+	BotMistake = 0.12, -- chance a decision is a random neighbour
+	BotNames = { "Ember", "Magma", "Cinder", "Flare", "Pumice", "Basalt", "Scoria", "Ash", "Obsidian", "Sparky" },
+
 	-- Shove
 	ShoveRange = 9,
 	ShoveCooldown = 0.8,
@@ -343,8 +350,11 @@ local function count(t: { [Player]: any }): number
 	return n
 end
 
+local aliveBotCount: () -> number = function()
+	return 0
+end
 local function aliveCount(): number
-	local n = 0
+	local n = aliveBotCount()
 	for _, r in L.Runners do
 		if r.alive and not r.crowned then
 			n += 1
@@ -2007,6 +2017,11 @@ local function toggleJoin(p: Player)
 	broadcast()
 end
 
+-- Set by the bots section: shoves a bot in front of the player if one is closer than maxDist.
+local shoveNearestBot: (Player, Vector3, Vector3, number) -> boolean = function()
+	return false
+end
+
 local function shove(p: Player)
 	local r = L.Runners[p]
 	local me = root(p)
@@ -2031,6 +2046,9 @@ local function shove(p: Player)
 		end
 	end
 	event:FireClient(p, "LavaFX", { Kind = "Swing" })
+	if shoveNearestBot(p, me.Position, me.CFrame.LookVector, bestDist) then
+		return
+	end
 	local target = best and L.Runners[best]
 	if best and target and now() < target.shieldUntil then
 		event:FireClient(p, "LavaFX", { Kind = "Blocked", Position = (root(best) :: BasePart).Position })
@@ -2387,6 +2405,285 @@ local function lavaFor(t: number): number
 	return gridY - CFG.LavaBelow
 end
 
+
+-- Bots: when a round starts with only a few real climbers, rock-named bots fill it up so it never feels empty.
+-- Tiles only move on clients, so a bot is a tile index plus a stand height: the server decides where it hops,
+-- when it falls and when it is shoved, and every client draws it riding its moving tile (tag "LavaBot").
+type Bot = { name: string, model: Model, root: BasePart, row: number, col: number, alive: boolean, nextThink: number, stand: number }
+local bots: { Bot } = {}
+local botStarters = 0
+aliveBotCount = function()
+	local n = 0
+	for _, b in bots do
+		if b.alive then
+			n += 1
+		end
+	end
+	return n
+end
+
+local function botTileTop(b: Bot, t: number): CFrame
+	local half = 0.6
+	return Grid.TileCFrame(tower :: Model, b.row, b.col, t) * CFrame.new(0, half, 0)
+end
+
+local function botPosition(b: Bot): Vector3
+	return (botTileTop(b, now()) * CFrame.new(0, b.stand, 0)).Position
+end
+
+local function aliveBots(): number
+	local n = 0
+	for _, b in bots do
+		if b.alive then
+			n += 1
+		end
+	end
+	return n
+end
+
+local function setBotTile(b: Bot, row: number, col: number)
+	b.row, b.col = row, col
+	b.root:SetAttribute("BotRow", row)
+	b.root:SetAttribute("BotCol", col)
+	b.root:SetAttribute("BotHopAt", now())
+end
+
+local function killBot(b: Bot, how: string)
+	if not b.alive then
+		return
+	end
+	b.alive = false
+	local at = botPosition(b)
+	b.root:SetAttribute("BotFalling", now())
+	for _, p in Players:GetPlayers() do
+		event:FireClient(p, "LavaFX", { Kind = "BotOut", Position = at, Text = "🤖 " .. b.name })
+	end
+	for p in L.Runners do
+		if p.Parent then
+			tell(p, "🔥 🤖 " .. b.name .. " " .. how)
+		end
+	end
+	local model = b.model
+	task.delay(1.6, function()
+		model:Destroy()
+	end)
+end
+
+local function walkable(state: string): boolean
+	return state == "Still" or state == "Warning" or state == "Growing"
+end
+
+local function makeBot(name: string, row: number, col: number): Bot?
+	local towerModel = tower
+	if not towerModel then
+		return nil
+	end
+	local desc = Instance.new("HumanoidDescription")
+	local skin = Color3.fromHSV(math.random(), 0.25, 0.9)
+	for _, k in { "HeadColor", "LeftArmColor", "RightArmColor", "TorsoColor", "LeftLegColor", "RightLegColor" } do
+		(desc :: any)[k] = skin
+	end
+	local ok, model = pcall(function()
+		return Players:CreateHumanoidModelFromDescription(desc, Enum.HumanoidRigType.R15)
+	end)
+	if not ok or not model or not tower or tower ~= towerModel then
+		return nil
+	end
+	model.Name = "Bot_" .. name
+	pcall(function()
+		model:ScaleTo(CFG.CharacterScale)
+	end)
+	local hum = model:FindFirstChildOfClass("Humanoid")
+	local rootPart = model:FindFirstChild("HumanoidRootPart")
+	if not hum or not rootPart or not rootPart:IsA("BasePart") then
+		model:Destroy()
+		return nil
+	end
+	hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+	hum:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
+	rootPart.Anchored = true
+	for _, d in model:GetDescendants() do
+		if d:IsA("BasePart") then
+			d.CanCollide = false
+			d.CanQuery = false
+			d.CanTouch = false
+			d.Massless = true
+		end
+	end
+	local head = model:FindFirstChild("Head")
+	if head then
+		local tag = Instance.new("BillboardGui")
+		tag.Size = UDim2.fromOffset(110, 24)
+		tag.StudsOffset = Vector3.new(0, 1.8, 0)
+		tag.MaxDistance = 90
+		tag.Parent = head
+		local text = Instance.new("TextLabel")
+		text.BackgroundTransparency = 1
+		text.Size = UDim2.fromScale(1, 1)
+		text.Font = Enum.Font.FredokaOne
+		text.TextScaled = true
+		text.Text = "🤖 " .. name
+		text.TextColor3 = Color3.fromRGB(255, 225, 190)
+		text.TextStrokeTransparency = 0.3
+		text.Parent = tag
+	end
+	local stand = hum.HipHeight + rootPart.Size.Y / 2
+	local b: Bot = { name = name, model = model, root = rootPart, row = row, col = col, alive = true, nextThink = now() + 1 + math.random(), stand = stand }
+	rootPart:SetAttribute("BotStand", stand)
+	rootPart:SetAttribute("BotYaw", math.random() * math.pi * 2)
+	setBotTile(b, row, col)
+	rootPart.CFrame = botTileTop(b, now()) * CFrame.new(0, stand, 0)
+	CollectionService:AddTag(rootPart, "LavaBot")
+	model.Parent = towerModel
+	return b
+end
+
+local function spawnBots()
+	table.clear(bots)
+	local real = count(L.Runners)
+	local want = if real > 0 then math.clamp(CFG.BotFillTo - real, 0, CFG.BotMax) else 0
+	botStarters = want
+	if want == 0 or not tower then
+		return
+	end
+	local names = table.clone(CFG.BotNames)
+	local size = CFG.GridSize
+	local spots = {}
+	for row = 1, size do
+		for col = 1, size do
+			if Grid.Ring(size, row, col) <= CFG.StartRings and Grid.TileState(tower, row, col, now()) == "Still" then
+				table.insert(spots, { row, col })
+			end
+		end
+	end
+	for _ = 1, want do
+		if #spots == 0 or #names == 0 then
+			break
+		end
+		local spot = table.remove(spots, math.random(#spots))
+		local name = table.remove(names, math.random(#names))
+		local b = makeBot(name, spot[1], spot[2])
+		if b then
+			table.insert(bots, b)
+		end
+	end
+end
+
+-- Pick the best tile among the bot's own and its eight neighbours; sometimes make a mistake.
+local function botThink(b: Bot, t: number, taken: { [number]: boolean })
+	local towerModel = tower :: Model
+	local size = CFG.GridSize
+	local best, bestScore = nil, -math.huge
+	local options = {}
+	for dr = -1, 1 do
+		for dc = -1, 1 do
+			local r, c = b.row + dr, b.col + dc
+			if r >= 1 and r <= size and c >= 1 and c <= size then
+				local state = Grid.TileState(towerModel, r, c, t)
+				if walkable(state) then
+					local here = dr == 0 and dc == 0
+					local score = if state == "Still" then 3 else -5
+					score -= 4 * (Grid.Crumble(towerModel, r, c, t) or 0)
+					score -= 0.6 * Grid.Ring(size, r, c)
+					if Grid.Safe(towerModel, r, c, t) then
+						score += 1.5
+					end
+					if not here and taken[(r - 1) * size + c] then
+						score -= 3
+					end
+					if here then
+						score += 0.8
+					end
+					score += math.random() * 0.6
+					table.insert(options, { r, c })
+					if score > bestScore then
+						best, bestScore = { r, c }, score
+					end
+				end
+			end
+		end
+	end
+	if #options > 0 and math.random() < CFG.BotMistake then
+		best = options[math.random(#options)]
+	end
+	if best and (best[1] ~= b.row or best[2] ~= b.col) then
+		setBotTile(b, best[1], best[2])
+	end
+end
+
+-- Runs every frame of a round: falls, lava and thinking. Returns how many bots are still up.
+local function botTick(t: number, occupied: { [number]: boolean }): (number, Bot?)
+	if not tower then
+		return 0, nil
+	end
+	local towerModel = tower :: Model
+	local size = CFG.GridSize
+	local alive, last = 0, nil
+	local taken = {}
+	for _, b in bots do
+		if b.alive then
+			taken[(b.row - 1) * size + b.col] = true
+		end
+	end
+	for _, b in bots do
+		if b.alive then
+			local state = Grid.TileState(towerModel, b.row, b.col, t)
+			local top = botTileTop(b, t).Position.Y
+			if state == "Falling" or state == "Gone" or state == "Hidden" then
+				killBot(b, "fell with the floor!")
+			elseif top < L.LavaY + 0.5 then
+				killBot(b, "got caught by the lava!")
+			else
+				if t >= b.nextThink then
+					b.nextThink = t + CFG.BotThink[1] + math.random() * (CFG.BotThink[2] - CFG.BotThink[1])
+					botThink(b, t, taken)
+				end
+				occupied[(b.row - 1) * size + b.col] = true
+				alive += 1
+				last = b
+			end
+		end
+	end
+	return alive, last
+end
+
+-- A player's shove reaches a bot: knock it a tile or two that way, or off the grid if there's nothing there.
+local function shoveBot(p: Player, b: Bot, dir: Vector3)
+	local towerModel = tower :: Model
+	local from = botPosition(b)
+	local row, col = Grid.TileAt(towerModel, from + dir * CFG.GridTile * 1.6 + Vector3.new(0, 2, 0), now())
+	event:FireClient(p, "LavaFX", { Kind = "Hit", Position = from })
+	if row and col and walkable(Grid.TileState(towerModel, row, col, now())) then
+		setBotTile(b, row, col)
+		b.nextThink = now() + 0.6
+	else
+		killBot(b, "got shoved into the lava by " .. p.DisplayName .. "!")
+	end
+end
+
+shoveNearestBot = function(p: Player, from: Vector3, look: Vector3, maxDist: number): boolean
+	if not tower then
+		return false
+	end
+	local best, bestDist = nil, maxDist
+	for _, b in bots do
+		if b.alive then
+			local delta = botPosition(b) - from
+			local flat = Vector3.new(delta.X, 0, delta.Z)
+			if flat.Magnitude < bestDist and math.abs(delta.Y) < 6 and (flat.Magnitude < 0.5 or look:Dot(flat.Unit) > 0.3) then
+				best, bestDist = b, flat.Magnitude
+			end
+		end
+	end
+	if not best then
+		return false
+	end
+	local delta = botPosition(best) - from
+	local dir = Vector3.new(delta.X, 0, delta.Z)
+	shoveBot(p, best, if dir.Magnitude > 0.1 then dir.Unit else Vector3.new(look.X, 0, look.Z).Unit)
+	return true
+end
+
 local function runRound()
 	clearTower()
 	buildTower()
@@ -2400,6 +2697,7 @@ local function runRound()
 	for p in L.Queue do
 		enter(p)
 	end
+	task.spawn(spawnBots)
 	broadcast()
 	workspace.Gravity = if L.Mutator.Id == "LowGravity" then 115 else DEFAULT_GRAVITY
 	local lastBroadcast = 0
@@ -2410,6 +2708,7 @@ local function runRound()
 	local lastPhase = 0
 	local starters = 0
 	local roundWinners: { Player } = {}
+	local botWinners: { string } = {}
 	L.ShowdownAt = 0
 	while now() < L.EndsAt do
 		local dt = Run.Heartbeat:Wait()
@@ -2489,15 +2788,25 @@ local function runRound()
 				end
 			end
 		end
+		local playersActive = active
+		local botsUp, lastBot = botTick(now(), occupied)
+		active += botsUp
+		starters = math.max(starters, count(L.Runners) + botStarters)
 		updateWear(occupied, dt)
 		if L.Mutator.Id == "HotPotato" then
-			bombTick(active)
+			bombTick(playersActive)
 		end
 		if now() - lastBroadcast > 0.5 then
 			lastBroadcast = now()
 			broadcast()
 		end
-		if active == 0 and not lateOpen() and next(L.Queue) == nil then
+		if playersActive == 0 and not lateOpen() and next(L.Queue) == nil then
+			-- No real climbers left: any bots still standing take the round.
+			for _, b in bots do
+				if b.alive then
+					table.insert(botWinners, "🤖 " .. b.name)
+				end
+			end
 			break
 		end
 		if L.ShowdownAt == 0 and active == 2 and not lateOpen() and (starters >= 3 or gridPhase() >= CFG.ShowdownFromPhase) then
@@ -2508,12 +2817,17 @@ local function runRound()
 					table.insert(names, p.DisplayName)
 				end
 			end
+			for _, b in bots do
+				if b.alive then
+					table.insert(names, "🤖 " .. b.name)
+				end
+			end
 			for _, p in Players:GetPlayers() do
 				event:FireClient(p, "LavaFX", { Kind = "Showdown", Names = names })
 			end
 			broadcast()
 		end
-		if starters >= 2 and active == 1 and lastActive and not lateOpen() and next(L.Queue) == nil then
+		if starters >= 2 and active == 1 and botsUp == 0 and lastActive and not lateOpen() and next(L.Queue) == nil then
 			local winner = lastActive :: Player
 			local r = L.Runners[winner]
 			if r and r.alive and not r.crowned then
@@ -2538,6 +2852,11 @@ local function runRound()
 				table.insert(roundWinners, p)
 			end
 		end
+		for _, b in bots do
+			if b.alive and not table.find(botWinners, "🤖 " .. b.name) then
+				table.insert(botWinners, "🤖 " .. b.name)
+			end
+		end
 		if #winners > 0 then
 			for p in L.Runners do
 				if p.Parent then
@@ -2555,6 +2874,9 @@ local function runRound()
 			if me then
 				table.insert(positions, me.Position)
 			end
+		end
+		for _, n in botWinners do
+			table.insert(names, n)
 		end
 		for _, p in Players:GetPlayers() do
 			event:FireClient(p, "LavaWinners", { Names = names, Positions = positions })
