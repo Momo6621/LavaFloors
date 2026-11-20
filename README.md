@@ -163,6 +163,12 @@ The free Lava Pass track (20 tiers, XP from playing, surviving, crowns and straw
 - Set the badge IDs in `SkySproutConfig`.
 - Set Lighting → Technology to **Future** in Studio.
 
+## Store art
+
+`Media/store/` has the game thumbnail (1920x1080) and icon (512x512). They're real Studio captures: the Sunset
+theme, Roblox's built-in R15 rigs with default animations, and the game's own crown, with the title set in Fredoka
+One (SIL Open Font License, shipped with Roblox Studio). `tools/compose_store_art.py` rebuilds them from the captures.
+
 ## Credits
 
 - [TopbarPlus](https://github.com/1ForeverHD/TopbarPlus) v3.5.0 by ForeverHD, used under the
