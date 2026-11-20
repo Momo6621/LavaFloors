@@ -785,6 +785,74 @@ Icon.new()
 
 local music = make("Sound", { Name = "LavaFloorsMusic", SoundId = "rbxassetid://1837768107", Looped = true, Volume = 0.22 }, game:GetService("SoundService"))
 music:Play()
+-- Emotes: six free emotes (Roblox's own default animations) from a top bar button, so kids can wave, cheer and
+-- dance without typing. Dances loop until you move; winning the crown plays a cheer automatically.
+local EMOTES = {
+	{ Icon = "👋", Name = "Wave", Id = "rbxassetid://507770239", Loop = false },
+	{ Icon = "🙌", Name = "Cheer", Id = "rbxassetid://507770677", Loop = false },
+	{ Icon = "😂", Name = "Laugh", Id = "rbxassetid://507770818", Loop = false },
+	{ Icon = "👉", Name = "Point", Id = "rbxassetid://507770453", Loop = false },
+	{ Icon = "💃", Name = "Dance", Id = "rbxassetid://507771019", Loop = true },
+	{ Icon = "🕺", Name = "Groove", Id = "rbxassetid://507776043", Loop = true },
+}
+local emoteTrack: AnimationTrack? = nil
+local function playEmote(id: string, loop: boolean)
+	local character = player.Character
+	local hum = character and character:FindFirstChildOfClass("Humanoid")
+	if not hum then
+		return
+	end
+	local animator = hum:FindFirstChildOfClass("Animator") or Instance.new("Animator")
+	animator.Parent = hum
+	if emoteTrack then
+		emoteTrack:Stop(0.2)
+	end
+	local animation = Instance.new("Animation")
+	animation.AnimationId = id
+	local ok, track = pcall(function()
+		return (animator :: Animator):LoadAnimation(animation)
+	end)
+	if ok and track then
+		track.Priority = Enum.AnimationPriority.Action
+		track.Looped = loop
+		track:Play(0.2)
+		emoteTrack = track
+	end
+end
+game:GetService("RunService").Heartbeat:Connect(function()
+	local track = emoteTrack
+	local hum = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+	if track and track.IsPlaying and track.Looped and hum and hum.MoveDirection.Magnitude > 0.1 then
+		track:Stop(0.3) -- moving ends a dance
+		emoteTrack = nil
+	end
+end)
+local emotePanel = make("Frame", { AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -96), Size = UDim2.fromOffset(312, 132), BackgroundColor3 = CREAM, Visible = false }, gui)
+corner(emotePanel, 18)
+outline(emotePanel, 2)
+make("UIPadding", { PaddingTop = UDim.new(0, 10), PaddingBottom = UDim.new(0, 10), PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10) }, emotePanel)
+make("UIGridLayout", { CellSize = UDim2.new(1 / 3, -8, 0.5, -5), CellPadding = UDim2.fromOffset(8, 8), SortOrder = Enum.SortOrder.LayoutOrder }, emotePanel)
+for i, e in EMOTES do
+	local b = button(emotePanel, e.Icon .. " " .. e.Name, ORANGE, UDim2.new())
+	b.LayoutOrder = i
+	b.TextScaled = true
+	make("UITextSizeConstraint", { MaxTextSize = 18 }, b)
+	make("UIPadding", { PaddingLeft = UDim.new(0, 4), PaddingRight = UDim.new(0, 4) }, b)
+	b.Activated:Connect(function()
+		playEmote(e.Id, e.Loop)
+		emotePanel.Visible = false
+	end)
+end
+Icon.new()
+	:setName("Emotes")
+	:setLabel(UI.short("😀 Emotes", "😀"))
+	:align("Right")
+	:oneClick()
+	:modifyTheme(pill(Color3.fromRGB(255, 200, 80)))
+	:bindEvent("selected", function()
+		emotePanel.Visible = not emotePanel.Visible
+	end)
+
 local musicIcon = Icon.new():setName("Music"):setLabel("🎵"):align("Right"):oneClick():modifyTheme(pill(Color3.fromRGB(150, 90, 255)))
 musicIcon:bindEvent("selected", function()
 	if music.Playing then
@@ -878,6 +946,8 @@ end)
 event.OnClientEvent:Connect(function(kind: string, v: any)
 	if kind == "Notice" and type(v) == "string" then
 		notify(v)
+	elseif kind == "LavaFX" and type(v) == "table" and v.Kind == "Crown" and v.Mine then
+		task.delay(0.3, playEmote, EMOTES[2].Id, false) -- you won: cheer!
 	end
 end)
 event:FireServer("Sync")

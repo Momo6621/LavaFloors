@@ -3,6 +3,24 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 2. Emotes (wave, cheer, laugh, point, two dances)
+
+**Research.** Kids use emotes to celebrate a win, greet friends and joke around without typing, and victory
+animations are one of the things Roblox itself teaches as a "feel good" moment
+([GeekChamp](https://geekchamp.com/?p=239646),
+[Roblox build-it-play-it: victory animation](https://developer.roblox.com/resources/build-it-play-it/2020summer/tier-2/overview)).
+On phones and tablets typing `/e dance` is awkward, so most young players never find emotes at all.
+
+**Gap.** LAVA Floors had no emote button, and winning the crown had no character reaction.
+
+**Built.** A "😀 Emotes" top bar pill opens a panel with six free emotes (Roblox's own default animations): Wave,
+Cheer, Laugh, Point, Dance and Groove. The two dances loop until you move. Winning the crown plays a cheer
+automatically. Nothing is sold; all six are free for everyone.
+
+**Verified.** Studio play test: the panel has all six buttons. After a server-sent Crown event for the player, the
+cheer track (rbxassetid://507770677) was playing on the character. The console showed no errors. The script size in
+Studio matched the repo (37545 bytes).
+
 ## 1. Pick the winner (knocked-out players stay in the game)
 
 **Research.** Parent guides and player-behaviour articles keep coming back to the same draws: playing with friends,
