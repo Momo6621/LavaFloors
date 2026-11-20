@@ -249,6 +249,7 @@ local L = {
 	Mutator = MUTATORS[1],
 	Theme = "Sunset",
 	ShowdownAt = 0, -- 0 = no showdown this round
+	RoundId = 0, -- counts rounds on this server (analytics funnel sessions)
 }
 local friends: { [Player]: { [number]: boolean } } = {}
 
@@ -264,6 +265,44 @@ local pickups: { Pickup } = {}
 local function data(p: Player): any
 	local s = Profiles.Sessions[p]
 	return s and s.Data
+end
+
+-- Analytics (Creator Dashboard). Server-only, never blocks or errors gameplay; Studio playtests aren't recorded.
+local AnalyticsService = game:GetService("AnalyticsService")
+local function track(fn: () -> ())
+	task.spawn(function()
+		pcall(fn)
+	end)
+end
+-- Coins in (or out when spent=true): txn is the kind of flow, sku names the specific source or item.
+local function logCoins(p: Player, txn: string, amount: number, sku: string?, spent: boolean?)
+	local d = data(p)
+	if not d or amount <= 0 then
+		return
+	end
+	local balance = d.Coins
+	track(function()
+		AnalyticsService:LogEconomyEvent(p, if spent then Enum.AnalyticsEconomyFlowType.Sink else Enum.AnalyticsEconomyFlowType.Source, "Coins", amount, balance, txn, sku)
+	end)
+end
+-- First-session funnel (each step counts once per player): 1 Joined, 2 First round started, 3 First round
+-- finished, 4 Second round finished, 5 First crown.
+local function logOnboarding(p: Player, step: number, name: string)
+	track(function()
+		AnalyticsService:LogOnboardingFunnelStepEvent(p, step, name)
+	end)
+end
+-- Per-round funnel: 1 Entered, 2 Reached phase 3, 3 Reached the final phase, 4 Crowned.
+local function logRound(p: Player, step: number, name: string)
+	local session = tostring(L.RoundId)
+	track(function()
+		AnalyticsService:LogFunnelStepEvent(p, "Round", session, step, name)
+	end)
+end
+local function logEvent(p: Player, name: string, field: string)
+	track(function()
+		AnalyticsService:LogCustomEvent(p, name, 1, { [Enum.AnalyticsCustomFieldKeys.CustomField01.Name] = field })
+	end)
 end
 
 local function root(p: Player): BasePart?
@@ -494,6 +533,7 @@ local function challenge(p: Player, id: string, amount: number, best: boolean?)
 			if daily.P[id] >= c.Goal then
 				daily.C[id] = true
 				d.Coins = math.min(100000000, d.Coins + c.Reward)
+				logCoins(p, "Gameplay", c.Reward, "Challenge_" .. id)
 				pushStats(p)
 				event:FireClient(p, "LavaFX", { Kind = "Invite", Text = "📋 Challenge done!", Coins = c.Reward })
 				tell(p, "📋 Challenge complete: " .. string.format(c.Text, c.Goal) .. "! +" .. c.Reward .. " coins")
@@ -1708,6 +1748,7 @@ local function spawnDrop()
 			finish()
 			applyBoost(p, r, boost, at)
 			challenge(p, "Drops", 1)
+			logEvent(p, "DropGrabbed", boost.Id)
 		end,
 	})
 	task.spawn(function()
@@ -2070,6 +2111,8 @@ local function enter(p: Player): boolean
 		rescue = if existing then existing.rescue else false,
 		nextLift = if existing then existing.nextLift else 0,
 	}
+	logOnboarding(p, 2, "FirstRoundStarted")
+	logRound(p, 1, "Entered")
 	pcall(function()
 		p:RequestStreamAroundAsync(pl.Position, 2)
 	end)
@@ -2431,6 +2474,9 @@ local function payout()
 			if not d.TutorialDone then
 				d.TutorialDone = true
 				p:SetAttribute("Tutorial", false)
+				logOnboarding(p, 3, "FirstRoundFinished")
+			else
+				logOnboarding(p, 4, "SecondRoundFinished")
 			end
 			challenge(p, "Play", 1)
 			if r.crowned or r.alive then
@@ -2471,6 +2517,7 @@ local function payout()
 				coins = math.floor(coins * (1 + GameConfig.Vip.CoinBonus))
 			end
 			d.Coins = math.min(100000000, d.Coins + coins)
+			logCoins(p, "Gameplay", coins, "RoundPayout")
 			if A.Season and GameConfig.LavaPass then
 				local xp = GameConfig.LavaPass.XP
 				A.Season.AddXP(p, xp.Played + (if r.crowned then xp.Crowned elseif r.alive then xp.Survived else 0) + (if r.crowned or r.alive then r.embers * xp.Berry else 0))
@@ -2551,6 +2598,7 @@ local function raiseTile(p: Player)
 		return
 	end
 	d.Coins -= CFG.LiftCost
+	logCoins(p, "ContextualPurchase", CFG.LiftCost, "RaiseTile", true)
 	pushStats(p)
 	r.nextLift = t + CFG.LiftCooldown
 	local tile = platforms[(row - 1) * CFG.GridSize + col]
@@ -2563,6 +2611,8 @@ end
 
 local function crownPlayer(p: Player, r: Runner)
 	r.crowned = true
+	logOnboarding(p, 5, "FirstCrown")
+	logRound(p, 4, "Crowned")
 	badge(p, "FirstCrown")
 	local d = data(p)
 	if d then
@@ -3038,6 +3088,7 @@ shoveNearestBot = function(p: Player, from: Vector3, look: Vector3, maxDist: num
 end
 
 local function runRound()
+	L.RoundId += 1
 	clearTower()
 	buildTower()
 	applyTheme(tower)
@@ -3083,6 +3134,11 @@ local function runRound()
 				if r.alive and not r.crowned then
 					tell(p, if phase == #CFG.GridSpins then "🏁 FINAL PHASE — hold on!" else string.format("Phase %d of %d", phase, #CFG.GridSpins))
 					challenge(p, "Phase", phase, true)
+					if phase == 3 then
+						logRound(p, 2, "Phase3")
+					elseif phase == #CFG.GridSpins then
+						logRound(p, 3, "FinalPhase")
+					end
 				end
 			end
 		end
@@ -3533,6 +3589,7 @@ function L.HandleAction(p: Player, action: unknown, _value: unknown): boolean
 		else
 			d.Redeemed[code] = true
 			d.Coins = math.min(100000000, d.Coins + info.Coins)
+			logCoins(p, "Code", info.Coins, code)
 			pushStats(p)
 			event:FireClient(p, "LavaFX", { Kind = "Invite", Text = "🎁 Code " .. code, Coins = info.Coins })
 			tell(p, "🎁 Code " .. code .. " redeemed: +" .. info.Coins .. " coins!")
@@ -3545,6 +3602,7 @@ function L.HandleAction(p: Player, action: unknown, _value: unknown): boolean
 			for _, m in v.options do
 				if m.Id == _value then
 					v.votes[p] = m.Id
+					logEvent(p, "TwistVote", m.Id)
 					event:FireAllClients("LavaVoteCounts", voteCounts(v))
 					break
 				end
@@ -3756,6 +3814,7 @@ function L.Start(arena: any, remote: RemoteEvent, stats: (Player) -> (), notice:
 		end
 		d.InviteToday += 1
 		d.Coins = math.min(100000000, d.Coins + deal.InviteCoins)
+		logCoins(inviter, "Gameplay", deal.InviteCoins, "InviteReward")
 		pushStats(inviter)
 		coinFX(inviter, "👥 " .. inviteeName .. " joined!", deal.InviteCoins)
 		tell(inviter, "🎉 " .. inviteeName .. " joined from your invite! +" .. deal.InviteCoins .. " coins")
@@ -3824,6 +3883,7 @@ function L.Start(arena: any, remote: RemoteEvent, stats: (Player) -> (), notice:
 		if not d.WelcomeClaimed then
 			d.WelcomeClaimed = true
 			d.Coins = math.min(100000000, d.Coins + deal.WelcomeCoins)
+			logCoins(p, "Onboarding", deal.WelcomeCoins, "WelcomeGift")
 			pushStats(p)
 			coinFX(p, "🎁 Welcome gift!", deal.WelcomeCoins)
 			tell(p, "🎁 You joined from " .. (if inviter then inviter.DisplayName .. "'s" else "a friend's") .. " invite: +" .. deal.WelcomeCoins .. " coins!")
@@ -3877,6 +3937,7 @@ function L.Start(arena: any, remote: RemoteEvent, stats: (Player) -> (), notice:
 			if d then
 				pushChallenges(p)
 				p:SetAttribute("Tutorial", d.TutorialDone ~= true) -- first-round coach cards for new players
+				logOnboarding(p, 1, "Joined")
 			end
 		end)
 	end)

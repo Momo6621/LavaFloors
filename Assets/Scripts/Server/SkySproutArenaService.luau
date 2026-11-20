@@ -216,10 +216,14 @@ function A.HandleAction(p,action,value)
   A.Queue[p]=now;setMode(p,"Queue");tell(p,"Looking for another player near your floor…")end
  elseif action=="Skin"then
   if f or type(value)~="string"then return end
+  local before=data(p).Coins
   local ok,msg=Rules.skin(data(p),value,A.Pass~=nil and A.Pass.Owns(p));if ok then stats(p);equip(p)end;tell(p,msg)
+  local spent=before-data(p).Coins;if spent>0 then local bal=data(p).Coins;task.spawn(pcall,function()game:GetService("AnalyticsService"):LogEconomyEvent(p,Enum.AnalyticsEconomyFlowType.Sink,"Coins",spent,bal,Enum.AnalyticsEconomyTransactionType.Shop.Name,"Glove_"..value)end)end
  elseif action=="Hat"then
   if type(value)~="string"then return end
+  local before=data(p).Coins
   local ok,msg=Rules.hat(data(p),value,A.Pass~=nil and A.Pass.Has(p,"VIP"));if ok then stats(p);if A.OnHat then A.OnHat(p)end end;tell(p,msg)
+  local spent=before-data(p).Coins;if spent>0 then local bal=data(p).Coins;task.spawn(pcall,function()game:GetService("AnalyticsService"):LogEconomyEvent(p,Enum.AnalyticsEconomyFlowType.Sink,"Coins",spent,bal,Enum.AnalyticsEconomyTransactionType.Shop.Name,"Hat_"..value)end)end
  elseif action=="PassClaim"then
   if A.Season then A.Season.Claim(p,value)end
  elseif action=="WatchAd"then

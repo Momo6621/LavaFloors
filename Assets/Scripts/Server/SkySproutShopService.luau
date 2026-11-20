@@ -102,6 +102,10 @@ function S.ProcessReceipt(receipt: any): Enum.ProductPurchaseDecision
 		end
 		if coins then
 			d.Coins = math.min(100000000, d.Coins + coins)
+			local balance = d.Coins
+			task.spawn(pcall, function()
+				game:GetService("AnalyticsService"):LogEconomyEvent(p, Enum.AnalyticsEconomyFlowType.Source, "Coins", coins, balance, Enum.AnalyticsEconomyTransactionType.IAP.Name, "CoinPack_" .. tostring(receipt.ProductId))
+			end)
 			stats(p)
 			tell(p, string.format("💰 +%d coins! Thanks for supporting LAVA Floors.", coins))
 		elseif tip then
@@ -150,6 +154,10 @@ local function daily(p: Player)
 	d.LastDaily = today
 	d.DailyStreak = streak
 	d.Coins = math.min(100000000, d.Coins + reward)
+	local dailyBalance = d.Coins
+	task.spawn(pcall, function()
+		game:GetService("AnalyticsService"):LogEconomyEvent(p, Enum.AnalyticsEconomyFlowType.Source, "Coins", reward, dailyBalance, Enum.AnalyticsEconomyTransactionType.TimedReward.Name, "DailyStreak_" .. tostring(streak))
+	end)
 	stats(p)
 	task.wait(4)
 	if p.Parent == Players then
