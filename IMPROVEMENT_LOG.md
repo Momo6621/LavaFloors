@@ -3,6 +3,36 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 6. Cheers from the sidelines
+
+**Research.**
+- DevForum threads on round-based games keep repeating that waiting with nothing to do is the boring part
+  ([DevForum](https://devforum.roblox.com/t/how-can-i-make-this-round-based-game-less-boring/312762),
+  [DevForum](https://devforum.roblox.com/t/what-do-you-guys-think-is-better-for-when-players-are-waiting/1996143)).
+- Party-game design treats a long sit-out for knocked-out players as a poor fit, and says the game should be fun to
+  watch ([Wikipedia: party game](https://en.wikipedia.org/wiki/Party_game)).
+- Jackbox keeps knocked-out players in the game and lets the audience react with emoji
+  ([Jackbox audience play-along](https://www.jackboxgames.com/how-audience-play-along-differs-in-each-jackbox-game)).
+
+**Gap.** A knocked-out player sits out the rest of the round (up to about 50 s). They could pick a winner (entry 1),
+watch from above or explore, but couldn't interact with anyone.
+
+**Built.**
+- Anyone not climbing gets a glass bar of six preset emoji above the spectate label: 🔥 👏 😂 😱 💪 🎉. That includes
+  knocked-out players and players sitting the round out.
+- A tap floats the emoji up the right side of everyone's screen with the sender's name, then it fades. With Reduce
+  Motion on it fades in place.
+- There's no typing, so it's kid-safe. The server only accepts cheers during a round, from players who aren't
+  climbing, for one of the six emoji, at most one every 1.2 s.
+
+**Verified.** Two-player Studio test, with Player1 climbing and Player2 opted out and watching (cheer bar shown):
+- Player2 sent #2, #3 right away, #6 1.4 s later, #9, 1.5, and #4 1.4 s after that.
+- Player1 received exactly 👏, 🎉, 😱, each as a floating bubble that cleaned itself up.
+- The too-soon cheer, the out-of-range index and the fraction were dropped.
+- Earlier runs showed cheers from a player still climbing are rejected. This includes the phase-1 re-drop, where a
+  player knocked out in phase 1 is put back in, which first looked like a bug.
+- Server and client consoles showed no errors. Studio matches the repo byte for byte.
+
 ## 5. Accessibility: ⚠ on warning tiles, and Reduce Motion
 
 **Research.** A DevForum accessibility guide written by a disabled developer, and the replies to it, warn against

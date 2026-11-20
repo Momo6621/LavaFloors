@@ -304,7 +304,59 @@ UI.text(predictHint, "muted")
 local predictButtons: { TextButton } = {}
 local predictShown = ""
 local myPrediction: string? = nil
+-- Cheers: while you're out, tap an emoji to cheer the climbers; it floats up on everyone's screen with your name.
+-- Preset emoji only (no typing), and the server limits how often each player can send one.
+local CHEERS = { "🔥", "👏", "😂", "😱", "💪", "🎉" }
+local cheerBar: Frame = make("Frame", {
+	Name = "CheerBar",
+	AnchorPoint = Vector2.new(0.5, 1),
+	Position = UDim2.new(0.5, 0, 1, -66),
+	Size = UDim2.fromOffset(#CHEERS * 50 + 6, 52),
+	Visible = false,
+	ZIndex = 4,
+}, gui)
+UI.glass(cheerBar, 18)
+make("UIPadding", { PaddingLeft = UDim.new(0, 6), PaddingRight = UDim.new(0, 6), PaddingTop = UDim.new(0, 5), PaddingBottom = UDim.new(0, 5) }, cheerBar)
+make("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 6), HorizontalAlignment = Enum.HorizontalAlignment.Center, VerticalAlignment = Enum.VerticalAlignment.Center, SortOrder = Enum.SortOrder.LayoutOrder }, cheerBar)
+local cheerReadyAt = 0
+for i, emoji in CHEERS do
+	local b: TextButton = make("TextButton", { Name = "Cheer" .. i, LayoutOrder = i, Size = UDim2.fromOffset(44, 42), Font = FONT, TextScaled = true, Text = emoji, ZIndex = 5 }, cheerBar)
+	make("UICorner", { CornerRadius = UDim.new(0, 12) }, b)
+	UI.button(b, UI.Lava)
+	b.Activated:Connect(function()
+		if os.clock() >= cheerReadyAt then
+			cheerReadyAt = os.clock() + 1.2
+			event:FireServer("LavaCheer", i)
+		end
+	end)
+end
+local cheerFeed: Frame = make("Frame", { Name = "CheerFeed", BackgroundTransparency = 1, AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -56, 0.92, 0), Size = UDim2.fromOffset(150, 260), ZIndex = 4 }, gui)
+local liveCheers = 0
+local function showCheer(name: string, emoji: string)
+	if liveCheers >= 10 then
+		return
+	end
+	liveCheers += 1
+	local start = UDim2.new(0.3 + math.random() * 0.5, 0, 1, 0)
+	local bubble: Frame = make("Frame", { Name = "CheerBubble", BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 1), Position = start, Size = UDim2.fromOffset(110, 64), ZIndex = 4 }, cheerFeed)
+	local icon: TextLabel = make("TextLabel", { BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 44), Font = FONT, TextScaled = true, Text = emoji, ZIndex = 4 }, bubble)
+	local tag: TextLabel = make("TextLabel", { BackgroundTransparency = 1, Position = UDim2.fromOffset(0, 44), Size = UDim2.new(1, 0, 0, 18), Font = FONT, TextScaled = true, Text = name, TextColor3 = Color3.new(1, 1, 1), ZIndex = 4 }, bubble)
+	local outline: UIStroke = make("UIStroke", { Thickness = 1.5, Color = STROKE }, tag)
+	local info = TweenInfo.new(2.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	-- Floats up and drifts a little; with Reduce Motion it just fades where it appeared.
+	local finish = if REDUCED_MOTION then start else start + UDim2.fromOffset(math.random(-20, 20), -190)
+	TweenService:Create(bubble, info, { Position = finish }):Play()
+	TweenService:Create(icon, info, { TextTransparency = 1 }):Play()
+	TweenService:Create(tag, info, { TextTransparency = 1 }):Play()
+	TweenService:Create(outline, info, { Transparency = 1 }):Play()
+	task.delay(2.5, function()
+		bubble:Destroy()
+		liveCheers -= 1
+	end)
+end
+
 local function refreshPredict()
+	cheerBar.Visible = state.Phase == "Round" and not me.Running
 	if state.Phase ~= "Round" then
 		myPrediction = nil
 	end
@@ -637,6 +689,10 @@ event.OnClientEvent:Connect(function(kind: string, v: any)
 		task.delay(5, function()
 			banner.Visible = false
 		end)
+	elseif kind == "LavaCheer" then
+		if type(v) == "table" and state.Phase == "Round" and type(v.Name) == "string" and type(v.Emoji) == "string" then
+			showCheer(v.Name, v.Emoji)
+		end
 	elseif kind == "LavaResult" then
 		resultTitle.Text = if v.Outcome == "CROWNED" then "👑 ESCAPED!" elseif v.Outcome == "SURVIVED" then "🔥 SURVIVED!" else "💀 SCORCHED"
 		local titleGradient = resultTitle:FindFirstChild("TitleGradient")

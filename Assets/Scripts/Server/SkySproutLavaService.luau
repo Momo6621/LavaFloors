@@ -81,6 +81,9 @@ local CFG = {
 	PredictCoins = 15,
 	-- Personal best: climbing higher than ever before pays a small bonus, so even a lost round can be progress.
 	BestCoins = 10,
+	-- Cheers: knocked-out players tap a preset emoji (no typing) that floats up on everyone's screen.
+	Cheers = { "🔥", "👏", "😂", "😱", "💪", "🎉" },
+	CheerCooldown = 1.2,
 
 	-- Shove
 	ShoveRange = 9,
@@ -256,6 +259,7 @@ local L = {
 	ShowdownAt = 0, -- 0 = no showdown this round
 	RoundId = 0, -- counts rounds on this server (analytics funnel sessions)
 	Predictions = {} :: { [Player]: string }, -- knocked-out players' free "pick the winner" guesses this round
+	LastCheer = setmetatable({}, { __mode = "k" }) :: any, -- [Player] = time of their last cheer (rate limit)
 }
 local friends: { [Player]: { [number]: boolean } } = {}
 
@@ -3754,6 +3758,20 @@ function L.HandleAction(p: Player, action: unknown, _value: unknown): boolean
 			pushStats(p)
 			event:FireClient(p, "LavaFX", { Kind = "Invite", Text = "🎁 Code " .. code, Coins = info.Coins })
 			tell(p, "🎁 Code " .. code .. " redeemed: +" .. info.Coins .. " coins!")
+		end
+		return true
+	end
+	if action == "LavaCheer" then
+		-- Only players who are out can cheer, only during a round, one of the preset emoji, and not too often.
+		local r = L.Runners[p]
+		local stillIn = r ~= nil and r.alive and not r.crowned and p:GetAttribute("ArenaMode") == "LavaRush"
+		local i = tonumber(_value)
+		local emoji = if i and i % 1 == 0 then CFG.Cheers[i] else nil
+		if L.Phase == "Round" and not stillIn and emoji and now() >= (L.LastCheer[p] or 0) + CFG.CheerCooldown then
+			L.LastCheer[p] = now()
+			for _, other in Players:GetPlayers() do
+				event:FireClient(other, "LavaCheer", { Name = p.DisplayName, Emoji = emoji })
+			end
 		end
 		return true
 	end
