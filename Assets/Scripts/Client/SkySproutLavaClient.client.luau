@@ -1016,6 +1016,151 @@ UIS.InputBegan:Connect(function(input, processed)
 	end
 end)
 
+-- Active volcano: ash drifts down from the rim, sparks float up through the crater, the lava falls on the walls
+-- stream downward, and during a round the lava throws up glowing fountains every few seconds. All local and visual.
+local volcanoAir: Model? = nil
+local fallTextures: { Texture } = {}
+local blobs: { { part: BasePart, vel: Vector3, floorY: number } } = {}
+local nextFountain = 0
+
+local function buildVolcanoAir(crater: Instance, cx: number, cz: number)
+	local rimAttr = crater:GetAttribute("RimY")
+	local rimY = if type(rimAttr) == "number" then rimAttr else 80
+	local air = Instance.new("Model")
+	air.Name = "VolcanoAir"
+	local function emitterPart(name: string, size: Vector3, at: Vector3): BasePart
+		local p = Instance.new("Part")
+		p.Name = name
+		p.Anchored = true
+		p.CanCollide = false
+		p.CanQuery = false
+		p.CanTouch = false
+		p.Transparency = 1
+		p.Size = size
+		p.CFrame = CFrame.new(at)
+		p.Parent = air
+		return p
+	end
+	local ashPart = emitterPart("Ash", Vector3.new(190, 1, 190), Vector3.new(cx, rimY + 12, cz))
+	local ash = Instance.new("ParticleEmitter")
+	ash.Shape = Enum.ParticleEmitterShape.Box
+	ash.ShapeStyle = Enum.ParticleEmitterShapeStyle.Volume
+	ash.EmissionDirection = Enum.NormalId.Bottom
+	ash.Rate = 45
+	ash.Lifetime = NumberRange.new(10, 16)
+	ash.Speed = NumberRange.new(3, 6)
+	ash.SpreadAngle = Vector2.new(20, 20)
+	ash.RotSpeed = NumberRange.new(-90, 90)
+	ash.Rotation = NumberRange.new(0, 360)
+	ash.Color = ColorSequence.new(Color3.fromRGB(150, 140, 140), Color3.fromRGB(90, 85, 90))
+	ash.Size = NumberSequence.new(0.35)
+	ash.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.1, 0.25), NumberSequenceKeypoint.new(1, 0.6) })
+	ash.Parent = ashPart
+	local sparkPart = emitterPart("Sparks", Vector3.new(170, 50, 170), Vector3.new(cx, 30, cz))
+	local sparks = Instance.new("ParticleEmitter")
+	sparks.Shape = Enum.ParticleEmitterShape.Box
+	sparks.ShapeStyle = Enum.ParticleEmitterShapeStyle.Volume
+	sparks.EmissionDirection = Enum.NormalId.Top
+	sparks.Rate = 70
+	sparks.Lifetime = NumberRange.new(3, 6)
+	sparks.Speed = NumberRange.new(2, 5)
+	sparks.SpreadAngle = Vector2.new(35, 35)
+	sparks.LightEmission = 1
+	sparks.Color = ColorSequence.new(Color3.fromRGB(255, 220, 110), Color3.fromRGB(255, 70, 15))
+	sparks.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.35), NumberSequenceKeypoint.new(1, 0) })
+	sparks.Parent = sparkPart
+	air.Parent = workspace.CurrentCamera
+	volcanoAir = air
+	table.clear(fallTextures)
+	for _, d in crater:GetDescendants() do
+		if d:IsA("BasePart") and d.Name == "LavaFall" then
+			for layer = 1, 2 do
+				local tex = Instance.new("Texture")
+				tex.Face = Enum.NormalId.Front
+				tex.Texture = "rbxasset://textures/particles/smoke_main.dds"
+				tex.StudsPerTileU = if layer == 1 then 6 else 10
+				tex.StudsPerTileV = if layer == 1 then 9 else 15
+				tex.Color3 = if layer == 1 then Color3.fromRGB(255, 230, 130) else Color3.fromRGB(255, 160, 50)
+				tex.Transparency = if layer == 1 then 0.3 else 0.45
+				tex.Parent = d
+				table.insert(fallTextures, tex)
+			end
+		end
+	end
+end
+
+local function fountain(lava: BasePart, cx: number, cz: number)
+	local top = lava.Position.Y + lava.Size.Y / 2
+	local half = lava.Size.X / 2 - 2
+	-- Somewhere in the open lava around the grid.
+	local a = math.random() * math.pi * 2
+	local r = math.random() * 6 + half - 6
+	local at = Vector3.new(cx + math.cos(a) * r, top, cz + math.sin(a) * r)
+	burst(at, FIRE, 40, 18)
+	local me = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+	if me and me:IsA("BasePart") and (me.Position - at).Magnitude < 90 then
+		play("Scorch", 0.55 + math.random() * 0.1)
+	end
+	for _ = 1, 9 do
+		local blob = Instance.new("Part")
+		blob.Shape = Enum.PartType.Ball
+		blob.Material = Enum.Material.Neon
+		blob.Color = Color3.fromRGB(255, 120 + math.random(0, 80), 30)
+		local s = 0.7 + math.random() * 1.1
+		blob.Size = Vector3.new(s, s, s)
+		blob.Anchored = true
+		blob.CanCollide = false
+		blob.CanQuery = false
+		blob.CanTouch = false
+		blob.CastShadow = false
+		blob.CFrame = CFrame.new(at)
+		local trail = Instance.new("ParticleEmitter")
+		trail.Texture = "rbxasset://textures/particles/fire_main.dds"
+		trail.Rate = 40
+		trail.Lifetime = NumberRange.new(0.3, 0.6)
+		trail.Speed = NumberRange.new(0.5, 1.5)
+		trail.LightEmission = 1
+		trail.Color = FIRE
+		trail.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, s * 1.2), NumberSequenceKeypoint.new(1, 0) })
+		trail.Parent = blob
+		blob.Parent = workspace
+		local spread = Vector3.new(math.random() - 0.5, 0, math.random() - 0.5) * 22
+		table.insert(blobs, { part = blob, vel = spread + Vector3.new(0, 30 + math.random() * 22, 0), floorY = top })
+	end
+end
+
+Run.RenderStepped:Connect(function(dt: number)
+	local floors = workspace:FindFirstChild("SkySprout") and workspace.SkySprout:FindFirstChild("Floors")
+	local arena = floors and floors:FindFirstChild("Floor_1") and floors.Floor_1:FindFirstChild("LavaRush")
+	local crater = arena and arena:FindFirstChild("Crater", true)
+	local tower = arena and arena:FindFirstChild("LavaRushTower")
+	local cx = tower and tower:GetAttribute("CenterX")
+	local cz = tower and tower:GetAttribute("CenterZ")
+	if crater and type(cx) == "number" and type(cz) == "number" and not volcanoAir then
+		buildVolcanoAir(crater, cx, cz)
+	end
+	for _, tex in fallTextures do
+		tex.OffsetStudsV = (tex.OffsetStudsV - dt * (if tex.StudsPerTileV < 12 then 14 else 9)) % tex.StudsPerTileV
+	end
+	local lava = tower and tower:FindFirstChild("Lava")
+	if lava and lava:IsA("BasePart") and type(cx) == "number" and type(cz) == "number" and state.Phase == "Round" and os.clock() >= nextFountain then
+		nextFountain = os.clock() + 3 + math.random() * 3
+		fountain(lava, cx, cz)
+	end
+	for i = #blobs, 1, -1 do
+		local b = blobs[i]
+		b.vel += Vector3.new(0, -70 * dt, 0)
+		local pos = b.part.Position + b.vel * dt
+		if pos.Y < b.floorY and b.vel.Y < 0 then
+			burst(Vector3.new(pos.X, b.floorY, pos.Z), FIRE, 8, 8)
+			b.part:Destroy()
+			table.remove(blobs, i)
+		else
+			b.part.CFrame = CFrame.new(pos)
+		end
+	end
+end)
+
 -- Eruption: each time the floor rises the volcano rumbles: a short camera shake, and a few glowing rocks break off
 -- the crater rim and plunge into the lava. Purely visual and local, so it never touches anyone.
 local SHAKE_TIME = 0.7

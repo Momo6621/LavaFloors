@@ -93,7 +93,8 @@ local CFG = {
 	CraterFlare = 0.22,
 	CraterFlank = 64,
 	CraterSegments = 44,
-	CraterGap = 26,
+	CraterGap = 17,
+	CraterFallEvery = 5, -- a lava fall on every Nth wall section
 
 	-- Drops
 	DropEvery = 14,
@@ -691,6 +692,7 @@ local function buildArena()
 		local tiers = 4
 		local tierHeight = height / tiers
 		local outerRadius = CFG.CraterRadius
+		local hasFall = i % CFG.CraterFallEvery == 2 and taper >= 1
 		for k = 0, tiers - 1 do
 			local radius = CFG.CraterRadius + k * tierHeight * CFG.CraterFlare
 			local width = 2 * math.pi * radius / segments * 1.3
@@ -708,6 +710,37 @@ local function buildArena()
 					face * CFrame.new(craterRng:NextNumber(-width / 3, width / 3), 0, -thick / 2 - 0.05) * CFrame.Angles(0, 0, math.rad(craterRng:NextNumber(-25, 25))),
 					Color3.fromRGB(255, 95, 25), Enum.Material.Neon)
 				vein.CanCollide = false
+			end
+			if hasFall then
+				local flat = CFrame.lookAt(at, Vector3.new(c.X, at.Y, c.Z))
+				local fall = rock("LavaFall", Vector3.new(width * 0.32, tierHeight * 1.08, 0.5), flat * CFrame.new(0, 0, -thick / 2 - 0.4), Color3.fromRGB(255, 105, 25), Enum.Material.Neon)
+				fall.CanCollide = false
+				fall.CanQuery = false
+				fall.CanTouch = false
+				if k == 0 then
+					local poolAt = c + dir * (CFG.CraterRadius - 5) + Vector3.new(0, 0.3, 0)
+					local pool = rock("LavaFallPool", Vector3.new(0.4, 13, 13), CFrame.new(poolAt) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(255, 95, 20), Enum.Material.Neon)
+					pool.Shape = Enum.PartType.Cylinder
+					pool.CanCollide = false
+					pool.CanQuery = false
+					pool.CanTouch = false
+					local glow = Instance.new("PointLight")
+					glow.Color = Color3.fromRGB(255, 120, 40)
+					glow.Range = 26
+					glow.Brightness = 2
+					glow.Parent = pool
+					local splash = Instance.new("ParticleEmitter")
+					splash.Texture = "rbxasset://textures/particles/smoke_main.dds"
+					splash.EmissionDirection = Enum.NormalId.Right
+					splash.Rate = 6
+					splash.Lifetime = NumberRange.new(2, 3.5)
+					splash.Speed = NumberRange.new(4, 8)
+					splash.SpreadAngle = Vector2.new(25, 25)
+					splash.Color = ColorSequence.new(Color3.fromRGB(255, 150, 80), Color3.fromRGB(90, 70, 70))
+					splash.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.5), NumberSequenceKeypoint.new(1, 1) })
+					splash.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 4), NumberSequenceKeypoint.new(1, 11) })
+					splash.Parent = pool
+				end
 			end
 			if k == tiers - 1 then
 				-- The rim glows like lava is lapping at the lip: the way out.
