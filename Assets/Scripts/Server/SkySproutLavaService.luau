@@ -79,6 +79,8 @@ local CFG = {
 
 	-- Pick the winner: knocked-out players guess who wins (free, no stake) for a small coin reward.
 	PredictCoins = 15,
+	-- Personal best: climbing higher than ever before pays a small bonus, so even a lost round can be progress.
+	BestCoins = 10,
 
 	-- Shove
 	ShoveRange = 9,
@@ -2616,6 +2618,15 @@ local function payout()
 				banked = r.embers * CFG.EmberCoins
 			end
 			coins += banked
+			local height = math.floor(r.peak)
+			local prevBest = tonumber(d.BestHeight) or 0
+			local newBest = height > prevBest
+			if newBest then
+				d.BestHeight = height
+				p:SetAttribute("BestHeight", height)
+				coins += CFG.BestCoins
+				logEvent(p, "PersonalBest", if prevBest == 0 then "First" else "Beaten")
+			end
 			if A.RPG and A.RPG.AwardXP then
 				A.RPG.AwardXP(p, coins * CFG.XPPerCoin)
 			end
@@ -2646,7 +2657,10 @@ local function payout()
 			pushStats(p)
 			event:FireClient(p, "LavaResult", {
 				Outcome = if r.crowned then "CROWNED" elseif r.alive then "SURVIVED" else "SCORCHED",
-				Height = math.floor(r.peak),
+				Height = height,
+				Best = tonumber(d.BestHeight) or height,
+				NewBest = newBest,
+				PrevBest = prevBest,
 				Embers = if r.crowned or r.alive then r.embers else 0,
 				Doubled = r.crowned,
 				Coins = coins,
@@ -4102,6 +4116,7 @@ function L.Start(arena: any, remote: RemoteEvent, stats: (Player) -> (), notice:
 			if d then
 				pushChallenges(p)
 				p:SetAttribute("Tutorial", d.TutorialDone ~= true) -- first-round coach cards for new players
+				p:SetAttribute("BestHeight", tonumber(d.BestHeight) or 0) -- the 🏅 marker on the climb meter
 				logOnboarding(p, 1, "Joined")
 			end
 		end)
@@ -4112,6 +4127,7 @@ function L.Start(arena: any, remote: RemoteEvent, stats: (Player) -> (), notice:
 			if d then
 				pushChallenges(p)
 				p:SetAttribute("Tutorial", d.TutorialDone ~= true)
+				p:SetAttribute("BestHeight", tonumber(d.BestHeight) or 0)
 			end
 		end)
 	end

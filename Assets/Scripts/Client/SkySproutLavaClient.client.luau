@@ -630,7 +630,14 @@ event.OnClientEvent:Connect(function(kind: string, v: any)
 		end
 		resultTitle.TextColor3 = if v.Outcome == "SCORCHED" then Color3.fromRGB(255, 140, 120) else Color3.new(1, 1, 1)
 		local emberLine = if v.Embers > 0 then string.format("\n%d embers banked%s", v.Embers, if v.Doubled then " (x2!)" else "") else ""
-		resultBody.Text = string.format("Height %d  •  +%d coins%s%s%s", v.Height, v.Coins, if v.Boosted then " (2x)" else "", if v.Friends then " 👥+25%" else "", emberLine)
+		local bestLine = if v.NewBest and (tonumber(v.PrevBest) or 0) > 0 then string.format("\n🏅 NEW BEST! %d (was %d)", v.Height, v.PrevBest)
+			elseif v.NewBest then "\n🏅 First best: " .. tostring(v.Height) .. ". Beat it next round!"
+			elseif type(v.Best) == "number" then string.format("\nYour best: %d", v.Best)
+			else ""
+		resultBody.Text = string.format("Height %d  •  +%d coins%s%s%s%s", v.Height, v.Coins, if v.Boosted then " (2x)" else "", if v.Friends then " 👥+25%" else "", emberLine, bestLine)
+		if v.NewBest and (tonumber(v.PrevBest) or 0) > 0 then
+			play("Crown", 1.2)
+		end
 		result.Visible = true
 		pop(result)
 		task.delay(4.5, function()
@@ -1658,6 +1665,28 @@ local meterFloor: Frame = make("Frame", {
 make("UICorner", { CornerRadius = UDim.new(0, 4) }, meterFloor)
 local meterFloorStroke: UIStroke = make("UIStroke", { Thickness = 2.5, Color = Color3.fromRGB(40, 20, 30) }, meterFloor)
 local meterTicks: { Frame } = {}
+-- Your personal best: a gold line with a medal beside the bar, so you can see the height to beat this round.
+local meterBest: Frame = make("Frame", {
+	Name = "BestMark",
+	AnchorPoint = Vector2.new(0.5, 0.5),
+	Position = UDim2.fromScale(0.5, 0),
+	Size = UDim2.new(1, 10, 0, 3),
+	BackgroundColor3 = Color3.fromRGB(255, 215, 80),
+	BorderSizePixel = 0,
+	Visible = false,
+	ZIndex = 2,
+}, meter)
+make("TextLabel", {
+	AnchorPoint = Vector2.new(1, 0.5),
+	Position = UDim2.new(0, -4, 0.5, 0),
+	Size = UDim2.fromOffset(22, 22),
+	BackgroundTransparency = 1,
+	Font = FONT,
+	TextScaled = true,
+	Text = "🏅",
+	ZIndex = 2,
+}, meterBest)
+local bestCheered = false
 
 local meterLavaY: number? = nil
 local meterFloorFrac = 0
@@ -1673,6 +1702,7 @@ Run.RenderStepped:Connect(function(dt: number)
 	meter.Visible = show
 	if not show or not tower then
 		meterLavaY, riseY, rising = nil, nil, false
+		bestCheered = false
 		return
 	end
 	local t = workspace:GetServerTimeNow()
@@ -1714,6 +1744,20 @@ Run.RenderStepped:Connect(function(dt: number)
 	meterFloor.BackgroundColor3 = if blink then Color3.fromRGB(255, 70, 40) else Color3.fromHSV(theme.TileHue or 0.05, 0.35, 1)
 	meterFloorStroke.Color = if danger > 0.5 then Color3.fromRGB(120, 10, 0) else Color3.fromRGB(40, 20, 30)
 	meterCrown.TextTransparency = if meterFloorFrac > 0.97 then 0 else 0.35
+
+	-- Personal best marker. Heights are measured at your character, which stands about 3 studs above its tile.
+	local best = tonumber(player:GetAttribute("BestHeight")) or 0
+	local bestFrac = frac(bottom + best - 3)
+	meterBest.Visible = best > 0 and bestFrac < 0.97
+	meterBest.Position = UDim2.fromScale(0.5, 1 - bestFrac)
+	local myRoot = rootPart()
+	if me.Running and best > 0 and not bestCheered and myRoot and myRoot.Position.Y - bottom > best + 0.5 then
+		bestCheered = true -- climbed past your old best: cheer once per round
+		play("Crown", 1.5)
+		floatText(myRoot.Position + Vector3.new(0, 3, 0), "🏅 NEW BEST!")
+		burst(myRoot.Position, ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(255, 215, 80)), 50, 20)
+		pop(meterBest)
+	end
 
 	-- Whoosh + a little pop on the marker each time the floor starts to rise.
 	if riseY and gridY > riseY + 0.05 then

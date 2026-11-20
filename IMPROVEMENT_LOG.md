@@ -3,6 +3,37 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 4. Personal best height
+
+**Research.** Kids like floor-is-lava games because they're easy to pick up and the lava keeps rising, pushing you
+higher ([Pabau](https://mgmt.pabau.com/news/the-floor-is-lava-on-roblox)). Retention advice for Roblox says new
+players need quick proof that the game is worth continuing, and that drop-off often follows a run of losses
+([Opper roundtable](https://opper.ai/ai-roundtable/questions/how-can-i-improve-my-roblox-gamess-play-through-and-deep-029bbec3)).
+Visible progress keeps coming up as a top draw (see entry 1). In an elimination game most rounds end in a loss, so the
+progress has to show even when you lose.
+
+**Gap.** The result card showed "Height N" each round, but nothing remembered it, so a kid who got higher than ever
+before got the same "💀 SCORCHED" as a bad round.
+
+**Built.** Your best height is saved (BestHeight). Beating it:
+- adds a line to the result card: "🏅 NEW BEST! 82 (was 46)", or "🏅 First best: 46. Beat it next round!";
+- pays +10 coins (CFG.BestCoins);
+- plays a chime.
+
+Other rounds show "Your best: N". During a round, a gold 🏅 line on the climb meter marks the height to beat, and
+climbing past it pops a "🏅 NEW BEST!" over your character. Best heights are capped at the crown, so the bonus can't be
+farmed.
+
+**Verified.** Studio play test with two real rounds driven by a test script:
+- round 1 → "SCORCHED h=46 best=46 new=true prev=0", 16 coins including the bonus;
+- round 2 → "h=82 best=82 new=true prev=46", 22 coins.
+
+The BestHeight attribute updated to 82, the PersonalBest analytics event fired twice, and the console showed no
+errors. Script contents in Studio match the repo byte for byte (chunk hashes). The size check caught a patch bug: real
+line breaks inside three repo strings. Studio was correct and the repo was fixed. Not verified: the meter marker and
+the mid-round cheer, because Studio was in the background and the client rendered no frames. These need a hands-on
+look.
+
 ## 3. Weekly Top Climbers board
 
 **Research.** Leaderboards in the lobby are one of the most common retention tools in Roblox games: seeing who is
