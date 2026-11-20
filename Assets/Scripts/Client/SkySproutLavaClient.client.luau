@@ -262,6 +262,7 @@ UI.glass(banner, 22, UI.Gold)
 UI.text(bannerTitle, "title")
 UI.text(bannerNames, "body")
 UI.text(bannerAwards, "body")
+local showWinnerCam: (names: { any }, positions: { any }) -> () = function() end -- set in the Spectate section
 
 -- Final showdown announcement: a big glass card in the middle of the screen for a few seconds.
 -- First-round coach cards: a new player's first round walks them through the basics, one tip every few seconds.
@@ -763,6 +764,7 @@ event.OnClientEvent:Connect(function(kind: string, v: any)
 					burst(at + Vector3.new(0, 4, 0), PARTY, 120, 36)
 				end
 			end
+			showWinnerCam(names, v.Positions)
 		end
 		task.delay(5, function()
 			banner.Visible = false
@@ -1442,11 +1444,15 @@ end)
 
 local UIS = game:GetService("UserInputService")
 local spectating = false
-local function stopSpectate()
+local spectateAutoEnded = 0 -- when the round (not the player) last ended spectating
+local function stopSpectate(byPlayer: boolean?)
 	if not spectating then
 		return
 	end
 	spectating = false
+	if not byPlayer then
+		spectateAutoEnded = os.clock()
+	end
 	spectateLabel.Visible = false
 	Run:UnbindFromRenderStep("LavaSpectate")
 	workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
@@ -1497,9 +1503,49 @@ local LOOK_KEYS = {
 	[Enum.KeyCode.Space] = true,
 	[Enum.KeyCode.Thumbstick1] = true,
 }
+-- Winner cam: when a round ends, anyone who was watching from above swings round to the winner for a few seconds,
+-- so the whole server sees who escaped. Winners and players who walked off keep their own camera. A move key or a
+-- drag hands the camera back early; Reduce Motion cuts straight to a still shot instead of swooping and orbiting.
+local WINNER_CAM_SECONDS = 3.2
+local winnerCamUntil = 0
+local function winnerCam(at: Vector3)
+	stopSpectate()
+	local cam = workspace.CurrentCamera
+	local from = cam.CFrame
+	local started = os.clock()
+	local a0 = math.atan2(from.Position.Z - at.Z, from.Position.X - at.X)
+	winnerCamUntil = started + WINNER_CAM_SECONDS
+	Run:UnbindFromRenderStep("LavaWinnerCam")
+	Run:BindToRenderStep("LavaWinnerCam", Enum.RenderPriority.Camera.Value + 2, function()
+		local t = os.clock() - started
+		if os.clock() >= winnerCamUntil then
+			Run:UnbindFromRenderStep("LavaWinnerCam")
+			cam.CameraType = Enum.CameraType.Custom
+			return
+		end
+		cam.CameraType = Enum.CameraType.Scriptable
+		local a = a0 + (if REDUCED_MOTION then 0 else t * 0.35)
+		local goal = CFrame.lookAt(at + Vector3.new(math.cos(a) * 14, 6, math.sin(a) * 14), at + Vector3.new(0, 1.5, 0))
+		local ease = if REDUCED_MOTION then 1 else math.min(1, t / 0.8)
+		cam.CFrame = from:Lerp(goal, ease * ease * (3 - 2 * ease))
+	end)
+end
+showWinnerCam = function(names: { any }, positions: { any })
+	local watching = spectating or os.clock() - spectateAutoEnded < 2
+	local at = positions[1]
+	if not watching or typeof(at) ~= "Vector3" or table.find(names, player.DisplayName) then
+		return
+	end
+	winnerCam(at)
+end
+
 UIS.InputBegan:Connect(function(input, processed)
-	if spectating and not processed and (LOOK_KEYS[input.KeyCode] or input.UserInputType == Enum.UserInputType.MouseButton2 or input.UserInputType == Enum.UserInputType.Touch) then
-		stopSpectate()
+	local look = LOOK_KEYS[input.KeyCode] or input.UserInputType == Enum.UserInputType.MouseButton2 or input.UserInputType == Enum.UserInputType.Touch
+	if spectating and not processed and look then
+		stopSpectate(true)
+	end
+	if winnerCamUntil > os.clock() and not processed and look then
+		winnerCamUntil = 0
 	end
 end)
 

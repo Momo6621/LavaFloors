@@ -3,6 +3,32 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 10. Winner cam
+
+**Research.**
+- Roblox pitches emotes as the way to "celebrate a hard-earned win"
+  ([Roblox newsroom](https://corp.roblox.com/newsroom/2019/08/expanding-emotes-more-animations-more-fun)).
+- Party games such as Violent Party end each match on a winner screen that puts the top player front and centre
+  ([guide](https://allthings.how/how-to-play-violent-party-on-roblox-full-minigame-guide/)).
+- LAVA Floors already plays a cheer for the winner and fires a gold pillar and fireworks. But the players watching
+  from the overhead spectate camera saw it from about 70 studs up, so the winning moment was tiny on their screens.
+
+**Built.** When a round ends with a real winner, anyone who was watching from the spectate camera swings round to
+the winner and slowly orbits them for 3.2 s. Then the normal camera comes back, just as the results move everyone
+back to the lobby.
+- Winners keep their own view. So do players who had walked off on their own, so nobody's camera is grabbed mid-jump
+  on the Warm-up Hop.
+- Any move key, a right-drag or a touch hands the camera back at once.
+- With Roblox's Reduce Motion setting on, it cuts to a still shot instead of swooping and orbiting.
+
+**Verified.** In a Studio play test with the player in the lobby, not watching:
+- A server-sent winner banner showed, and the camera stayed `Custom`.
+- A malformed position was ignored.
+- The console showed no errors, and Studio matches the repo by chunk hash.
+
+Not verified: the swing and orbit themselves. They run in RenderStep, which doesn't fire while Studio is in the
+background. That needs a hands-on look: get knocked out, watch from above, and let someone else win.
+
 ## 9. Round awards on the winner banner
 
 **Research.**
