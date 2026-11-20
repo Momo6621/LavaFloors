@@ -2,6 +2,8 @@ return {
  Version=8,GameTitle="LAVA Floors",SaveName="SkyboundArena_Player_v1",PassId=0,
  DoubleLavaPassId=0,
  LavaPassPremiumId=0,
+ VipPassId=0, -- one-time VIP game pass (preferred over the subscription for a kids' game)
+ TrailPassId=0, -- Flame Trail cosmetic
  VipSubscriptionId="",
  ProductIds={Coins100=0,Coins500=0,Coins2000=0,Coins6000=0,Tip25=0,Tip100=0,Tip500=0,Tip1000=0},
  Tips={Tip25=25,Tip100=100,Tip500=500,Tip1000=1000},

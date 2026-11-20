@@ -283,6 +283,24 @@ if (C.PassId or 0) > 0 then
 		end,
 	})
 end
+if (C.TrailPassId or 0) > 0 then
+	local _, b = card(99, Color3.fromRGB(255, 150, 40), "🔥 Flame Trail")
+	b.Activated:Connect(function()
+		if not player:GetAttribute("TrailPass") then
+			MPS:PromptGamePassPurchase(player, C.TrailPassId)
+		end
+	end)
+	table.insert(cards, {
+		refresh = function()
+			if player:GetAttribute("TrailPass") then
+				setButton(b, "✓ OWNED", GREEN)
+			else
+				setButton(b, "R$", GOLD)
+				price(C.TrailPassId, Enum.InfoType.GamePass, b, "")
+			end
+		end,
+	})
+end
 if (C.DoubleLavaPassId or 0) > 0 then
 	local _, b = card(101, Color3.fromRGB(255, 90, 30), "🔥 2x Lava Coins")
 	b.Activated:Connect(function()
@@ -350,7 +368,7 @@ local function refreshShop()
 		c.refresh()
 	end
 end
-for _, attr in { "Coins", "GloveStyle", "HatStyle", "AuroraPass", "DoubleLavaPass", "VIP", "LavaPassPremium" } do
+for _, attr in { "Coins", "GloveStyle", "HatStyle", "AuroraPass", "DoubleLavaPass", "VIP", "LavaPassPremium", "TrailPass" } do
 	player:GetAttributeChangedSignal(attr):Connect(refreshShop)
 end
 for _, s in C.Skins do
@@ -540,6 +558,9 @@ vipButton.TextSize = 24
 local function refreshVip()
 	if player:GetAttribute("VIP") then
 		setButton(vipButton, "⭐ YOU'RE VIP — THANK YOU!", GREEN)
+	elseif (C.VipPassId or 0) > 0 then
+		setButton(vipButton, "GET VIP", GOLD)
+		price(C.VipPassId, Enum.InfoType.GamePass, vipButton, "GET VIP · ")
 	elseif type(C.VipSubscriptionId) == "string" and C.VipSubscriptionId ~= "" then
 		setButton(vipButton, "SUBSCRIBE", GOLD)
 	else
@@ -547,7 +568,12 @@ local function refreshVip()
 	end
 end
 vipButton.Activated:Connect(function()
-	if not player:GetAttribute("VIP") and type(C.VipSubscriptionId) == "string" and C.VipSubscriptionId ~= "" then
+	if player:GetAttribute("VIP") then
+		return
+	end
+	if (C.VipPassId or 0) > 0 then
+		MPS:PromptGamePassPurchase(player, C.VipPassId)
+	elseif type(C.VipSubscriptionId) == "string" and C.VipSubscriptionId ~= "" then
 		pcall(function()
 			MPS:PromptSubscriptionPurchase(player, C.VipSubscriptionId)
 		end)

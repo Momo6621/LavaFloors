@@ -1,5 +1,5 @@
 --!strict
--- Game passes (Aurora, 2x Lava Coins, Lava Pass premium) and the VIP subscription.
+-- Game passes (Aurora, 2x Lava Coins, Lava Pass premium, VIP, Flame Trail) and the optional VIP subscription.
 local Players = game:GetService("Players")
 local MarketplaceService = game:GetService("MarketplaceService")
 local RunService = game:GetService("RunService")
@@ -7,8 +7,8 @@ local C = require(game.ReplicatedStorage.SkySproutConfig) :: any
 local Profiles = require(script.Parent.SkySproutProfiles) :: any
 
 local P = {}
-local PASSES = { Aurora = "PassId", DoubleLava = "DoubleLavaPassId", LavaPass = "LavaPassPremiumId" }
-local owned: { [string]: { [Player]: boolean } } = { Aurora = {}, DoubleLava = {}, LavaPass = {} }
+local PASSES = { Aurora = "PassId", DoubleLava = "DoubleLavaPassId", LavaPass = "LavaPassPremiumId", VipPass = "VipPassId", Trail = "TrailPassId" }
+local owned: { [string]: { [Player]: boolean } } = { Aurora = {}, DoubleLava = {}, LavaPass = {}, VipPass = {}, Trail = {} }
 local vip: { [Player]: boolean } = {}
 local A: any
 local tell: (Player, string) -> ()
@@ -24,7 +24,7 @@ local function subscriptionId(): string?
 end
 
 function P.Has(p: Player, key: string): boolean
-	if key == "VIP" and vip[p] == true then
+	if key == "VIP" and (vip[p] == true or owned.VipPass[p] == true or (RunService:IsStudio() and p:GetAttribute("StudioGrantVipPass") == true)) then
 		return true
 	end
 	if owned[key] and owned[key][p] == true then
@@ -89,10 +89,55 @@ local function vipLook(p: Player)
 	end
 end
 
+-- Flame Trail: a fiery ribbon streaming from your back, in rounds and in the lobby.
+local function trailLook(p: Player)
+	local character = p.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart")
+	if not root then
+		return
+	end
+	local trail = root:FindFirstChild("FlameTrail")
+	if not P.Has(p, "Trail") then
+		if trail then
+			trail:Destroy()
+		end
+		return
+	end
+	if trail then
+		return
+	end
+	local top = root:FindFirstChild("FlameTrailTop") or Instance.new("Attachment")
+	top.Name = "FlameTrailTop"
+	top.Position = Vector3.new(0, 0.7, 0.4)
+	top.Parent = root
+	local bottom = root:FindFirstChild("FlameTrailBottom") or Instance.new("Attachment")
+	bottom.Name = "FlameTrailBottom"
+	bottom.Position = Vector3.new(0, -0.7, 0.4)
+	bottom.Parent = root
+	local t = Instance.new("Trail")
+	t.Name = "FlameTrail"
+	t.Attachment0 = top
+	t.Attachment1 = bottom
+	t.Lifetime = 0.45
+	t.MinLength = 0.05
+	t.LightEmission = 1
+	t.FaceCamera = true
+	t.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 240, 150)),
+		ColorSequenceKeypoint.new(0.4, Color3.fromRGB(255, 140, 40)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(200, 30, 10)),
+	})
+	t.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.1), NumberSequenceKeypoint.new(1, 1) })
+	t.WidthScale = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(1, 0.2) })
+	t.Parent = root
+end
+
 local function publish(p: Player)
 	if p.Parent ~= Players then
 		return
 	end
+	p:SetAttribute("TrailPass", P.Has(p, "Trail"))
+	trailLook(p)
 	p:SetAttribute("AuroraPass", P.Has(p, "Aurora"))
 	p:SetAttribute("DoubleLavaPass", P.Has(p, "DoubleLava"))
 	p:SetAttribute("LavaPassPremium", P.Has(p, "LavaPass"))
@@ -187,6 +232,14 @@ function P.Start(arena: any, notice: (Player, string) -> ())
 			owned.LavaPass[p] = true
 			publish(p)
 			tell(p, "🎟️ Lava Pass Premium unlocked! Claim your premium rewards in the Pass menu.")
+		elseif id == passId("VipPass") then
+			owned.VipPass[p] = true
+			publish(p)
+			tell(p, "⭐ Welcome to VIP! Thank you for supporting LAVA Floors.")
+		elseif id == passId("Trail") then
+			owned.Trail[p] = true
+			publish(p)
+			tell(p, "🔥 Flame Trail unlocked! Thank you for supporting LAVA Floors.")
 		end
 	end)
 	local function added(p: Player)
@@ -195,6 +248,7 @@ function P.Start(arena: any, notice: (Player, string) -> ())
 		p.CharacterAdded:Connect(function()
 			task.wait(0.5)
 			vipLook(p)
+			trailLook(p)
 		end)
 		if RunService:IsStudio() then
 			for key in PASSES do
