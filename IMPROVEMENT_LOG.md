@@ -3,6 +3,39 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 11. Away players sit out
+
+**Research.** DevForum threads on round-based games say idle players who get pulled into rounds "ruin the experience
+for others". The advice is to keep them out of the playing pool until they come back, and to count only active players
+when starting a round
+([1](https://devforum.roblox.com/t/make-1-player-afk-in-a-round-based-game-with-a-script-not-a-local-script/857220),
+[2](https://devforum.roblox.com/t/how-would-i-make-an-afk-system/3435486),
+[3](https://devforum.roblox.com/t/simple-afk-system/825577)).
+
+In party mode LAVA Floors queues everyone automatically. So a kid who walked away was dropped into every round and
+fell off. That took a slot a bot would have filled, and it changed the last-one-standing rule for everyone else.
+
+**Built.**
+- After 2 minutes with no input at all (`CFG.AwayAfter`, sent to clients as the workspace attribute `LavaAwayAfter`),
+  the client asks to sit out.
+- The server agrees only between climbs, and only if the player hadn't already chosen to sit out. It takes them out of
+  the queue and says "💤 You've been away, so you're sitting out. Move to jump back in!"
+- Any input afterwards (a key, a click, a touch or moving the mouse) sends them back: "🔥 Welcome back! You're in the next round."
+- Tapping Join also clears it. A player who opted out by hand is never put back automatically.
+- Benching is logged as an analytics custom event (`Away`).
+
+**Verified.** In a Studio play test, by firing the remotes from the client:
+- Benching mid-climb was refused.
+- In the lobby, benching set away and opt-out, and the player was not put into the next round (35 s watched).
+- Coming back cleared both, and the player was in the following round.
+- With the limit lowered to 5 s and no input, the client benched itself after 8 s.
+- Join cleared it.
+- After a manual opt-out, both "away" and "back" were ignored.
+- The console showed no errors, and Studio matches the repo by chunk hash.
+
+Not verified: real input bringing a player back. Studio was in the background, so no input events fired; the test
+sent "LavaBack" directly.
+
 ## 10. Winner cam
 
 **Research.**

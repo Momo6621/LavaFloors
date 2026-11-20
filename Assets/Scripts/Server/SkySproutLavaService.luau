@@ -98,6 +98,9 @@ local CFG = {
 	-- practice lava just sends you back to the start. No coins (nothing to farm); the server's fastest run shows.
 	HopFrom = 22, -- studs from the plaza centre to the start pad, sideways
 	HopMinTime = 2.5, -- runs faster than this are impossible and ignored
+	-- Away: seconds without any input before a player sits out the automatic rounds (published as the workspace
+	-- attribute LavaAwayAfter for the client). Any input brings them back.
+	AwayAfter = 120,
 
 	-- Shove
 	ShoveRange = 9,
@@ -3966,7 +3969,34 @@ end
 
 function L.HandleAction(p: Player, action: unknown, _value: unknown): boolean
 	if action == "LavaJoin" then
+		p:SetAttribute("LavaAway", nil)
 		toggleJoin(p)
+		return true
+	end
+	-- Away: after CFG.AwayAfter seconds with no input the client asks to sit the player out of the automatic rounds,
+	-- so nobody is dropped in to fall off while they're gone. Never mid-climb, and never over a player's own choice
+	-- to sit out. Their first input afterwards sends "LavaBack" and puts them back in the queue.
+	if action == "LavaAway" then
+		local r = L.Runners[p]
+		if GameConfig.PartyMode and not (r and r.alive) and not p:GetAttribute("LavaOptOut") then
+			L.Queue[p] = nil
+			p:SetAttribute("LavaOptOut", true)
+			p:SetAttribute("LavaAway", true)
+			tell(p, "💤 You've been away, so you're sitting out. Move to jump back in!")
+			logEvent(p, "Away", "Benched")
+			personal(p)
+			broadcast()
+		end
+		return true
+	end
+	if action == "LavaBack" then
+		if p:GetAttribute("LavaAway") then
+			p:SetAttribute("LavaAway", nil)
+			p:SetAttribute("LavaOptOut", nil)
+			tell(p, "🔥 Welcome back! You're in the next round.")
+			personal(p)
+			broadcast()
+		end
 		return true
 	end
 	if action == "RedeemCode" then
@@ -4094,6 +4124,7 @@ end
 
 function L.Start(arena: any, remote: RemoteEvent, stats: (Player) -> (), notice: (Player, string) -> ())
 	A, event, pushStats, tell = arena, remote, stats, notice
+	workspace:SetAttribute("LavaAwayAfter", CFG.AwayAfter)
 	publishEvent()
 	clearPreview()
 	buildArena()

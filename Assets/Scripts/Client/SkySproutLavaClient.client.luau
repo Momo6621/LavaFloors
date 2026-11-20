@@ -1549,6 +1549,35 @@ UIS.InputBegan:Connect(function(input, processed)
 	end
 end)
 
+-- Away: after the server's LavaAwayAfter seconds with no input at all, ask to sit out the automatic rounds (so you
+-- aren't dropped in to fall off while you're gone). The first input afterwards puts you back in the queue.
+do
+	local lastInput = os.clock()
+	local askedBack = false
+	local function active()
+		lastInput = os.clock()
+		if player:GetAttribute("LavaAway") and not askedBack then
+			askedBack = true
+			event:FireServer("LavaBack")
+		end
+	end
+	player:GetAttributeChangedSignal("LavaAway"):Connect(function()
+		askedBack = false
+		lastInput = os.clock()
+	end)
+	UIS.InputBegan:Connect(active)
+	UIS.InputChanged:Connect(active)
+	task.spawn(function()
+		while true do
+			task.wait(10)
+			local after = tonumber(workspace:GetAttribute("LavaAwayAfter"))
+			if after and os.clock() - lastInput > after and not player:GetAttribute("LavaAway") and not player:GetAttribute("LavaOptOut") then
+				event:FireServer("LavaAway")
+			end
+		end
+	end)
+end
+
 -- Active volcano: ash drifts down from the rim, sparks float up through the crater, the lava falls on the walls
 -- stream downward, and during a round the lava throws up glowing fountains every few seconds. All local and visual.
 local volcanoAir: Model? = nil
