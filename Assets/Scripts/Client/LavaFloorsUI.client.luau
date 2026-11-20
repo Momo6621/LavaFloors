@@ -93,6 +93,20 @@ player:GetAttributeChangedSignal("Coins"):Connect(stats)
 player:GetAttributeChangedSignal("Crowns"):Connect(stats)
 stats()
 
+local boostChip = make("Frame", { Position = UDim2.fromOffset(12, 62), Size = UDim2.fromOffset(200, 28), BackgroundColor3 = Color3.fromRGB(70, 190, 90), Visible = false }, gui)
+corner(boostChip, 14)
+outline(boostChip, 3)
+local boostText = label(boostChip, "", 16)
+boostText.TextColor3 = Color3.new(1, 1, 1)
+local function friendBoost()
+	local cfg = (require(game.ReplicatedStorage:WaitForChild("SkySproutConfig")) :: any).FriendDeal
+	local pct = math.floor(((cfg and cfg.Bonus) or 0.25) * 100)
+	boostText.Text = "👥 Friend boost +" .. pct .. "% coins"
+	boostChip.Visible = player:GetAttribute("FriendBoost") == true
+end
+player:GetAttributeChangedSignal("FriendBoost"):Connect(friendBoost)
+friendBoost()
+
 local toast = make("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 116), Size = UDim2.fromOffset(0, 40), AutomaticSize = Enum.AutomaticSize.X, BackgroundColor3 = CREAM, Visible = false }, gui)
 corner(toast, 20)
 outline(toast, 3)
@@ -594,20 +608,25 @@ TextChatService.OnIncomingMessage = function(message: TextChatMessage)
 end
 
 local SocialService = game:GetService("SocialService")
+local FRIEND_DEAL = (require(game.ReplicatedStorage:WaitForChild("SkySproutConfig")) :: any).FriendDeal
+	or { InviteCoins = 150, Bonus = 0.25 }
 Icon.new()
 	:setName("Invite")
-	:setLabel("👥 Invite")
+	:setLabel("👥 Invite +" .. tostring(FRIEND_DEAL.InviteCoins) .. "💰")
 	:align("Right")
 	:oneClick()
-	:setCaption("Friends here = +25% coins")
+	:setCaption(string.format("Invite a friend: you BOTH get %d coins • Play together: +%d%% coins", FRIEND_DEAL.InviteCoins, math.floor(FRIEND_DEAL.Bonus * 100)))
 	:modifyTheme(pill(Color3.fromRGB(70, 190, 90)))
 	:bindEvent("selected", function()
 		local ok, can = pcall(function()
 			return SocialService:CanSendGameInviteAsync(player)
 		end)
 		if ok and can then
+			notify(string.format("🎁 Friends who join from your invite: you both get %d coins!", FRIEND_DEAL.InviteCoins))
 			pcall(function()
-				SocialService:PromptGameInvite(player)
+				local options = Instance.new("ExperienceInviteOptions")
+				options.PromptMessage = string.format("Escape the volcano together! You both get %d coins when they join.", FRIEND_DEAL.InviteCoins)
+				SocialService:PromptGameInvite(player, options)
 			end)
 		else
 			notify("Invites aren't available here — share the game with your friends!")

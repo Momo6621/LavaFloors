@@ -1,7 +1,7 @@
 local C=require(game.ReplicatedStorage.SkySproutConfig)
 local R={}
 function R.floor(points)return math.clamp(1+math.floor(points/C.PointsPerFloor),1,C.MaxFloor)end
-function R.new()return {Version=8,Waystones={},Contracts={},XP=0,Style="Vanguard",Relic="Ember",BossClears={},Hunts={},Stories={},Coins=0,Points=0,BestFloor=1,Wins=0,Losses=0,Knockouts=0,Skin="Mint",Owned={Mint=true},FloorQuests={},Receipts={},LastDaily=0,DailyStreak=0,Crowns=0,Hat="",OwnedHats={},PassSeason=0,PassXP=0,PassFree={},PassPrem={},Tipped=0}end
+function R.new()return {Version=8,Waystones={},Contracts={},XP=0,Style="Vanguard",Relic="Ember",BossClears={},Hunts={},Stories={},Coins=0,Points=0,BestFloor=1,Wins=0,Losses=0,Knockouts=0,Skin="Mint",Owned={Mint=true},FloorQuests={},Receipts={},LastDaily=0,DailyStreak=0,Crowns=0,Hat="",OwnedHats={},PassSeason=0,PassXP=0,PassFree={},PassPrem={},Tipped=0,WelcomeClaimed=false,Invited={},InviteDay=0,InviteToday=0}end
 function R.clean(raw)
  local p=R.new();if type(raw)~="table"then return p end
  for _,k in ipairs({"Coins","Points","Wins","Losses","Knockouts","BestFloor","XP","Crowns"})do
@@ -35,6 +35,10 @@ function R.clean(raw)
  p.XP=math.min(200000,p.XP)
  if type(raw.LastDaily)=="number"and raw.LastDaily==raw.LastDaily then p.LastDaily=math.clamp(math.floor(raw.LastDaily),0,10000000)end
  if type(raw.DailyStreak)=="number"and raw.DailyStreak==raw.DailyStreak then p.DailyStreak=math.clamp(math.floor(raw.DailyStreak),0,7)end
+ p.WelcomeClaimed=raw.WelcomeClaimed==true
+ if type(raw.Invited)=="table"then for _,id in ipairs(raw.Invited)do if type(id)=="number"and id==id and math.abs(id)<1e15 and #p.Invited<200 then table.insert(p.Invited,math.floor(id))end end end
+ if type(raw.InviteDay)=="number"and raw.InviteDay==raw.InviteDay then p.InviteDay=math.clamp(math.floor(raw.InviteDay),0,10000000)end
+ if type(raw.InviteToday)=="number"and raw.InviteToday==raw.InviteToday then p.InviteToday=math.clamp(math.floor(raw.InviteToday),0,1000)end
  if type(raw.Receipts)=="table"then for _,id in ipairs(raw.Receipts)do if type(id)=="string"and #id<=64 and #p.Receipts<60 then table.insert(p.Receipts,id)end end end
  local rpg=require(game.ReplicatedStorage.SkySproutRPGConfig)
  if type(raw.Style)=="string"and rpg.Styles[raw.Style]and rpg.Styles[raw.Style].Floor<=p.BestFloor then p.Style=raw.Style end

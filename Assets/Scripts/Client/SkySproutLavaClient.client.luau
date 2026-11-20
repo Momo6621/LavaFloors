@@ -304,6 +304,15 @@ event.OnClientEvent:Connect(function(kind: string, v: any)
 					tint.BackgroundTransparency = 0.35
 				end
 			end
+		elseif v.Kind == "Invite" then
+			-- Invite deal paid out: a gold burst over your head and the amount floating up.
+			play("Crown", 1.2)
+			local r = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+			if r and r:IsA("BasePart") then
+				burst(r.Position + Vector3.new(0, 3, 0), ColorSequence.new(Color3.fromRGB(255, 240, 150), Color3.fromRGB(255, 190, 40)), 70, 22)
+				floatText(r.Position + Vector3.new(0, 4, 0), string.format("%s +%d 💰", tostring(v.Text or ""), tonumber(v.Coins) or 0))
+			end
+			pop(title)
 		elseif v.Kind == "Crown" then
 			play("Crown")
 			if v.Position then

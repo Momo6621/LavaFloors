@@ -6,6 +6,9 @@ return {
  ProductIds={Coins100=0,Coins500=0,Coins2000=0,Coins6000=0,Tip25=0,Tip100=0,Tip500=0,Tip1000=0},
  Tips={Tip25=25,Tip100=100,Tip500=500,Tip1000=1000},
  Vip={CoinBonus=0.25,DailyMultiplier=2,Hat="GoldenApple"},
+ -- Friend deal: when someone joins from your invite you both get coins (once per friend; the welcome gift once per
+ -- account). Playing with a friend, or someone you invited, gives +Bonus coins every round.
+ FriendDeal={InviteCoins=150,WelcomeCoins=150,DailyCap=5,MinAccountAgeDays=3,Bonus=0.25},
  BadgeIds={FirstRound=0,FirstCrown=0,TenCrowns=0,PlayWithFriend=0},
  PartyMode=true,
  SkipTowerApproach=true,

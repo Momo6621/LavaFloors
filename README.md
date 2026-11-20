@@ -35,6 +35,12 @@ The arena sits inside a volcano crater. The lobby is on the crater floor, a wide
 you can walk out onto the island, and the grid climbs the inside of the crater: the last rise lifts it just over the
 glowing rim, so the winners escape the volcano. Every rise makes the volcano rumble and throw rocks into the lava.
 
+Friend deal: tap 👥 Invite. When a friend joins from your invite you both get 150 coins (once per friend; the
+welcome gift once per account; up to 5 invite rewards a day; accounts under 3 days old don't pay the inviter). If you
+have left, the reward waits for your next visit. Playing in the same server as a friend, or someone you invited, gives
++25% coins every round, shown by the green "Friend boost" badge. Numbers live in `FriendDeal` in SkySproutConfig.
+In Studio, set the workspace attribute `StudioFakeReferrer` to a test player's UserId to simulate an invite.
+
 | | |
 |---|---|
 | ![Purple Moon](Media/purple-moon.jpg) | ![Blue Inferno](Media/blue-inferno.jpg) |

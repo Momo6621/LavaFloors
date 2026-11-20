@@ -68,7 +68,7 @@ local CFG = {
 	SurviveCoins = 20,
 	CrownCoins = 60,
 	XPPerCoin = 2,
-	FriendBonus = 0.25,
+	FriendBonus = (GameConfig.FriendDeal and GameConfig.FriendDeal.Bonus) or 0.25,
 
 	-- Shield
 	ShieldOrbs = 2,
@@ -2756,6 +2756,8 @@ function L.Start(arena: any, remote: RemoteEvent, stats: (Player) -> (), notice:
 					friends[p][o.UserId] = true
 					friends[o] = friends[o] or {}
 					friends[o][p.UserId] = true
+					p:SetAttribute("FriendBoost", true)
+					o:SetAttribute("FriendBoost", true)
 					tell(p, "👥 " .. o.DisplayName .. " is here — friend bonus: +25% coins every round!")
 					tell(o, "👥 " .. p.DisplayName .. " joined — friend bonus: +25% coins every round!")
 				end
@@ -2770,6 +2772,11 @@ function L.Start(arena: any, remote: RemoteEvent, stats: (Player) -> (), notice:
 	end
 	Players.PlayerRemoving:Connect(function(p)
 		friends[p] = nil
+		task.defer(function()
+			for _, o in Players:GetPlayers() do
+				o:SetAttribute("FriendBoost", hasFriendHere(o))
+			end
+		end)
 		awarded[p] = nil
 		L.Queue[p] = nil
 		L.Runners[p] = nil
@@ -2781,6 +2788,152 @@ function L.Start(arena: any, remote: RemoteEvent, stats: (Player) -> (), notice:
 			end
 		end)
 	end)
+
+	-- Friend deal. Roblox fills Player:GetJoinData().ReferredByPlayerId when someone joins from an invite (the server
+	-- reads it, so clients can't fake it). The new player gets a one-time welcome gift; the inviter gets coins once
+	-- per new player, capped per day, and only for accounts a few days old so alt accounts can't farm it. If the
+	-- inviter isn't in this server the reward waits in a small DataStore queue until they next join.
+	local deal = GameConfig.FriendDeal
+	local inviteStore = if Run:IsStudio() then nil else game:GetService("DataStoreService"):GetDataStore("LavaFloorsInvites")
+	local function today(): number
+		return math.floor(os.time() / 86400)
+	end
+	local function waitData(p: Player): any
+		for _ = 1, 40 do
+			local d = data(p)
+			if d or not p.Parent then
+				return d
+			end
+			task.wait(0.5)
+		end
+		return nil
+	end
+	local function coinFX(p: Player, text: string, amount: number)
+		event:FireClient(p, "LavaFX", { Kind = "Invite", Text = text, Coins = amount })
+	end
+	local function rewardInviter(inviter: Player, inviteeId: number, inviteeName: string)
+		local d = data(inviter)
+		if not d or table.find(d.Invited, inviteeId) then
+			return
+		end
+		table.insert(d.Invited, inviteeId)
+		if #d.Invited > 200 then
+			table.remove(d.Invited, 1)
+		end
+		if d.InviteDay ~= today() then
+			d.InviteDay, d.InviteToday = today(), 0
+		end
+		if d.InviteToday >= deal.DailyCap then
+			tell(inviter, "👥 " .. inviteeName .. " joined from your invite! (You've had today's " .. deal.DailyCap .. " invite rewards.)")
+			return
+		end
+		d.InviteToday += 1
+		d.Coins = math.min(100000000, d.Coins + deal.InviteCoins)
+		pushStats(inviter)
+		coinFX(inviter, "👥 " .. inviteeName .. " joined!", deal.InviteCoins)
+		tell(inviter, "🎉 " .. inviteeName .. " joined from your invite! +" .. deal.InviteCoins .. " coins")
+	end
+	local function setBoost(p: Player)
+		if p.Parent then
+			p:SetAttribute("FriendBoost", hasFriendHere(p))
+		end
+	end
+	local function link(a: Player, b: Player)
+		friends[a] = friends[a] or {}
+		friends[b] = friends[b] or {}
+		friends[a][b.UserId] = true
+		friends[b][a.UserId] = true
+		setBoost(a)
+		setBoost(b)
+	end
+	local function claimQueued(p: Player)
+		if not inviteStore then
+			return
+		end
+		local queued = nil
+		pcall(function()
+			inviteStore:UpdateAsync("i_" .. p.UserId, function(old)
+				queued = old
+				return if type(old) == "table" and #old > 0 then {} else nil
+			end)
+		end)
+		if type(queued) == "table" then
+			for _, entry in queued do
+				if type(entry) == "table" and type(entry.Id) == "number" then
+					rewardInviter(p, entry.Id, tostring(entry.Name or "A friend"))
+				end
+			end
+		end
+	end
+	local function checkReferral(p: Player)
+		local d = waitData(p)
+		if not d then
+			return
+		end
+		claimQueued(p)
+		-- The referral can take a moment to show up after joining.
+		local referrer = 0
+		for _ = 1, 10 do
+			local ok, join = pcall(function()
+				return p:GetJoinData()
+			end)
+			local id = if ok and type(join) == "table" then tonumber(join.ReferredByPlayerId) else nil
+			if Run:IsStudio() then
+				id = tonumber(workspace:GetAttribute("StudioFakeReferrer")) or id
+			end
+			if id and id ~= 0 then
+				referrer = id
+				break
+			end
+			if not p.Parent then
+				return
+			end
+			task.wait(1)
+		end
+		if referrer == 0 or referrer == p.UserId then
+			return
+		end
+		local inviter = Players:GetPlayerByUserId(referrer)
+		if not d.WelcomeClaimed then
+			d.WelcomeClaimed = true
+			d.Coins = math.min(100000000, d.Coins + deal.WelcomeCoins)
+			pushStats(p)
+			coinFX(p, "🎁 Welcome gift!", deal.WelcomeCoins)
+			tell(p, "🎁 You joined from " .. (if inviter then inviter.DisplayName .. "'s" else "a friend's") .. " invite: +" .. deal.WelcomeCoins .. " coins!")
+		end
+		if inviter then
+			link(inviter, p) -- you count as friends for the play-together bonus, even if you aren't Roblox friends yet
+			tell(p, "👥 Play with " .. inviter.DisplayName .. " for +" .. math.floor(deal.Bonus * 100) .. "% coins every round!")
+		end
+		if p.AccountAge < deal.MinAccountAgeDays and not Run:IsStudio() then
+			return
+		end
+		if inviter then
+			rewardInviter(inviter, p.UserId, p.DisplayName)
+		elseif inviteStore then
+			pcall(function()
+				inviteStore:UpdateAsync("i_" .. referrer, function(old)
+					local list = if type(old) == "table" then old else {}
+					for _, entry in list do
+						if type(entry) == "table" and entry.Id == p.UserId then
+							return nil
+						end
+					end
+					if #list >= 50 then
+						return nil
+					end
+					table.insert(list, { Id = p.UserId, Name = p.DisplayName })
+					return list
+				end)
+			end)
+		end
+	end
+	Players.PlayerAdded:Connect(function(p)
+		task.spawn(checkReferral, p)
+	end)
+	for _, p in Players:GetPlayers() do
+		task.spawn(checkReferral, p)
+	end
 	task.spawn(loop)
 	print("Lava Rush ready — floor-is-lava rounds on floor 1.")
 end
