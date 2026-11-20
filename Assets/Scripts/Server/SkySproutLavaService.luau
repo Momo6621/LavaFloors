@@ -101,6 +101,10 @@ local CFG = {
 	-- Away: seconds without any input before a player sits out the automatic rounds (published as the workspace
 	-- attribute LavaAwayAfter for the client). Any input brings them back.
 	AwayAfter = 120,
+	-- Underdog shield: knocked out UnderdogAfter rounds in a row (in this server), you start the next round in a
+	-- bubble shield for UnderdogShield seconds. A small catch-up for kids who are still learning; resets when you survive.
+	UnderdogAfter = 3,
+	UnderdogShield = 15,
 
 	-- Shove
 	ShoveRange = 9,
@@ -279,6 +283,7 @@ local L = {
 	RoundId = 0, -- counts rounds on this server (analytics funnel sessions)
 	Predictions = {} :: { [Player]: string }, -- knocked-out players' free "pick the winner" guesses this round
 	LastCheer = setmetatable({}, { __mode = "k" }) :: any, -- [Player] = time of their last cheer (rate limit)
+	LossStreak = setmetatable({}, { __mode = "k" }) :: any, -- [Player] = rounds in a row knocked out (this server)
 }
 local friends: { [Player]: { [number]: boolean } } = {}
 
@@ -1720,8 +1725,9 @@ end
 
 -- Boosts
 
-local function grantShield(p: Player, character: Model, r: Runner, position: Vector3)
-	r.shieldUntil = now() + CFG.ShieldTime
+local function grantShield(p: Player, character: Model, r: Runner, position: Vector3, seconds: number?, message: string?)
+	local lasts = seconds or CFG.ShieldTime
+	r.shieldUntil = now() + lasts
 	local old = character:FindFirstChild("LavaBubble")
 	if old then
 		old:Destroy()
@@ -1730,13 +1736,13 @@ local function grantShield(p: Player, character: Model, r: Runner, position: Vec
 	bubble.Name = "LavaBubble"
 	bubble.Visible = true
 	bubble.Parent = character
-	task.delay(CFG.ShieldTime, function()
+	task.delay(lasts, function()
 		if bubble.Parent then
 			bubble:Destroy()
 		end
 	end)
 	event:FireClient(p, "LavaFX", { Kind = "Shield", Position = position })
-	tell(p, "🛡️ Bubble shield! Shoves can't move you for " .. CFG.ShieldTime .. "s.")
+	tell(p, message or ("🛡️ Bubble shield! Shoves can't move you for " .. lasts .. "s."))
 end
 
 local function baseWalkSpeed(): number
@@ -2416,6 +2422,10 @@ local function enter(p: Player): boolean
 	local stepIndex = pl:GetAttribute("StepIndex")
 	local at = ((if type(stepIndex) == "number" then tileDelta(stepIndex) else CFrame.identity) * pl.CFrame).Position + Vector3.new(0, 4.5, 0)
 	p.Character:PivotTo(CFrame.lookAt(at, Vector3.new(CFG.Center.X, at.Y, CFG.Center.Z)))
+	local runner = L.Runners[p]
+	if runner and (L.LossStreak[p] or 0) >= CFG.UnderdogAfter and now() >= runner.shieldUntil then
+		grantShield(p, p.Character, runner, at, CFG.UnderdogShield, "🫧 Underdog shield! Tough few rounds, so shoves can't move you for " .. CFG.UnderdogShield .. "s.")
+	end
 	personal(p)
 	return true
 end
@@ -2776,6 +2786,7 @@ local function payout()
 			if r.crowned or r.alive then
 				challenge(p, "Survive", 1)
 			end
+			L.LossStreak[p] = if r.crowned or r.alive then 0 else (L.LossStreak[p] or 0) + 1
 			if r.crowned then
 				challenge(p, "Win", 1)
 			end

@@ -3,6 +3,31 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 12. Underdog shield
+
+**Research.**
+- Catch-up ("rubber band") mechanics keep players who are behind engaged, and work best in casual and party games
+  ([Game Developer](https://gamedeveloper.com/design/the-value-of-rubber-banding-an-engagement-driver-),
+  [feedback loops](https://computerscience.chemeketa.edu/cis125greader/MechanicsDynamics/FeedbackLoops.html)).
+- The same writing warns that too much catch-up makes good play pointless, and that the blue shell punishes the
+  leader. The gentle kind is a small, fixed help for whoever is behind, like Catan's free resource.
+- LAVA Floors had nothing for a kid who keeps falling first.
+
+**Built.** Knocked out 3 rounds in a row in this server (`CFG.UnderdogAfter`), you start the next round inside the
+bubble shield for 15 s (`CFG.UnderdogShield`, vs 7 s for the blueberry pickup). The message is "🫧 Underdog shield! Tough few
+rounds, so shoves can't move you for 15s."
+- It only stops shoves. The lava, cracking tiles and the climb are unchanged, so it can't win a round for you.
+- Surviving or winning resets the count.
+- It's free and automatic, nothing to buy, and isn't saved between servers.
+- `grantShield` now takes an optional duration and message. The blueberry pickup is unchanged.
+
+**Verified.** In a solo Studio play test, the client stepped into the lava after phase 1 each round:
+- Round entries 1–3 had no bubble. Entry 4 had the bubble and the underdog message.
+- The bubble was gone about 12–16 s later.
+- The console showed no errors, and Studio matches the repo by chunk hash.
+
+Not verified: the reset after surviving. A test player can't survive a round while Studio is in the background.
+
 ## 11. Away players sit out
 
 **Research.** DevForum threads on round-based games say idle players who get pulled into rounds "ruin the experience
