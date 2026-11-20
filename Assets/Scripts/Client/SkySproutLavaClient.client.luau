@@ -110,13 +110,26 @@ stroked(title)
 local info: TextLabel = make("TextLabel", { BackgroundTransparency = 1, Position = UDim2.fromOffset(12, 40), Size = UDim2.new(1, -24, 0, 24), Font = FONT, TextScaled = true, TextColor3 = Color3.new(1, 1, 1), Text = "" }, panel)
 stroked(info)
 
+-- End-of-round cards stack in one column (winner banner on top, your result under it) that starts just below the
+-- notice strip, so the notice, banner and result never cover each other. The column shrinks to fit short screens.
+local NOTICE_BOTTOM = 156 -- the notice toast in LavaFloorsUI sits at 116..156 below the top bar
+local endStack: Frame = make("Frame", {
+	Name = "EndStack",
+	AnchorPoint = Vector2.new(0.5, 0),
+	Position = UDim2.new(0.5, 0, 0, NOTICE_BOTTOM + 10),
+	Size = UDim2.new(1, -24, 0, 0),
+	AutomaticSize = Enum.AutomaticSize.Y,
+	BackgroundTransparency = 1,
+}, gui)
+make("UIListLayout", { FillDirection = Enum.FillDirection.Vertical, HorizontalAlignment = Enum.HorizontalAlignment.Center, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 10) }, endStack)
+local endScale: UIScale = make("UIScale", {}, endStack)
+
 local result: Frame = make("Frame", {
-	AnchorPoint = Vector2.new(0.5, 0.5),
-	Position = UDim2.fromScale(0.5, 0.4),
-	Size = UDim2.new(1, -24, 0, 170),
+	LayoutOrder = 2,
+	Size = UDim2.new(1, 0, 0, 170),
 	BackgroundColor3 = Color3.new(1, 1, 1),
 	Visible = false,
-}, gui)
+}, endStack)
 make("UISizeConstraint", { MaxSize = Vector2.new(380, 170) }, result)
 make("UICorner", { CornerRadius = UDim.new(0, 20) }, result)
 make("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(255, 150, 40), Color3.fromRGB(235, 60, 25)) }, result)
@@ -127,12 +140,22 @@ local resultBody: TextLabel = make("TextLabel", { BackgroundTransparency = 1, Po
 stroked(resultBody)
 
 local banner: Frame = make("Frame", {
-	AnchorPoint = Vector2.new(0.5, 0),
-	Position = UDim2.new(0.5, 0, 0, 150),
-	Size = UDim2.new(1, -24, 0, 120),
+	LayoutOrder = 1,
+	Size = UDim2.new(1, 0, 0, 120),
 	BackgroundColor3 = Color3.new(1, 1, 1),
 	Visible = false,
-}, gui)
+}, endStack)
+
+local function fitEndStack()
+	local top = GuiService:GetGuiInset().Y + NOTICE_BOTTOM + 10
+	endStack.Position = UDim2.new(0.5, 0, 0, top)
+	local need = (if banner.Visible then 120 else 0) + (if result.Visible then 170 else 0) + (if banner.Visible and result.Visible then 10 else 0)
+	local room = workspace.CurrentCamera.ViewportSize.Y - top - 12
+	endScale.Scale = if need > 0 then math.clamp(room / need, 0.45, 1) else 1
+end
+banner:GetPropertyChangedSignal("Visible"):Connect(fitEndStack)
+result:GetPropertyChangedSignal("Visible"):Connect(fitEndStack)
+workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fitEndStack)
 make("UISizeConstraint", { MaxSize = Vector2.new(520, 120) }, banner)
 make("UICorner", { CornerRadius = UDim.new(0, 22) }, banner)
 make("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(255, 225, 80), Color3.fromRGB(255, 150, 30)) }, banner)
