@@ -41,6 +41,22 @@ have left, the reward waits for your next visit. Playing in the same server as a
 +25% coins every round, shown by the green "Friend boost" badge. Numbers live in `FriendDeal` in SkySproutConfig.
 In Studio, set the workspace attribute `StudioFakeReferrer` to a test player's UserId to simulate an invite.
 
+Round extras:
+- Final showdown: when two climbers (or two Duos teams) are left the lava surges and shoves hit harder.
+- Twist vote: at the end of a round everyone votes on one of three twists for the next round.
+- Bots fill rounds that start with 1-3 real climbers (up to 4, labelled with a robot); they hop between safe tiles,
+  fall with the floor or the lava and can be shoved off. If no real climbers are left, standing bots win.
+- Duos twist: everyone is paired (friends first, then players, then bots); teammates share an outline colour, can't
+  shove each other, and the last team standing wins (both teammates are crowned).
+
+Progression and live-ops:
+- Daily challenges: three a day for everyone (CFG.Challenges), paid on completion; shown in the Challenges panel.
+- Codes: typed into the Challenges panel, once per account (CFG.Codes, server-only). Launch codes LAVA, VOLCANO, ESCAPE.
+- Titles over your head from total crowns (CFG.Titles), and a gold pillar with fireworks over every winner.
+- Seasonal events (SkySproutConfig.Events): Spooky Eruption (Oct 20 - Nov 3) and Frostfire Festival (Dec 18 - Jan 4)
+  give +50% round coins, favour a theme, show a top bar pill, and Frostfire brings snow. Force one in Studio with
+  the workspace attribute `StudioForceEvent`.
+
 | | |
 |---|---|
 | ![Purple Moon](Media/purple-moon.jpg) | ![Blue Inferno](Media/blue-inferno.jpg) |

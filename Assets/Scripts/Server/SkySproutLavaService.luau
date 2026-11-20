@@ -174,6 +174,7 @@ local MUTATORS: { Mutator } = {
 	{ Id = "ShieldParty", Name = "🛡️ Shield Party", Weight = 1 },
 	{ Id = "DropParty", Name = "🎁 Drop Party", Weight = 2 },
 	{ Id = "HotPotato", Name = "💣 Hot Potato", Weight = 3 },
+	{ Id = "Duos", Name = "👥 Duos", Weight = 2 },
 }
 -- Twist vote: when a round ends everyone gets a few twists to pick from; the most votes wins (ties and no votes are
 -- settled at random among the options).
@@ -2122,6 +2123,19 @@ local function toggleJoin(p: Player)
 	broadcast()
 end
 
+
+-- Duos twist: everyone is paired (friends first, then other players, then bots), teammates share an outline colour and
+-- can't shove each other, and the last team standing wins: both teammates are crowned.
+local teamOf: { [any]: number } = {} -- Player or Bot -> team number
+local TEAM_COLOURS = {
+	Color3.fromRGB(80, 200, 255), Color3.fromRGB(255, 120, 200), Color3.fromRGB(120, 255, 140),
+	Color3.fromRGB(255, 210, 70), Color3.fromRGB(190, 130, 255), Color3.fromRGB(255, 140, 70),
+}
+local function sameTeam(a: any, b: any): boolean
+	local ta, tb = teamOf[a], teamOf[b]
+	return ta ~= nil and ta == tb
+end
+
 -- Set by the bots section: shoves a bot in front of the player if one is closer than maxDist.
 local shoveNearestBot: (Player, Vector3, Vector3, number) -> boolean = function()
 	return false
@@ -2142,7 +2156,7 @@ local function shove(p: Player)
 	local bestDist = CFG.ShoveRange
 	for other, o in L.Runners do
 		local them = root(other)
-		if other ~= p and o.alive and not o.crowned and them then
+		if other ~= p and o.alive and not o.crowned and them and not sameTeam(p, other) then
 			local delta = them.Position - me.Position
 			local flat = Vector3.new(delta.X, 0, delta.Z)
 			if flat.Magnitude < bestDist and math.abs(delta.Y) < 6 and (flat.Magnitude < 0.5 or me.CFrame.LookVector:Dot(flat.Unit) > 0.3) then
@@ -2741,7 +2755,85 @@ local function makeBot(name: string, row: number, col: number): Bot?
 	return b
 end
 
+local function assignTeams()
+	table.clear(teamOf)
+	local players = {}
+	for p, r in L.Runners do
+		if p.Parent and r.alive then
+			table.insert(players, p)
+		end
+	end
+	local pending = {}
+	local used = {}
+	-- Friends first.
+	for _, p in players do
+		if not used[p] then
+			for _, q in players do
+				if q ~= p and not used[q] and friends[p] and friends[p][q.UserId] then
+					table.insert(pending, { p, q })
+					used[p], used[q] = true, true
+					break
+				end
+			end
+		end
+	end
+	local rest = {}
+	for _, p in players do
+		if not used[p] then
+			table.insert(rest, p)
+		end
+	end
+	for _, b in bots do
+		if b.alive then
+			table.insert(rest, b)
+		end
+	end
+	for i = 1, #rest, 2 do
+		table.insert(pending, { rest[i], rest[i + 1] })
+	end
+	for team, pair in pending do
+		local colour = TEAM_COLOURS[(team - 1) % #TEAM_COLOURS + 1]
+		for i, member in pair do
+			teamOf[member] = team
+			local model = if typeof(member) == "Instance" then member.Character else member.model
+			if model then
+				local glow = model:FindFirstChild("TeamGlow") or Instance.new("Highlight")
+				glow.Name = "TeamGlow"
+				glow.OutlineColor = colour
+				glow.FillColor = colour
+				glow.FillTransparency = 0.8
+				glow.DepthMode = Enum.HighlightDepthMode.Occluded
+				glow.Parent = model
+			end
+			local mate = pair[3 - i]
+			if typeof(member) == "Instance" then
+				local mateName = if mate == nil then nil elseif typeof(mate) == "Instance" then mate.DisplayName else "🤖 " .. mate.name
+				tell(member, if mateName then "👥 DUOS! Your teammate: " .. mateName .. " — last team standing wins!" else "👥 DUOS! You're solo this round — good luck!")
+			end
+		end
+	end
+end
+
+local function clearTeams()
+	for member in teamOf do
+		local model = if typeof(member) == "Instance" then member.Character else member.model
+		local glow = model and model:FindFirstChild("TeamGlow")
+		if glow then
+			glow:Destroy()
+		end
+	end
+	table.clear(teamOf)
+end
+
+local spawnBotsOnly: () -> ()
 local function spawnBots()
+	spawnBotsOnly()
+	if L.Mutator.Id == "Duos" then
+		assignTeams()
+	end
+end
+
+spawnBotsOnly = function()
 	table.clear(bots)
 	local real = count(L.Runners)
 	local want = if real > 0 then math.clamp(CFG.BotFillTo - real, 0, CFG.BotMax) else 0
@@ -2871,7 +2963,7 @@ shoveNearestBot = function(p: Player, from: Vector3, look: Vector3, maxDist: num
 	end
 	local best, bestDist = nil, maxDist
 	for _, b in bots do
-		if b.alive then
+		if b.alive and not sameTeam(p, b) then
 			local delta = botPosition(b) - from
 			local flat = Vector3.new(delta.X, 0, delta.Z)
 			if flat.Magnitude < bestDist and math.abs(delta.Y) < 6 and (flat.Magnitude < 0.5 or look:Dot(flat.Unit) > 0.3) then
@@ -2901,6 +2993,7 @@ local function runRound()
 	for p in L.Queue do
 		enter(p)
 	end
+	clearTeams()
 	task.spawn(spawnBots)
 	broadcast()
 	workspace.Gravity = if L.Mutator.Id == "LowGravity" then 115 else DEFAULT_GRAVITY
@@ -3014,7 +3107,48 @@ local function runRound()
 			end
 			break
 		end
-		if L.ShowdownAt == 0 and active == 2 and not lateOpen() and (starters >= 3 or gridPhase() >= CFG.ShowdownFromPhase) then
+		local duos = L.Mutator.Id == "Duos" and next(teamOf) ~= nil
+		local aliveTeams: { [number]: boolean } = {}
+		local teamsLeft = 0
+		if duos then
+			for p, r in L.Runners do
+				if r.alive and not r.crowned and p:GetAttribute("ArenaMode") == "LavaRush" and teamOf[p] then
+					aliveTeams[teamOf[p]] = true
+				end
+			end
+			for _, b in bots do
+				if b.alive and teamOf[b] then
+					aliveTeams[teamOf[b]] = true
+				end
+			end
+			for _ in aliveTeams do
+				teamsLeft += 1
+			end
+			if teamsLeft == 1 and not lateOpen() and next(L.Queue) == nil then
+				local winner = next(aliveTeams)
+				local names = {}
+				for p, r in L.Runners do
+					if teamOf[p] == winner and p.Parent and not r.crowned then
+						crownPlayer(p, r)
+						table.insert(roundWinners, p)
+						table.insert(names, p.DisplayName)
+					end
+				end
+				for _, b in bots do
+					if teamOf[b] == winner then
+						table.insert(botWinners, "🤖 " .. b.name)
+						table.insert(names, "🤖 " .. b.name)
+					end
+				end
+				for other in L.Runners do
+					if other.Parent then
+						tell(other, "👥 Team " .. table.concat(names, " & ") .. " wins!")
+					end
+				end
+				break
+			end
+		end
+		if L.ShowdownAt == 0 and not lateOpen() and (if duos then teamsLeft == 2 else active == 2) and (starters >= 3 or gridPhase() >= CFG.ShowdownFromPhase) then
 			L.ShowdownAt = now()
 			local names = {}
 			for p, r in L.Runners do
@@ -3032,7 +3166,7 @@ local function runRound()
 			end
 			broadcast()
 		end
-		if starters >= 2 and active == 1 and botsUp == 0 and lastActive and not lateOpen() and next(L.Queue) == nil then
+		if not duos and starters >= 2 and active == 1 and botsUp == 0 and lastActive and not lateOpen() and next(L.Queue) == nil then
 			local winner = lastActive :: Player
 			local r = L.Runners[winner]
 			if r and r.alive and not r.crowned then
