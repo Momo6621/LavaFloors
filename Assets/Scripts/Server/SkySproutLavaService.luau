@@ -84,6 +84,15 @@ local CFG = {
 	BombBlast = 70,
 	BombLift = 40,
 
+	-- Volcano crater around the arena (radius from the arena centre; the gap faces the town)
+	CraterRadius = 100,
+	CraterHeight = 80,
+	CraterThickness = 16,
+	CraterFlare = 0.22,
+	CraterFlank = 64,
+	CraterSegments = 44,
+	CraterGap = 26,
+
 	-- Drops
 	DropEvery = 8,
 	DropPartyEvery = 3.5,
@@ -583,12 +592,12 @@ local function buildArena()
 	end
 	local placed = 0
 	for _ = 1, 80 do
-		if placed >= 22 then
+		if placed >= 16 then
 			break
 		end
 		local angle = rng:NextNumber(0, math.pi * 2)
 		local off = math.abs(math.atan2(math.sin(angle - toTown), math.cos(angle - toTown)))
-		local radius = rng:NextNumber(60, 104)
+		local radius = rng:NextNumber(64, 90)
 		local pos = c + Vector3.new(math.cos(angle) * radius, 0, math.sin(angle) * radius)
 		if off > math.rad(42) and clear(pos, 30) then
 			placed += 1
@@ -629,6 +638,108 @@ local function buildArena()
 			smoke.Parent = vent
 		end
 	end
+
+	-- Volcano crater: a ring of jagged rock walls around the lobby and the lava vent, opening a little wider as it
+	-- climbs, with glowing lava veins and a glowing rim. The grid climbs the inside of the crater and the last rise
+	-- lifts it just over the rim. A wide gap faces the town so players can walk out and explore the island.
+	local crater = Instance.new("Model")
+	crater.Name = "Crater"
+	crater:SetAttribute("RimY", c.Y + CFG.CraterHeight)
+	crater.Parent = scenery
+	local craterRng = Random.new(1815)
+	local segments = CFG.CraterSegments
+	local gapHalf = math.rad(CFG.CraterGap)
+	local rockColours = { Color3.fromRGB(56, 44, 46), Color3.fromRGB(66, 52, 52), Color3.fromRGB(46, 38, 42) }
+	local function rock(name: string, size: Vector3, cf: CFrame, colour: Color3, material: Enum.Material): BasePart
+		local p = part(crater, name, size, cf, colour, material)
+		p.CastShadow = false
+		return p
+	end
+	for i = 0, segments - 1 do
+		local angle = (i + 0.5) / segments * math.pi * 2
+		local off = math.abs(math.atan2(math.sin(angle - toTown), math.cos(angle - toTown)))
+		if off < gapHalf then
+			continue
+		end
+		-- Walls shrink toward the gap so the opening looks like a broken-down section of the rim.
+		local taper = math.clamp((off - gapHalf) / math.rad(20), 0.25, 1)
+		local height = CFG.CraterHeight * taper * craterRng:NextNumber(0.9, 1.08)
+		local dir = Vector3.new(math.cos(angle), 0, math.sin(angle))
+		local tiers = 4
+		local tierHeight = height / tiers
+		local outerRadius = CFG.CraterRadius
+		for k = 0, tiers - 1 do
+			local radius = CFG.CraterRadius + k * tierHeight * CFG.CraterFlare
+			local width = 2 * math.pi * radius / segments * 1.3
+			local thick = CFG.CraterThickness
+			local y = c.Y + tierHeight * (k + 0.5)
+			local at = c + dir * (radius + thick / 2) + Vector3.new(0, y - c.Y, 0)
+			local face = CFrame.lookAt(at, Vector3.new(c.X, at.Y, c.Z))
+				* CFrame.Angles(math.rad(craterRng:NextNumber(-6, 2)), 0, math.rad(craterRng:NextNumber(-4, 4)))
+			local colour = rockColours[craterRng:NextInteger(1, #rockColours)]
+			rock("CraterWall", Vector3.new(width, tierHeight * 1.15, thick), face, colour, if k % 2 == 0 then Enum.Material.Basalt else Enum.Material.Slate)
+			outerRadius = radius + thick
+			if craterRng:NextNumber() < 0.3 then
+				-- A glowing lava vein down the inside face.
+				local vein = rock("LavaVein", Vector3.new(craterRng:NextNumber(0.8, 1.6), tierHeight * craterRng:NextNumber(0.6, 1.1), 0.6),
+					face * CFrame.new(craterRng:NextNumber(-width / 3, width / 3), 0, -thick / 2 - 0.05) * CFrame.Angles(0, 0, math.rad(craterRng:NextNumber(-25, 25))),
+					Color3.fromRGB(255, 95, 25), Enum.Material.Neon)
+				vein.CanCollide = false
+			end
+			if k == tiers - 1 then
+				-- The rim glows like lava is lapping at the lip: the way out.
+				local rim = rock("CraterRim", Vector3.new(width * 0.85, 0.8, 2.2), face * CFrame.new(0, tierHeight * 0.55, -thick / 2 + 1), Color3.fromRGB(255, 120, 40), Enum.Material.Neon)
+				rim.CanCollide = false
+			end
+		end
+		-- Outer flank: a slope down to the ground so the crater reads as a volcano from the island.
+		local flankHeight = height * 0.92
+		local flankDepth = CFG.CraterFlank
+		local flankWidth = 2 * math.pi * (outerRadius + flankDepth) / segments * 1.15
+		local flankAt = c + dir * (outerRadius - 4 + flankDepth / 2) + Vector3.new(0, flankHeight / 2, 0)
+		local flank = Instance.new("WedgePart")
+		flank.Name = "CraterFlank"
+		flank.Anchored = true
+		flank.Size = Vector3.new(flankWidth, flankHeight, flankDepth)
+		-- A wedge's tall face is at its back (+Z), so look outward: tall side hugs the wall, slope runs down and out.
+		flank.CFrame = CFrame.lookAt(flankAt, flankAt + dir)
+		flank.Color = rockColours[craterRng:NextInteger(1, #rockColours)]
+		flank.Material = Enum.Material.Basalt
+		flank.CastShadow = false
+		flank.TopSurface = Enum.SurfaceType.Smooth
+		flank.BottomSurface = Enum.SurfaceType.Smooth
+		flank.Parent = crater
+	end
+	-- A slow column of smoke and ash above the crater, visible from anywhere on the island.
+	local plume = part(crater, "Plume", Vector3.new(1, 1, 1), CFrame.new(c + Vector3.new(0, CFG.CraterHeight + 45, 0)), Color3.new(0, 0, 0), Enum.Material.SmoothPlastic)
+	plume.Transparency = 1
+	plume.CanCollide = false
+	plume.CanQuery = false
+	plume.CanTouch = false
+	local smokeColumn = Instance.new("ParticleEmitter")
+	smokeColumn.Name = "Smoke"
+	smokeColumn.Texture = "rbxasset://textures/particles/smoke_main.dds"
+	smokeColumn.Rate = 3
+	smokeColumn.Lifetime = NumberRange.new(14, 20)
+	smokeColumn.Speed = NumberRange.new(5, 8)
+	smokeColumn.SpreadAngle = Vector2.new(18, 18)
+	smokeColumn.Rotation = NumberRange.new(0, 360)
+	smokeColumn.RotSpeed = NumberRange.new(-6, 6)
+	smokeColumn.Color = ColorSequence.new(Color3.fromRGB(120, 90, 85), Color3.fromRGB(60, 52, 55))
+	smokeColumn.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.15, 0.45), NumberSequenceKeypoint.new(1, 1) })
+	smokeColumn.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 30), NumberSequenceKeypoint.new(1, 70) })
+	smokeColumn.Parent = plume
+	local ash = Instance.new("ParticleEmitter")
+	ash.Name = "Ash"
+	ash.Rate = 12
+	ash.Lifetime = NumberRange.new(4, 7)
+	ash.Speed = NumberRange.new(8, 16)
+	ash.SpreadAngle = Vector2.new(40, 40)
+	ash.Color = ColorSequence.new(Color3.fromRGB(255, 190, 80), Color3.fromRGB(255, 60, 10))
+	ash.LightEmission = 1
+	ash.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1.4), NumberSequenceKeypoint.new(1, 0) })
+	ash.Acceleration = Vector3.new(0, -6, 0)
+	ash.Parent = plume
 	arenaFolder.Parent = workspace.SkySprout.Floors:FindFirstChild("Floor_" .. CFG.Floor)
 end
 

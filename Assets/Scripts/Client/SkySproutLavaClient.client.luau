@@ -287,7 +287,7 @@ event.OnClientEvent:Connect(function(kind: string, v: any)
 		end
 	elseif kind == "LavaWinners" then
 		local names = if type(v.Names) == "table" then v.Names else {}
-		bannerTitle.Text = if #names == 0 then "🌋 THE LAVA WINS!" elseif #names == 1 then "👑 WINNER!" else "👑 WINNERS!"
+		bannerTitle.Text = if #names == 0 then "🌋 THE LAVA WINS!" elseif #names == 1 then "🌋 ESCAPED THE VOLCANO!" else "🌋 THEY ESCAPED!"
 		bannerNames.Text = if #names == 0 then "Nobody survived this time" else table.concat(names, "  •  ")
 		banner.Visible = true
 		pop(banner)
@@ -303,7 +303,7 @@ event.OnClientEvent:Connect(function(kind: string, v: any)
 			banner.Visible = false
 		end)
 	elseif kind == "LavaResult" then
-		resultTitle.Text = if v.Outcome == "CROWNED" then "👑 CROWNED!" elseif v.Outcome == "SURVIVED" then "🔥 SURVIVED!" else "💀 SCORCHED"
+		resultTitle.Text = if v.Outcome == "CROWNED" then "👑 ESCAPED!" elseif v.Outcome == "SURVIVED" then "🔥 SURVIVED!" else "💀 SCORCHED"
 		resultTitle.TextColor3 = if v.Outcome == "SCORCHED" then Color3.new(1, 1, 1) else TITLE
 		local emberLine = if v.Embers > 0 then string.format("\n%d embers banked%s", v.Embers, if v.Doubled then " (x2!)" else "") else ""
 		resultBody.Text = string.format("Height %d  •  +%d coins%s%s%s", v.Height, v.Coins, if v.Boosted then " (2x)" else "", if v.Friends then " 👥+25%" else "", emberLine)
@@ -707,7 +707,7 @@ type Floater = { part: BasePart, layer: Layer, angle: number, radius: number, y:
 
 local LAYERS: { [string]: Layer } = {
 	Streak = { Count = 70, Radius = NumberRange.new(54, 95), Span = 70, Drift = 18, Rush = 13 },
-	Rock = { Count = 40, Radius = NumberRange.new(95, 150), Span = 110, Drift = 8, Rush = 5.5 },
+	Rock = { Count = 28, Radius = NumberRange.new(66, 94), Span = 110, Drift = 8, Rush = 5.5 },
 	Cloud = { Count = 18, Radius = NumberRange.new(150, 230), Span = 160, Drift = 3, Rush = 2.2 },
 }
 local FOV_KICK = 9 -- extra field of view at full rush, the classic "speeding up" cue
@@ -918,6 +918,89 @@ UIS.InputBegan:Connect(function(input, processed)
 	end
 end)
 
+-- Eruption: each time the floor rises the volcano rumbles: a short camera shake, and a few glowing rocks break off
+-- the crater rim and plunge into the lava. Purely visual and local, so it never touches anyone.
+local SHAKE_TIME = 0.7
+local shakeUntil = 0
+local shakeStrength = 0
+Run:BindToRenderStep("LavaRumble", Enum.RenderPriority.Camera.Value + 1, function()
+	local left = shakeUntil - os.clock()
+	if left <= 0 then
+		return
+	end
+	local k = shakeStrength * (left / SHAKE_TIME)
+	local t = os.clock() * 30
+	local cam = workspace.CurrentCamera
+	cam.CFrame *= CFrame.new(math.noise(t, 0.3) * k, math.noise(t, 1.7) * k, 0) * CFrame.Angles(0, 0, math.noise(t, 3.1) * k * 0.02)
+end)
+
+local function rumble(strength: number)
+	shakeStrength = strength
+	shakeUntil = os.clock() + SHAKE_TIME
+end
+
+local function fallingRock(tower: Instance, lavaY: number)
+	local cx, cz = tower:GetAttribute("CenterX"), tower:GetAttribute("CenterZ")
+	if type(cx) ~= "number" or type(cz) ~= "number" then
+		return
+	end
+	local floors = workspace:FindFirstChild("SkySprout") and workspace.SkySprout:FindFirstChild("Floors")
+	local crater = floors and floors:FindFirstChild("Crater", true)
+	local rimAttr = crater and crater:GetAttribute("RimY")
+	local rimY = if type(rimAttr) == "number" then rimAttr else 80
+	local a = math.random() * math.pi * 2
+	local from = Vector3.new(cx + math.cos(a) * 96, rimY - 4, cz + math.sin(a) * 96)
+	local to = Vector3.new(cx + math.cos(a) * (48 + math.random() * 10), lavaY, cz + math.sin(a) * (48 + math.random() * 10))
+	local rock = Instance.new("Part")
+	rock.Name = "EruptionRock"
+	rock.Anchored = true
+	rock.CanCollide = false
+	rock.CanQuery = false
+	rock.CanTouch = false
+	rock.CastShadow = false
+	local size = 2.5 + math.random() * 3
+	rock.Size = Vector3.new(size, size * 0.8, size * 0.9)
+	rock.Material = Enum.Material.CrackedLava
+	rock.Color = Color3.fromRGB(255, 110, 40)
+	rock.CFrame = CFrame.new(from)
+	local trail = Instance.new("ParticleEmitter")
+	trail.Texture = "rbxasset://textures/particles/fire_main.dds"
+	trail.Rate = 60
+	trail.Lifetime = NumberRange.new(0.4, 0.8)
+	trail.Speed = NumberRange.new(1, 3)
+	trail.LightEmission = 1
+	trail.Color = ColorSequence.new(Color3.fromRGB(255, 200, 80), Color3.fromRGB(255, 60, 10))
+	trail.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, size * 0.8), NumberSequenceKeypoint.new(1, 0) })
+	trail.Parent = rock
+	rock.Parent = workspace
+	local fall = 1.1 + math.random() * 0.4
+	local spin = CFrame.Angles(math.random() * 6, math.random() * 6, math.random() * 6)
+	task.spawn(function()
+		local start = os.clock()
+		while rock.Parent do
+			local k = math.min(1, (os.clock() - start) / fall)
+			-- Arc inward, then accelerate down like it's really falling.
+			local flat = from:Lerp(to, k)
+			local y = from.Y + (to.Y - from.Y) * k * k + math.sin(k * math.pi) * 6
+			rock.CFrame = CFrame.new(flat.X, y, flat.Z) * spin:Lerp(CFrame.identity, 1 - k)
+			if k >= 1 then
+				break
+			end
+			Run.RenderStepped:Wait()
+		end
+		burst(to, FIRE, 30, 22)
+		rock:Destroy()
+	end)
+end
+
+local function erupt(tower: Instance)
+	rumble(0.35)
+	play("Shove", 0.45)
+	for i = 1, 4 do
+		task.delay(i * 0.18, fallingRock, tower, state.LavaY)
+	end
+end
+
 -- Climb meter: a slim bar on the right edge. The floor marker climbs toward the crown at the top while the
 -- lava fills up from below, so you can see at a glance how high you are and how close the lava is.
 
@@ -1024,6 +1107,7 @@ Run.RenderStepped:Connect(function(dt: number)
 			rising = true
 			play("Rise", 0.95 + math.random() * 0.1)
 			pop(meterFloor)
+			erupt(tower)
 		end
 	elseif riseY and gridY <= riseY + 0.001 then
 		rising = false
