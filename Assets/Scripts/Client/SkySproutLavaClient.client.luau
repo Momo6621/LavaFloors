@@ -323,6 +323,13 @@ local function rootPart(): BasePart?
 end
 
 local lavaSoundFor: Instance? = nil
+-- Flowing lava: soft glow layers scroll across the lava top in different directions (local-only textures).
+type FlowLayer = { Studs: number, Colour: Color3, Transparency: number, Flow: Vector2 }
+local LAVA_FLOW: { FlowLayer } = {
+	{ Studs = 18, Colour = Color3.fromRGB(255, 225, 120), Transparency = 0.35, Flow = Vector2.new(1.6, 0.6) },
+	{ Studs = 31, Colour = Color3.fromRGB(255, 150, 40), Transparency = 0.45, Flow = Vector2.new(-0.7, -1.1) },
+}
+local lavaFlow: { Texture } = {}
 Run.RenderStepped:Connect(function(dt)
 	local t = workspace:GetServerTimeNow()
 	local left = math.max(0, state.EndsAt - t)
@@ -405,6 +412,26 @@ Run.RenderStepped:Connect(function(dt)
 	if lava and lava ~= lavaSoundFor then
 		lavaSoundFor = lava
 		make("Sound", { SoundId = "rbxassetid://318794788", Looped = true, Volume = 0.7, RollOffMinDistance = 20, RollOffMaxDistance = 140, Playing = true }, lava)
+		table.clear(lavaFlow)
+		for _, layer in LAVA_FLOW do
+			local texture = Instance.new("Texture")
+			texture.Name = "LavaFlow"
+			texture.Face = Enum.NormalId.Top
+			texture.Texture = "rbxasset://textures/particles/smoke_main.dds"
+			texture.StudsPerTileU = layer.Studs
+			texture.StudsPerTileV = layer.Studs
+			texture.Color3 = layer.Colour
+			texture.Transparency = layer.Transparency
+			texture.Parent = lava
+			table.insert(lavaFlow, texture)
+		end
+	end
+	if lava then
+		for i, texture in lavaFlow do
+			local layer = LAVA_FLOW[i]
+			texture.OffsetStudsU = (texture.OffsetStudsU + layer.Flow.X * dt) % layer.Studs
+			texture.OffsetStudsV = (texture.OffsetStudsV + layer.Flow.Y * dt) % layer.Studs
+		end
 	end
 
 	local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
@@ -519,6 +546,7 @@ end)
 
 -- Wear: a tile darkens, cracks and shakes as it wears out, then shatters into chunks that tumble into the lava.
 local CRACKED = Color3.fromRGB(70, 52, 48)
+local WHITE = Color3.new(1, 1, 1)
 type Look = { color: Color3, material: Enum.Material, broken: boolean }
 local looks: { [BasePart]: Look } = {}
 
@@ -641,6 +669,16 @@ Run.PreSimulation:Connect(function()
 			moved = wearTile(tile, moved, crumble, state, t)
 		elseif item.Name == "LiftGlow" or item.Name == "WarnPlate" then
 			item.LocalTransparencyModifier = if broken then 1 else 0
+		elseif item.Name == "TileCap" then
+			-- The bevel cap follows its tile: lighter when fresh, the same cracked colour as it wears.
+			item.LocalTransparencyModifier = if broken then 1 else 0
+			local capColour = tile.Color:Lerp(WHITE, if crumble and crumble > 0 then 0.04 else 0.16)
+			if item.Color ~= capColour then
+				item.Color = capColour
+			end
+			if item.Material ~= tile.Material then
+				item.Material = tile.Material
+			end
 		end
 		item.CFrame = if CollectionService:HasTag(item, "LavaEmber") then moved * CFrame.Angles(0, t * 3, 0) else moved
 		if item.Name == "WarnPlate" then

@@ -970,8 +970,8 @@ end
 -- checker only changes lightness.
 tileColour = function(theme: any, ring: number, light: boolean): Color3
 	local t = ring / math.max(1, (CFG.GridSize - 1) / 2)
-	local colour = Color3.fromHSV(theme.TileHue or 0.05, 0.42 + 0.16 * t, 0.96 - 0.26 * t)
-	return if light then colour:Lerp(Color3.new(1, 1, 1), 0.14) else colour
+	local colour = Color3.fromHSV(theme.TileHue or 0.05, 0.5 + 0.16 * t, 0.84 - 0.24 * t)
+	return if light then colour:Lerp(Color3.new(1, 1, 1), 0.1) else colour
 end
 
 local function themeColor(d: Instance, theme: any)
@@ -1453,7 +1453,9 @@ local function buildTower()
 			local warn = part(model, "WarnPlate", Vector3.new(CFG.GridTile - 0.6, 0.12, CFG.GridTile - 0.6), tile.CFrame * CFrame.new(0, 0.66, 0), Color3.fromRGB(255, 45, 45), Enum.Material.Neon)
 			warn.Transparency = 1
 			warn:SetAttribute("NoTheme", true)
-			for _, deco in { under, warn } do
+			local cap = part(model, "TileCap", Vector3.new(CFG.GridTile - 1, 0.1, CFG.GridTile - 1), tile.CFrame * CFrame.new(0, 0.62, 0), tile.Color:Lerp(Color3.new(1, 1, 1), 0.16), Enum.Material.SmoothPlastic)
+			cap:SetAttribute("NoTheme", true)
+			for _, deco in { under, warn, cap } do
 				deco.CanCollide = false
 				deco.CanQuery = false
 				deco.CanTouch = false
@@ -1462,6 +1464,7 @@ local function buildTower()
 			ride(tile, index)
 			ride(under, index)
 			ride(warn, index)
+			ride(cap, index)
 			table.insert(platforms, tile)
 		end
 	end
@@ -1504,7 +1507,7 @@ local function buildTower()
 		spot.Face = Enum.NormalId.Front
 		spot.Range = 60
 		spot.Angle = 75
-		spot.Brightness = 2.5
+		spot.Brightness = 1.5
 		spot.Shadows = true
 		spot.Color = Color3.fromRGB(255, 160, 80)
 		spot.Parent = rig
@@ -1513,7 +1516,7 @@ local function buildTower()
 
 	local l = part(model, "Lava", Vector3.new(CFG.LavaPool, 4, CFG.LavaPool), CFrame.new(c), Color3.fromRGB(230, 70, 10), Enum.Material.Neon)
 	local crust = part(model, "LavaCrust", Vector3.new(CFG.LavaPool, 0.2, CFG.LavaPool), CFrame.new(c), Color3.fromRGB(255, 120, 40), Enum.Material.CrackedLava)
-	crust.Transparency = 0.35
+	crust.Transparency = 0.62
 	local fill = part(model, "LavaFill", Vector3.new(CFG.LavaPool - 0.2, 0.2, CFG.LavaPool - 0.2), CFrame.new(c), Color3.fromRGB(200, 55, 8), Enum.Material.Neon)
 	fill.Transparency = 1
 	fill.CanCollide = false
