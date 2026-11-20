@@ -125,6 +125,13 @@ local CFG = {
 	JumpTime = 7,
 	EmberBag = 3,
 
+	-- Redeemable codes: CODE = { Coins = n, Until = optional os.time() expiry }. Server-only, once per account.
+	Codes = {
+		LAVA = { Coins = 100 },
+		VOLCANO = { Coins = 150 },
+		ESCAPE = { Coins = 75 },
+	},
+
 	-- Daily challenges (three a day, the same for everyone)
 	ChallengesPerDay = 3,
 	Challenges = {
@@ -3199,6 +3206,27 @@ end
 function L.HandleAction(p: Player, action: unknown, _value: unknown): boolean
 	if action == "LavaJoin" then
 		toggleJoin(p)
+		return true
+	end
+	if action == "RedeemCode" then
+		local d = data(p)
+		local code = if type(_value) == "string" then string.upper((string.gsub(_value, "%s", ""))) else ""
+		if not d or #code == 0 or #code > 20 then
+			return true
+		end
+		local info = CFG.Codes[code]
+		d.Redeemed = d.Redeemed or {}
+		if not info or (info.Until and os.time() > info.Until) then
+			tell(p, "❌ That code doesn't work. Check the spelling!")
+		elseif d.Redeemed[code] then
+			tell(p, "✅ You already used " .. code .. ".")
+		else
+			d.Redeemed[code] = true
+			d.Coins = math.min(100000000, d.Coins + info.Coins)
+			pushStats(p)
+			event:FireClient(p, "LavaFX", { Kind = "Invite", Text = "🎁 Code " .. code, Coins = info.Coins })
+			tell(p, "🎁 Code " .. code .. " redeemed: +" .. info.Coins .. " coins!")
+		end
 		return true
 	end
 	if action == "LavaVote" then

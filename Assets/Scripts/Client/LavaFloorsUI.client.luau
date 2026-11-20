@@ -628,7 +628,34 @@ Icon.new()
 local HttpService = game:GetService("HttpService")
 local builtPanel, challengeBody = panel("📋 DAILY CHALLENGES", UI.Lava, UI.LavaDeep)
 challengePanel = builtPanel
-local challengeList = make("Frame", { Size = UDim2.new(1, 0, 1, -34), BackgroundTransparency = 1 }, challengeBody)
+local challengeList = make("Frame", { Size = UDim2.new(1, 0, 1, -92), BackgroundTransparency = 1 }, challengeBody)
+-- Codes: type one in and redeem it (the server checks it and pays once per account).
+local codeRow = make("Frame", { AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 0, 1, -30), Size = UDim2.new(1, 0, 0, 48), BackgroundTransparency = 1 }, challengeBody)
+local codeBox: TextBox = make("TextBox", {
+	Size = UDim2.new(1, -140, 1, 0),
+	BackgroundColor3 = UI.GlassLight,
+	BackgroundTransparency = 0.08,
+	Font = FONT,
+	TextSize = 20,
+	TextColor3 = UI.Text,
+	PlaceholderText = "🎁 Enter a code",
+	PlaceholderColor3 = UI.Muted,
+	Text = "",
+	ClearTextOnFocus = false,
+}, codeRow)
+corner(codeBox, 12)
+outline(codeBox, 2)
+local redeem = button(codeRow, "REDEEM", GREEN, UDim2.new(0, 128, 1, 0))
+redeem.AnchorPoint = Vector2.new(1, 0)
+redeem.Position = UDim2.fromScale(1, 0)
+redeem.TextSize = 20
+redeem.Activated:Connect(function()
+	local code = codeBox.Text
+	if #code > 0 then
+		event:FireServer("RedeemCode", code)
+		codeBox.Text = ""
+	end
+end)
 make("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }, challengeList)
 local challengeFoot = label(challengeBody, "", 15, INK:Lerp(CREAM, 0.35))
 challengeFoot.AnchorPoint = Vector2.new(0, 1)
