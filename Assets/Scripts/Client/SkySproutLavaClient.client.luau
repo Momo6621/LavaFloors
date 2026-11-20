@@ -101,7 +101,9 @@ local function fieryPill(color: Color3): { any }
 	return UI.pill(color)
 end
 UI.fitScreen(gui)
-if not UI.isCompact() then -- the title pill only fits on bigger screens
+-- The title pill is decoration: only on screens tall and wide enough that the top bar doesn't overflow
+-- (at ~1130 px wide it pushed itself under the right-hand group).
+if not UI.isCompact() and workspace.CurrentCamera.ViewportSize.X >= 1280 then
 	Icon.new():setName("LavaFloorsTitle"):setLabel("🔥 " .. Config.GameTitle):align("Left"):lock():modifyTheme(fieryPill(Color3.fromRGB(255, 120, 40)))
 end
 
@@ -741,7 +743,13 @@ event.OnClientEvent:Connect(function(kind: string, v: any)
 		if type(v.Awards) == "table" then
 			for _, a in v.Awards do
 				if type(a) == "table" and type(a.Icon) == "string" and type(a.Title) == "string" and type(a.Name) == "string" then
-					table.insert(awards, a.Icon .. " " .. a.Title .. ": " .. a.Name)
+					-- Long display names would wrap an award across two lines, so they're cut to 12 characters.
+					local name = a.Name
+					local cut = utf8.offset(name, 12)
+					if (utf8.len(name) or 0) > 12 and cut then
+						name = string.sub(name, 1, cut - 1) .. "…"
+					end
+					table.insert(awards, a.Icon .. " " .. a.Title .. ": " .. name)
 				end
 			end
 		end
@@ -879,7 +887,8 @@ Run.RenderStepped:Connect(function(dt)
 				local gap = math.max(0, math.floor((r.Position.Y - 3) - state.LavaY))
 				local phase, phases = state.GridPhase or 0, state.GridPhases or 0
 				local stage = if phase <= 0 then "Get ready!" else string.format("Phase %d/%d", phase, phases)
-				info.Text = string.format("%s  •  👥 %d left  •  🍓 %d  •  Lava %d below", stage, state.Alive or 0, me.Embers, gap)
+				-- No lava-distance count: with 3 big rises it changed too fast to be useful (the red tint still warns you).
+				info.Text = string.format("%s  •  👥 %d left  •  🍓 %d", stage, state.Alive or 0, me.Embers)
 				local target = if gap < 10 then 0.6 + 0.4 * (gap / 10) else 1
 				tint.BackgroundTransparency += (target - tint.BackgroundTransparency) * math.min(1, dt * 8)
 			else

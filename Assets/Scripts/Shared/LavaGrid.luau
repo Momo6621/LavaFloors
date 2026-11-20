@@ -49,6 +49,14 @@ function G.Ring(size: number, row: number, col: number): number
 	return math.max(math.abs(row - mid), math.abs(col - mid))
 end
 
+-- The centre tile carries the pillar when the tower's Pillar attribute is set: it never drops, and nobody (players,
+-- bots, pickups) is placed on it. It still wears out under campers, taking the pillar down with it for a moment.
+function G.IsPillar(tower: Instance, row: number, col: number): boolean
+	local size = attr(tower, "Size") or 9
+	local mid = (size + 1) / 2
+	return tower:GetAttribute("Pillar") == true and row == mid and col == mid
+end
+
 function G.Phase(tower: Instance, t: number): (number, number)
 	local start, phaseTime, phases = attr(tower, "Start"), attr(tower, "PhaseTime") or 12, attr(tower, "Phases") or 0
 	if not start or t < start then
@@ -69,7 +77,7 @@ end
 function G.Plan(tower: Instance): { appear: { [number]: number }, leave: { [number]: number }, drop: { [number]: number } }
 	local seed = attr(tower, "GridSeed") or 1
 	local size = attr(tower, "Size") or 9
-	local key = table.concat({ seed, size, tostring(tower:GetAttribute("StartRings")), tostring(tower:GetAttribute("Grow")), tostring(tower:GetAttribute("Shrink")), tostring(tower:GetAttribute("Drops")) }, "|")
+	local key = table.concat({ seed, size, tostring(tower:GetAttribute("StartRings")), tostring(tower:GetAttribute("Grow")), tostring(tower:GetAttribute("Shrink")), tostring(tower:GetAttribute("Drops")), tostring(tower:GetAttribute("Pillar")) }, "|")
 	local hit = planCache[key]
 	if hit then
 		return hit
@@ -104,12 +112,13 @@ function G.Plan(tower: Instance): { appear: { [number]: number }, leave: { [numb
 			plan.leave[index] = ringLeave[ring]
 		end
 	end
+	local pillarIndex = if tower:GetAttribute("Pillar") == true then (size * size + 1) / 2 else nil
 	for phase, count in list(tower, "Drops") do
 		local q = phase - 1
 		local pool = {}
 		for index = 1, size * size do
 			local appear, leave = plan.appear[index], plan.leave[index]
-			if not plan.drop[index] and (appear == nil or appear <= q) and (leave == nil or leave > q) then
+			if index ~= pillarIndex and not plan.drop[index] and (appear == nil or appear <= q) and (leave == nil or leave > q) then
 				table.insert(pool, index)
 			end
 		end
@@ -318,7 +327,7 @@ function G.TileAt(tower: Instance, position: Vector3, t: number): (number?, numb
 end
 
 function G.Safe(tower: Instance, row: number, col: number, t: number): boolean
-	if G.TileState(tower, row, col, t) ~= "Still" then
+	if G.IsPillar(tower, row, col) or G.TileState(tower, row, col, t) ~= "Still" then
 		return false
 	end
 	local size = attr(tower, "Size") or 9

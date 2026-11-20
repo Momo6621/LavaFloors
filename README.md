@@ -7,13 +7,16 @@ under you. Survive every phase to win the round.
 
 ## How a round works
 
-Each round is 7 phases. Every phase the floor:
+Each round is 3 phases of 10 seconds. Every phase the floor:
 
 1. **Spins.** Everyone standing on it gets carried around.
-2. **Grows.** The first two phases slide out a new outer ring (5x5 → 7x7 → 9x9).
+2. **Grows.** Phase 1 slides out two new rings at once (5x5 → 9x9).
 3. **Breaks tiles.** A few tiles wear out over the phase (they darken, crack and shake) and then shatter.
-4. **Rises.** The floor goes up and the lava follows. In the later phases the outer ring stays behind as a
-   step, so it shrinks back down like a pyramid (9x9 → 7x7 → 5x5 → 3x3).
+4. **Rises.** The floor goes up 23 studs and the lava follows. In phases 2 and 3 the outer rings stay behind as
+   steps, so it shrinks back down like a pyramid (9x9 → 5x5 → a 3x3 finale).
+
+A basalt pillar stands on the centre tile and rides it, blocking the view across the grid, so you can't always
+see who's coming round the other side. The centre tile never drops and nobody is placed on it.
 
 Don't camp: any tile you stand on starts wearing out, and after about 6 seconds it cracks under you. You can
 spend 40 coins (earned in rounds) to **raise** your tile for 10 seconds (E, Y on a controller, or the RAISE
@@ -22,7 +25,7 @@ button). A raised tile doesn't wear.
 If you fall while others are still going, the camera swings out to spectate the floor until the round ends.
 When it does, everyone sees a winner banner with confetti over the winners.
 
-Whoever is still standing after phase 7 gets crowned. With two or more players, the last one standing wins
+Whoever is still standing after phase 3 gets crowned. With two or more players, the last one standing wins
 straight away, so nobody waits out a long round after falling. You can shove other players off, and every so often
 one supply drop pops in far from everyone, floating out of reach under a beam of light: jump to grab it before its
 ring shrinks away. Drops are fruit: banana (speed), pineapple (super jump), blueberry (shield), coconut (rescue) and
@@ -68,8 +71,9 @@ Progression and live-ops:
   about 3 seconds (any move key hands it back; Reduce Motion makes it a still shot).
 - Round awards: with 2+ players the winner banner also names a Top Climber (best non-winner), Shove Champ, Berry
   Picker and Fruit Grabber. One award per player, only for something they did, no coins.
-- Warm-up Hop: a timed stepping-stone run over practice lava beside the lobby plaza, for anyone waiting on a round.
-  Falling in sends you back to the start; the finish sign shows the server's fastest run. No coins.
+- Warm-up Hop: a timed little puzzle run over practice lava beside the lobby plaza, for anyone waiting on a round:
+  a round pillar, a fork where one stone is cracked (⚠, it drops a moment after you land), a narrow beam, a step
+  up and a second fork. Falling in sends you back to the start; the finish sign shows the server's fastest run. No coins.
 - Near miss: knocked out one or two rises from the crown, the result card says "😱 SO CLOSE! N rises left".
 - Cheers: anyone not climbing (knocked out or sitting a round out) gets a bar of six preset emoji. A tap floats
   the emoji with your name up everyone's screen. No typing; the server allows one every 1.2 s (CFG.CheerCooldown).

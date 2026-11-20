@@ -31,13 +31,16 @@ local CFG = {
 	GridGap = 0.15,
 	StartRings = 2,
 	GridBaseY = 12,
-	GridRise = 10,
-	PhaseTime = 7,
+	-- A round is 3 phases (one entry per phase in the lists below). The crown height is GridBaseY + phases * GridRise,
+	-- kept just over the crater rim (CraterHeight 80) so the last rise still lifts the winners out of the volcano.
+	GridRise = 23,
+	PhaseTime = 10,
 	StartDelay = 3,
-	GridSpins = { 90, -90, 180, 45, -90, 135, -180 },
-	GridGrow = { 1, 1, 0, 0, 0, 0, 0 },
-	GridShrink = { 0, 0, 1, 0, 1, 1, 0 },
-	GridDrops = { 2, 3, 4, 5, 4, 3, 3 },
+	GridSpins = { 90, -135, 180 },
+	GridGrow = { 2, 0, 0 }, -- 5x5 grows to 9x9 in phase 1
+	GridShrink = { 0, 2, 1 }, -- back to 5x5 in phase 2, a 3x3 finale in phase 3
+	GridDrops = { 4, 3, 2 },
+	PillarHeight = 16, -- the basalt pillar on the centre tile that blocks the view across the grid
 	RoundJumpPower = 48,
 	CharacterScale = 0.62,
 	RoundWalkSpeed = 24,
@@ -63,7 +66,7 @@ local CFG = {
 	-- Final showdown: when two climbers are left the lava surges (accelerating) and shoves hit harder.
 	ShowdownSurge = 1.4, -- studs per second at the start, growing over time
 	ShowdownShove = 1.35,
-	ShowdownFromPhase = 4, -- in a 2-player round the showdown starts at this phase
+	ShowdownFromPhase = 2, -- in a 2-player round the showdown starts at this phase
 
 	-- Bots fill small rounds up to BotFillTo climbers (never more than BotMax bots)
 	BotFillTo = 4,
@@ -102,6 +105,8 @@ local CFG = {
 	-- practice lava just sends you back to the start. No coins (nothing to farm); the server's fastest run shows.
 	HopFrom = 22, -- studs from the plaza centre to the start pad, sideways
 	HopMinTime = 2.5, -- runs faster than this are impossible and ignored
+	HopCrackDelay = 0.6, -- a cracked stone drops this long after someone lands on it
+	HopCrackBack = 3, -- and comes back after this long
 	-- Away: seconds without any input before a player sits out the automatic rounds (published as the workspace
 	-- attribute LavaAwayAfter for the client). Any input brings them back.
 	AwayAfter = 120,
@@ -191,7 +196,7 @@ local CFG = {
 		{ Id = "Win", Text = "Win %d round", Goal = 1, Reward = 100 },
 		{ Id = "Drops", Text = "Grab %d supply drops", Goal = 2, Reward = 60 },
 		{ Id = "Berries", Text = "Collect %d strawberries", Goal = 10, Reward = 50 },
-		{ Id = "Phase", Text = "Reach phase %d", Goal = 5, Reward = 60 },
+		{ Id = "Phase", Text = "Reach phase %d", Goal = 3, Reward = 60 },
 		{ Id = "Shoves", Text = "Land %d shoves", Goal = 6, Reward = 50 },
 	},
 
@@ -908,21 +913,60 @@ local function buildArena()
 		end
 		local turn = CFrame.lookAt(Vector3.zero, side).Rotation
 		local startPad = part(hop, "HopStart", Vector3.new(8, 1, 8), CFrame.new(at(0, 0, 2.5)) * turn, Color3.fromRGB(70, 160, 90), Enum.Material.Slate)
-		local goalPad = part(hop, "HopGoal", Vector3.new(7, 1, 7), CFrame.new(at(39, 0, 8)) * turn, Color3.fromRGB(255, 190, 60), Enum.Material.Slate)
-		for _, s in { { 7, 2.5, 3.5 }, { 12, -2.5, 4.5 }, { 17, 2, 5.5 }, { 22, -2.5, 6.5 }, { 27, 2.5, 7 }, { 32.5, -1, 7.5 } } do
-			local top = s[3]
-			part(hop, "HopStone", Vector3.new(3.6, 1, 3.6), CFrame.new(at(s[1], s[2], top - 0.5)) * turn, Color3.fromRGB(72, 54, 52), Enum.Material.Basalt)
-			local column = part(hop, "HopColumn", Vector3.new(2.4, top - 3, 2.4), CFrame.new(at(s[1], s[2], 2 + (top - 3) / 2)) * turn, Color3.fromRGB(40, 30, 30), Enum.Material.Basalt)
-			column.CanCollide = false
-			column.CanTouch = false
+		local goalPad = part(hop, "HopGoal", Vector3.new(7, 1, 7), CFrame.new(at(37, 0, 8.5)) * turn, Color3.fromRGB(255, 190, 60), Enum.Material.Slate)
+		-- The route is a little puzzle, not a staircase: a round pillar, a fork where one stone is cracked (it drops away
+		-- a moment after you land, like a worn tile in a round), a narrow beam, a step up, and a second fork.
+		local cracked: { BasePart } = {}
+		local upright = CFrame.Angles(0, 0, math.rad(90)) -- stands a cylinder's axis up
+		-- size is (across, thickness, along the course); a round piece is a disc size.X wide.
+		local function piece(name: string, s: number, t: number, top: number, size: Vector3, round: boolean?, crack: boolean?)
+			local centre = at(s, t, top - size.Y / 2)
+			local colour = if crack then Color3.fromRGB(150, 96, 70) else Color3.fromRGB(72, 54, 52)
+			local material = if crack then Enum.Material.Cobblestone else Enum.Material.Basalt
+			local p = if round
+				then part(hop, name, Vector3.new(size.Y, size.X, size.X), CFrame.new(centre) * upright, colour, material)
+				else part(hop, name, size, CFrame.new(centre) * turn, colour, material)
+			if round then
+				p.Shape = Enum.PartType.Cylinder
+			end
+			local height = top - size.Y - 2
+			if height > 0.2 then
+				local width = math.min(size.X, size.Z) * 0.6
+				local c = part(hop, "HopColumn", Vector3.new(width, height, width), CFrame.new(at(s, t, 2 + height / 2)) * turn, Color3.fromRGB(40, 30, 30), Enum.Material.Basalt)
+				c.CanCollide = false
+				c.CanTouch = false
+			end
+			if crack then
+				-- The same ⚠ the round's warning tiles carry, so the hint isn't colour alone.
+				local mark = Instance.new("SurfaceGui")
+				mark.Face = Enum.NormalId.Top
+				mark.LightInfluence = 0
+				mark.Parent = p
+				local warn = Instance.new("TextLabel")
+				warn.BackgroundTransparency = 1
+				warn.Size = UDim2.fromScale(1, 1)
+				warn.Font = Enum.Font.FredokaOne
+				warn.TextScaled = true
+				warn.TextColor3 = Color3.fromRGB(255, 200, 60)
+				warn.Text = "⚠"
+				warn.Parent = mark
+				table.insert(cracked, p)
+			end
 		end
-		local goalColumn = part(hop, "HopColumn", Vector3.new(5, 5.5, 5), CFrame.new(at(39, 0, 4.75)) * turn, Color3.fromRGB(40, 30, 30), Enum.Material.Basalt)
+		piece("HopStone", 7.5, 0, 4, Vector3.new(4, 1, 4), true) -- round pillar
+		piece("HopCracked", 12.5, 3, 5, Vector3.new(3.4, 1, 3.4), false, true) -- fork 1: cracked
+		piece("HopStone", 12.5, -3, 5, Vector3.new(3.4, 1, 3.4)) -- fork 1: solid
+		piece("HopStone", 19.5, -3, 5.5, Vector3.new(1.6, 1, 7)) -- narrow beam
+		piece("HopStone", 26, 0, 6.5, Vector3.new(3.2, 1, 3.2)) -- step up
+		piece("HopCracked", 30.5, 3, 7.5, Vector3.new(3.2, 1, 3.2), false, true) -- fork 2: cracked
+		piece("HopStone", 30.5, -2.5, 8, Vector3.new(3.2, 1, 3.2)) -- fork 2: solid
+		local goalColumn = part(hop, "HopColumn", Vector3.new(5, 6, 5), CFrame.new(at(37, 0, 5)) * turn, Color3.fromRGB(40, 30, 30), Enum.Material.Basalt)
 		goalColumn.CanTouch = false
-		local pool = part(hop, "HopLava", Vector3.new(14, 0.5, 31), CFrame.new(at(19.75, 0, 2.1)) * turn, Color3.fromRGB(235, 80, 15), Enum.Material.Neon)
+		local pool = part(hop, "HopLava", Vector3.new(14, 0.5, 29.5), CFrame.new(at(18.75, 0, 2.1)) * turn, Color3.fromRGB(235, 80, 15), Enum.Material.Neon)
 		pool.CanCollide = false
 		pool.CastShadow = false
 		for _, edge in { -1, 1 } do
-			local lip = part(hop, "HopLip", Vector3.new(1.2, 0.8, 33), CFrame.new(at(19.75, edge * 7.6, 2.2)) * turn, Color3.fromRGB(40, 30, 30), Enum.Material.Basalt)
+			local lip = part(hop, "HopLip", Vector3.new(1.2, 0.8, 31.5), CFrame.new(at(18.75, edge * 7.6, 2.2)) * turn, Color3.fromRGB(40, 30, 30), Enum.Material.Basalt)
 			lip.CanCollide = false
 			lip.CanTouch = false
 		end
@@ -957,7 +1001,7 @@ local function buildArena()
 			end
 			return labels[2]
 		end
-		sign(startPad, 5, "🔥 WARM-UP HOP", "Hop to the gold pad! Falling is safe")
+		sign(startPad, 5, "🔥 WARM-UP HOP", "Cracked stones drop! Falling is safe")
 		local recordLabel = sign(goalPad, 5, "🏁 FINISH", "Be the first to finish!")
 
 		local started: { [Player]: number } = setmetatable({}, { __mode = "k" }) :: any
@@ -1037,6 +1081,31 @@ local function buildArena()
 				char:PivotTo(CFrame.lookAt(at(0, 0, 6), at(10, 0, 6)))
 			end
 		end)
+		-- Cracked stones drop away HopCrackDelay seconds after someone lands on them and come back HopCrackBack later.
+		for _, stoneCracked in cracked do
+			local dropping = false
+			stoneCracked.Touched:Connect(function(hit)
+				if dropping or not hopper(hit) then
+					return
+				end
+				dropping = true
+				task.delay(CFG.HopCrackDelay, function()
+					local mark = stoneCracked:FindFirstChildOfClass("SurfaceGui")
+					stoneCracked.Transparency = 0.8
+					stoneCracked.CanCollide = false
+					if mark then
+						mark.Enabled = false
+					end
+					task.wait(CFG.HopCrackBack)
+					stoneCracked.Transparency = 0
+					stoneCracked.CanCollide = true
+					if mark then
+						mark.Enabled = true
+					end
+					dropping = false
+				end)
+			end)
+		end
 	end
 
 	-- A glowing lava strip across the middle of the arena floor, under the floating grid. It runs side to side as
@@ -2161,6 +2230,7 @@ local function buildTower()
 	model:SetAttribute("BaseY", c.Y + CFG.GridBaseY)
 	model:SetAttribute("CenterX", c.X)
 	model:SetAttribute("CenterZ", c.Z)
+	model:SetAttribute("Pillar", true)
 
 	table.clear(wear)
 	local size = CFG.GridSize
@@ -2190,9 +2260,34 @@ local function buildTower()
 			table.insert(platforms, tile)
 		end
 	end
+	-- Centre pillar: a basalt column standing on the centre tile. It rides the tile (rises and spins with the floor)
+	-- and blocks the view across the grid, so you can't always see who's coming round the other side. It fills most
+	-- of its tile; it's left out of camera checks so the camera doesn't jump in front of it.
+	do
+		local centreIndex = (size * size + 1) / 2
+		local base = platforms[centreIndex].CFrame * CFrame.new(0, 0.6, 0)
+		local upright = CFrame.Angles(0, 0, math.rad(90)) -- stands a cylinder's axis up
+		local pillar = Instance.new("Model")
+		pillar.Name = "CentrePillar"
+		pillar.Parent = model
+		local h = CFG.PillarHeight
+		local pieces = {
+			part(pillar, "PillarFoot", Vector3.new(2.5, 7.6, 7.6), base * CFrame.new(0, 1.25, 0) * upright, Color3.fromRGB(40, 32, 36), Enum.Material.Basalt),
+			part(pillar, "Pillar", Vector3.new(h - 2.5, 6.4, 6.4), base * CFrame.new(0, 2.5 + (h - 2.5) / 2, 0) * upright, Color3.fromRGB(56, 46, 50), Enum.Material.Basalt),
+			part(pillar, "PillarCap", Vector3.new(0.8, 6.8, 6.8), base * CFrame.new(0, h + 0.4, 0) * upright, Color3.fromRGB(255, 120, 40), Enum.Material.Neon),
+		}
+		for _, piece in pieces do
+			piece.Shape = Enum.PartType.Cylinder
+			piece.CanQuery = false
+			piece.CanTouch = false
+		end
+		ride(pillar, centreIndex)
+	end
+
 	local startTiles = {}
 	for index, tile in platforms do
-		if Grid.Ring(size, tile:GetAttribute("Row"), tile:GetAttribute("Col")) <= CFG.StartRings then
+		local row, col = tile:GetAttribute("Row"), tile:GetAttribute("Col")
+		if Grid.Ring(size, row, col) <= CFG.StartRings and not Grid.IsPillar(model, row, col) then
 			table.insert(startTiles, index)
 		end
 	end
@@ -3343,7 +3438,7 @@ spawnBotsOnly = function()
 	local spots = {}
 	for row = 1, size do
 		for col = 1, size do
-			if Grid.Ring(size, row, col) <= CFG.StartRings and Grid.TileState(tower, row, col, now()) == "Still" then
+			if Grid.Ring(size, row, col) <= CFG.StartRings and Grid.TileState(tower, row, col, now()) == "Still" and not Grid.IsPillar(tower, row, col) then
 				table.insert(spots, { row, col })
 			end
 		end
@@ -3372,7 +3467,7 @@ local function botThink(b: Bot, t: number, taken: { [number]: boolean })
 			local r, c = b.row + dr, b.col + dc
 			if r >= 1 and r <= size and c >= 1 and c <= size then
 				local state = Grid.TileState(towerModel, r, c, t)
-				if walkable(state) then
+				if walkable(state) and not Grid.IsPillar(towerModel, r, c) then
 					local here = dr == 0 and dc == 0
 					local score = if state == "Still" then 3 else -5
 					score -= 4 * (Grid.Crumble(towerModel, r, c, t) or 0)
@@ -3525,10 +3620,10 @@ local function runRound()
 				if r.alive and not r.crowned then
 					tell(p, if phase == #CFG.GridSpins then "🏁 FINAL PHASE — hold on!" else string.format("Phase %d of %d", phase, #CFG.GridSpins))
 					challenge(p, "Phase", phase, true)
-					if phase == 3 then
-						logRound(p, 2, "Phase3")
-					elseif phase == #CFG.GridSpins then
+					if phase == #CFG.GridSpins then
 						logRound(p, 3, "FinalPhase")
+					elseif phase == 2 then
+						logRound(p, 2, "Phase2")
 					end
 				end
 			end

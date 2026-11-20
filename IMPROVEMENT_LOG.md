@@ -3,6 +3,56 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 16. Hands-on pass: 3-phase rounds, centre pillar, puzzle hop, top bar fixes
+
+Done with Studio in front, following the owner's notes while watching.
+
+**Owner's notes and changes.**
+- "Too many squares on the hop; puzzle-like jumps would work better." The Warm-up Hop is now:
+  - a round pillar;
+  - a fork where one stone is cracked: lighter, with a ⚠, and it drops 0.6 s after you land, then comes back after
+    3 s (`HopCrackDelay`, `HopCrackBack`). It practises reading cracked tiles before a real round;
+  - a narrow beam and a step up;
+  - a second cracked-or-solid fork before the gold pad.
+- "Make it 3 phases instead of 7." A round is now 3 phases of 10 s.
+  - Rises are 23 studs (`GridRise`), so the crown is at 81, still just over the crater rim at 80: winners still escape
+    the volcano.
+  - The floor grows 5x5 → 9x9 in phase 1, then shrinks to 5x5 and to a 3x3 finale.
+  - The showdown can start from phase 2.
+  - The "Reach phase 5" daily challenge is now "Reach phase 3".
+  - The round funnel logs Phase2 and FinalPhase, instead of a "Phase3" step that now fell on the final phase.
+- "Counting the lava height isn't as important." The "Lava N below" count is gone from the round HUD. The red tint
+  still warns you when the lava is close.
+- "The grid doesn't look good; maybe a pillar in the middle blocking the view?" A 16-stud basalt pillar with a glowing
+  cap now stands on the centre tile.
+  - It rides the tile, so it rises and spins with the floor.
+  - It fills most of the tile and blocks the view across the grid.
+  - It's ignored by camera checks, so the camera doesn't jump in front of it.
+  - `LavaGrid.IsPillar` keeps the centre tile out of the random drops, `Safe`, bot moves, bot and player spawns, and
+    strawberries.
+
+**Found by looking.**
+- **Top bar overflow.** At about 1130 px wide the new "🌋 Server goal 0/40" pill pushed the title pill under the
+  right-hand group. Fixes: the goal pill always uses the short "🌋 12/40" with a hover caption, and the title pill now
+  also needs a screen at least 1280 px wide.
+- **Long award names.** A long display name wrapped an award across lines on the winner banner. Names are now cut to
+  12 characters.
+- **Fine as built:** the Warm-up Hop look, the award banner layout and the goal pill.
+
+**Verified.** In Studio play tests:
+- A survival-driven player climbed y 15.5 → 38.5 → 61.3 → 84.4 over the 3 phases and was crowned.
+- Screenshots at eye level show the pillar blocking the far side, in three themes.
+- The HUD reads "Phase 1/3 • 4 left • 🍓 2".
+- The hop built every piece (2 cracked, 5 solid).
+- The console showed no errors, and Studio matches the repo by chunk hash for the service, client, `LavaFloorsUI` and
+  `LavaGrid`.
+
+Not verified:
+- A clean screenshot of the hop's ⚠ marks, and a cracked stone actually dropping under a player.
+- Real jumps through the hop: my scripted runner wasn't reliable enough to judge.
+- Coin pace: a round still pays by height, but rounds are now about 33 s instead of about 52 s, so coins and chests
+  come roughly 1.5x faster per minute.
+
 ## 15. Server goal
 
 **Research.**

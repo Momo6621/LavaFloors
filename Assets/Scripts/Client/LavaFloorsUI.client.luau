@@ -746,14 +746,16 @@ task.spawn(function()
 end)
 
 -- Server goal pill: the shared bar every climber in this server fills together (rises reached).
+-- Always the short label: the left side of the top bar is already full on laptop-sized windows.
 local goalIcon = Icon.new():setName("ServerGoal"):setLabel(""):align("Left"):lock():modifyTheme(pill(Color3.fromRGB(235, 90, 20)))
+goalIcon:setCaption("Server goal: every rise anyone climbs fills it. Full = coins for all who helped!")
 local function refreshGoal()
 	local have, size = tonumber(workspace:GetAttribute("LavaGoal")), tonumber(workspace:GetAttribute("LavaGoalSize"))
 	if not have or not size or size <= 0 then
 		goalIcon:setEnabled(false)
 		return
 	end
-	goalIcon:setLabel(UI.short(string.format("🌋 Server goal %d/%d", have, size), string.format("🌋 %d/%d", have, size)))
+	goalIcon:setLabel(string.format("🌋 %d/%d", have, size))
 	goalIcon:setEnabled(true)
 end
 workspace:GetAttributeChangedSignal("LavaGoal"):Connect(refreshGoal)
