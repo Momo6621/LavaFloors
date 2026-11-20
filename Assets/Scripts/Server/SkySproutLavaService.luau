@@ -2731,16 +2731,61 @@ local function makeBot(name: string, row: number, col: number): Bot?
 	hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
 	hum:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
 	rootPart.Anchored = true
+	-- Lava-rock golem look: basalt body in a random rock shade, glowing ember eyes and a fruit hat, so bots are
+	-- easy to tell apart from players at a glance.
+	local rockShade = Color3.fromHSV(0.02 + math.random() * 0.05, 0.35 + math.random() * 0.2, 0.22 + math.random() * 0.12)
 	for _, d in model:GetDescendants() do
 		if d:IsA("BasePart") then
 			d.CanCollide = false
 			d.CanQuery = false
 			d.CanTouch = false
 			d.Massless = true
+			if d ~= rootPart then
+				d.Material = Enum.Material.Basalt
+				d.Color = rockShade
+				d:SetAttribute("NoTheme", true)
+			end
+		elseif d:IsA("Decal") and d.Name == "face" then
+			d:Destroy()
 		end
 	end
 	local head = model:FindFirstChild("Head")
-	if head then
+	if head and head:IsA("BasePart") then
+		for side = -1, 1, 2 do
+			local eye = Instance.new("Part")
+			eye.Name = "EmberEye"
+			eye.Shape = Enum.PartType.Ball
+			eye.Material = Enum.Material.Neon
+			eye.Color = Color3.fromRGB(255, 150, 40)
+			eye.Size = Vector3.one * head.Size.Y * 0.18
+			eye.CanCollide, eye.CanQuery, eye.CanTouch, eye.Massless, eye.CastShadow = false, false, false, true, false
+			eye.CFrame = head.CFrame * CFrame.new(side * head.Size.X * 0.2, head.Size.Y * 0.08, -head.Size.Z * 0.48)
+			local weld = Instance.new("WeldConstraint")
+			weld.Part0, weld.Part1 = head, eye
+			weld.Parent = eye
+			eye.Parent = model
+		end
+		local hats = { "Strawberry", "Banana", "Pineapple", "Watermelon", "Coconut", "Blueberry" }
+		local template = FruitModels:FindFirstChild(hats[math.random(#hats)])
+		if template and template:IsA("Model") then
+			local hat = template:Clone()
+			hat.Name = "BotHat"
+			local _, size = hat:GetBoundingBox()
+			hat:ScaleTo(head.Size.X * 1.1 / math.max(size.X, size.Z))
+			local _, scaled = hat:GetBoundingBox()
+			hat:PivotTo(head.CFrame * CFrame.new(0, head.Size.Y / 2 + scaled.Y * 0.35, 0))
+			for _, piece in hat:GetDescendants() do
+				if piece:IsA("BasePart") then
+					piece.Anchored = false
+					piece.CanCollide, piece.CanQuery, piece.CanTouch, piece.Massless = false, false, false, true
+					piece:SetAttribute("NoTheme", true)
+					local weld = Instance.new("WeldConstraint")
+					weld.Part0, weld.Part1 = head, piece
+					weld.Parent = piece
+				end
+			end
+			hat.Parent = model
+		end
 		local tag = Instance.new("BillboardGui")
 		tag.Size = UDim2.fromOffset(110, 24)
 		tag.StudsOffset = Vector3.new(0, 1.8, 0)
