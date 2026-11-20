@@ -58,6 +58,11 @@ local CFG = {
 	StageLightHeight = 26,
 	StageLightReach = 30,
 
+	-- Final showdown: when two climbers are left the lava surges (accelerating) and shoves hit harder.
+	ShowdownSurge = 1.4, -- studs per second at the start, growing over time
+	ShowdownShove = 1.35,
+	ShowdownFromPhase = 4, -- in a 2-player round the showdown starts at this phase
+
 	-- Shove
 	ShoveRange = 9,
 	ShoveCooldown = 0.8,
@@ -178,6 +183,7 @@ local L = {
 	LavaY = CFG.Center.Y + CFG.LavaStart,
 	Mutator = MUTATORS[1],
 	Theme = "Sunset",
+	ShowdownAt = 0, -- 0 = no showdown this round
 }
 local friends: { [Player]: { [number]: boolean } } = {}
 
@@ -348,6 +354,7 @@ local function broadcast()
 		CrownY = CFG.Center.Y + crownHeight,
 		GridPhase = gridPhase(),
 		GridPhases = #CFG.GridSpins,
+		Showdown = L.ShowdownAt > 0,
 	}
 	for _, p in Players:GetPlayers() do
 		event:FireClient(p, "LavaState", payload)
@@ -2013,7 +2020,8 @@ local function shove(p: Player)
 		local them = root(best) :: BasePart
 		local dir = Vector3.new(them.Position.X - me.Position.X, 0, them.Position.Z - me.Position.Z)
 		dir = if dir.Magnitude > 0.1 then dir.Unit else me.CFrame.LookVector
-		event:FireClient(best, "LavaShove", dir * CFG.ShoveSpeed + Vector3.new(0, CFG.ShoveLift, 0))
+		local power = if L.ShowdownAt > 0 then CFG.ShowdownShove else 1
+		event:FireClient(best, "LavaShove", dir * CFG.ShoveSpeed * power + Vector3.new(0, CFG.ShoveLift, 0))
 		event:FireClient(p, "LavaFX", { Kind = "Hit", Position = them.Position })
 		tell(best, "💥 " .. p.DisplayName .. " shoved you!")
 	end
@@ -2381,13 +2389,19 @@ local function runRound()
 	local lastPhase = 0
 	local starters = 0
 	local roundWinners: { Player } = {}
+	L.ShowdownAt = 0
 	while now() < L.EndsAt do
 		local dt = Run.Heartbeat:Wait()
 		if now() >= nextDrop then
 			nextDrop = now() + dropEvery
 			spawnDrop()
 		end
-		setLava(lavaFor(now()))
+		local surge = 0
+		if L.ShowdownAt > 0 then
+			local since = now() - L.ShowdownAt
+			surge = CFG.ShowdownSurge * since + 0.06 * since * since
+		end
+		setLava(lavaFor(now()) + surge)
 		local phase = gridPhase()
 		if phase ~= lastPhase then
 			lastPhase = phase
@@ -2464,6 +2478,19 @@ local function runRound()
 		end
 		if active == 0 and not lateOpen() and next(L.Queue) == nil then
 			break
+		end
+		if L.ShowdownAt == 0 and active == 2 and not lateOpen() and (starters >= 3 or gridPhase() >= CFG.ShowdownFromPhase) then
+			L.ShowdownAt = now()
+			local names = {}
+			for p, r in L.Runners do
+				if r.alive and not r.crowned and p:GetAttribute("ArenaMode") == "LavaRush" then
+					table.insert(names, p.DisplayName)
+				end
+			end
+			for _, p in Players:GetPlayers() do
+				event:FireClient(p, "LavaFX", { Kind = "Showdown", Names = names })
+			end
+			broadcast()
 		end
 		if starters >= 2 and active == 1 and lastActive and not lateOpen() and next(L.Queue) == nil then
 			local winner = lastActive :: Player

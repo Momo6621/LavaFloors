@@ -20,7 +20,7 @@ local TITLE = Color3.fromRGB(255, 245, 140)
 local ORANGE = Color3.fromRGB(255, 150, 40)
 local STROKE = Color3.fromRGB(60, 15, 0)
 
-type State = { Phase: string, EndsAt: number, Mutator: string?, Theme: string?, Queued: number, Running: number, LavaY: number, BaseY: number, CrownY: number, GridPhase: number?, GridPhases: number?, Alive: number? }
+type State = { Showdown: boolean?, Phase: string, EndsAt: number, Mutator: string?, Theme: string?, Queued: number, Running: number, LavaY: number, BaseY: number, CrownY: number, GridPhase: number?, GridPhases: number?, Alive: number? }
 type Me = { Queued: boolean, Running: boolean, Crowned: boolean, Embers: number, Peak: number }
 
 local state: State = { Phase = "Idle", EndsAt = 0, Queued = 0, Running = 0, LavaY = -100, BaseY = 0, CrownY = 160 }
@@ -170,6 +170,21 @@ UI.glass(banner, 22, UI.Gold)
 UI.text(bannerTitle, "title")
 UI.text(bannerNames, "body")
 
+-- Final showdown announcement: a big glass card in the middle of the screen for a few seconds.
+local showdownCard: Frame = make("Frame", {
+	AnchorPoint = Vector2.new(0.5, 0.5),
+	Position = UDim2.fromScale(0.5, 0.36),
+	Size = UDim2.new(0.9, 0, 0, 110),
+	Visible = false,
+	ZIndex = 5,
+}, gui)
+make("UISizeConstraint", { MaxSize = Vector2.new(560, 110) }, showdownCard)
+local showdownTitle: TextLabel = make("TextLabel", { BackgroundTransparency = 1, Position = UDim2.fromOffset(10, 6), Size = UDim2.new(1, -20, 0, 60), Font = FONT, TextScaled = true, Text = "", ZIndex = 6 }, showdownCard)
+local showdownNames: TextLabel = make("TextLabel", { BackgroundTransparency = 1, Position = UDim2.fromOffset(10, 68), Size = UDim2.new(1, -20, 0, 34), Font = FONT, TextScaled = true, Text = "", ZIndex = 6 }, showdownCard)
+UI.glass(showdownCard, 22, UI.Lava)
+UI.text(showdownTitle, "title")
+UI.text(showdownNames, "body")
+
 local spectateLabel: TextLabel = make("TextLabel", {
 	AnchorPoint = Vector2.new(0.5, 1),
 	Position = UDim2.new(0.5, 0, 1, -24),
@@ -312,6 +327,19 @@ event.OnClientEvent:Connect(function(kind: string, v: any)
 					tint.BackgroundTransparency = 0.35
 				end
 			end
+		elseif v.Kind == "Showdown" then
+			-- Two left: a big lava-gold announcement, a horn and a red flash.
+			local names = if type(v.Names) == "table" then v.Names else {}
+			showdownTitle.Text = "⚔️ FINAL SHOWDOWN"
+			showdownNames.Text = if #names == 2 then string.format("%s  vs  %s", tostring(names[1]), tostring(names[2])) else "Last two standing!"
+			showdownCard.Visible = true
+			pop(showdownCard)
+			play("Crown", 0.7)
+			play("Rise", 0.8)
+			tint.BackgroundTransparency = 0.45
+			task.delay(2.8, function()
+				showdownCard.Visible = false
+			end)
 		elseif v.Kind == "Invite" then
 			-- Invite deal paid out: a gold burst over your head and the amount floating up.
 			play("Crown", 1.2)
