@@ -2428,6 +2428,10 @@ local function payout()
 	for p, r in L.Runners do
 		local d = data(p)
 		if p.Parent and d then
+			if not d.TutorialDone then
+				d.TutorialDone = true
+				p:SetAttribute("Tutorial", false)
+			end
 			challenge(p, "Play", 1)
 			if r.crowned or r.alive then
 				challenge(p, "Survive", 1)
@@ -3824,15 +3828,19 @@ function L.Start(arena: any, remote: RemoteEvent, stats: (Player) -> (), notice:
 	Players.PlayerAdded:Connect(function(p)
 		task.spawn(checkReferral, p)
 		task.spawn(function()
-			if waitData(p) then
+			local d = waitData(p)
+			if d then
 				pushChallenges(p)
+				p:SetAttribute("Tutorial", d.TutorialDone ~= true) -- first-round coach cards for new players
 			end
 		end)
 	end)
 	for _, p in Players:GetPlayers() do
 		task.spawn(function()
-			if waitData(p) then
+			local d = waitData(p)
+			if d then
 				pushChallenges(p)
+				p:SetAttribute("Tutorial", d.TutorialDone ~= true)
 			end
 		end)
 	end

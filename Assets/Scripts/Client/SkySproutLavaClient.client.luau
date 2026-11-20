@@ -189,6 +189,54 @@ UI.text(bannerTitle, "title")
 UI.text(bannerNames, "body")
 
 -- Final showdown announcement: a big glass card in the middle of the screen for a few seconds.
+-- First-round coach cards: a new player's first round walks them through the basics, one tip every few seconds.
+local coachCard: Frame = make("Frame", {
+	AnchorPoint = Vector2.new(0.5, 0.5),
+	Position = UDim2.fromScale(0.5, 0.7),
+	Size = UDim2.new(0.9, 0, 0, 74),
+	Visible = false,
+	ZIndex = 5,
+}, gui)
+make("UISizeConstraint", { MaxSize = Vector2.new(560, 74) }, coachCard)
+local coachStep: TextLabel = make("TextLabel", { BackgroundTransparency = 1, Position = UDim2.fromOffset(12, 4), Size = UDim2.new(1, -24, 0, 22), Font = FONT, TextScaled = true, Text = "", ZIndex = 6 }, coachCard)
+local coachText: TextLabel = make("TextLabel", { BackgroundTransparency = 1, Position = UDim2.fromOffset(12, 28), Size = UDim2.new(1, -24, 0, 40), Font = FONT, TextScaled = true, TextWrapped = true, Text = "", ZIndex = 6 }, coachCard)
+UI.glass(coachCard, 18, UI.Gold)
+UI.text(coachStep, "title")
+UI.text(coachText, "body")
+local coachRunning = false
+local function runCoach()
+	if coachRunning or player:GetAttribute("Tutorial") ~= true then
+		return
+	end
+	coachRunning = true
+	local touch = game:GetService("UserInputService").TouchEnabled
+	local tips = {
+		"🌋 Climb out of the volcano! Stay on the floor while the lava rises below.",
+		"🔴 Tiles that glow red or crack are about to fall. Keep moving!",
+		if touch then "💥 Tap SHOVE to push rivals toward the edge." else "🖱️ Click to shove rivals toward the edge.",
+		"🍍 Jump into floating fruit for power-ups!",
+		"👑 Be the last one standing to win the crown!",
+	}
+	task.spawn(function()
+		for i, tip in tips do
+			if player:GetAttribute("Tutorial") ~= true or (state.Phase ~= "Countdown" and state.Phase ~= "Round") then
+				break
+			end
+			coachStep.Text = string.format("NEW HERE? TIP %d / %d", i, #tips)
+			coachText.Text = tip
+			coachCard.Visible = true
+			local bounce = coachCard:FindFirstChild("Pop") or Instance.new("UIScale") -- pop() is declared further down
+			bounce.Name = "Pop"
+			bounce.Parent = coachCard;
+			(bounce :: UIScale).Scale = 1.15
+			TweenService:Create(bounce, TweenInfo.new(0.3, Enum.EasingStyle.Back), { Scale = 1 }):Play()
+			task.wait(5)
+		end
+		coachCard.Visible = false
+		coachRunning = false
+	end)
+end
+
 local showdownCard: Frame = make("Frame", {
 	AnchorPoint = Vector2.new(0.5, 0.5),
 	Position = UDim2.fromScale(0.5, 0.36),
@@ -284,6 +332,9 @@ event.OnClientEvent:Connect(function(kind: string, v: any)
 	if kind == "LavaState" then
 		local wasPhase = state.Phase
 		state = v
+		if state.Phase == "Countdown" or state.Phase == "Round" then
+			runCoach()
+		end
 		if state.Phase == "Round" and wasPhase ~= "Round" and (me.Queued or me.Running) then
 			play("Beep", 1.5)
 		end
