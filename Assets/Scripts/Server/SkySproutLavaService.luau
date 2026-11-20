@@ -35,13 +35,13 @@ local CFG = {
 	GridSpins = { 90, -90, 180, 45, -90, 135, -180 },
 	GridGrow = { 1, 1, 0, 0, 0, 0, 0 },
 	GridShrink = { 0, 0, 1, 0, 1, 1, 0 },
-	GridDrops = { 0, 2, 3, 3, 2, 1, 1 },
+	GridDrops = { 1, 2, 3, 4, 3, 2, 2 },
 	RoundJumpPower = 48,
 	CharacterScale = 0.8,
 
 	-- Lava
 	LavaBelow = 7,
-	LavaLag = 2,
+	LavaLag = 1.5,
 	LavaPool = 92,
 	LavaStart = -6,
 	LavaGlowRange = 60,
@@ -94,11 +94,14 @@ local CFG = {
 	CraterGap = 26,
 
 	-- Drops
-	DropEvery = 8,
-	DropPartyEvery = 3.5,
-	DropFirstAt = 6,
-	DropMaxLive = 3,
-	DropLifetime = 16,
+	DropEvery = 14,
+	DropPartyEvery = 6,
+	DropFirstAt = 14,
+	DropMaxLive = 1,
+	DropLifetime = 8,
+	DropHover = 6, -- studs above the tile top: you have to jump for it
+	DropGrabRadius = 2.8,
+	DropPickFrom = 3, -- spawn on one of the N safe tiles farthest from every player
 	SpeedBoost = 10,
 	SpeedTime = 6,
 	JumpBoostPower = 64,
@@ -1380,11 +1383,32 @@ local function spawnDrop()
 	if #candidates == 0 then
 		return
 	end
-	local step = candidates[math.random(1, #candidates)]
+	-- Score each tile by how far it is from the closest climber, then pick among the farthest few.
+	local climbers = {}
+	for p, r in L.Runners do
+		local me = r.alive and not r.crowned and root(p)
+		if me then
+			table.insert(climbers, me.Position)
+		end
+	end
+	local scored = {}
+	for _, tile in candidates do
+		local at = (tileDelta(tile:GetAttribute("StepIndex") :: number) * tile.CFrame).Position
+		local nearest = math.huge
+		for _, pos in climbers do
+			nearest = math.min(nearest, Vector2.new(pos.X - at.X, pos.Z - at.Z).Magnitude)
+		end
+		table.insert(scored, { tile = tile, score = nearest + math.random() * 3 })
+	end
+	table.sort(scored, function(a, b)
+		return a.score > b.score
+	end)
+	local step = scored[math.random(1, math.min(CFG.DropPickFrom, #scored))].tile
 	local stepIndex = step:GetAttribute("StepIndex") :: number
 	local boost = pickBoost()
 	local born = now()
-	local landAt = step.Position + Vector3.new(0, step.Size.Y / 2 + 1.3, 0)
+	local tileTop = step.Position + Vector3.new(0, step.Size.Y / 2, 0)
+	local landAt = tileTop + Vector3.new(0, CFG.DropHover, 0)
 	step:SetAttribute("DropHere", true)
 
 	local drop = Instance.new("Model")
@@ -1397,12 +1421,28 @@ local function spawnDrop()
 		piece.CanQuery = false
 		piece.CanTouch = false
 	end
+	for _, d in drop:GetDescendants() do
+		if d:IsA("BasePart") then
+			d:SetAttribute("BobPivot", landAt)
+		end
+	end
+	local sparkle = Instance.new("ParticleEmitter")
+	sparkle.Name = "Sparkle"
+	sparkle.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+	sparkle.Color = ColorSequence.new(Color3.new(1, 1, 1), boost.Color)
+	sparkle.LightEmission = 1
+	sparkle.Rate = 18
+	sparkle.Lifetime = NumberRange.new(0.6, 1.1)
+	sparkle.Speed = NumberRange.new(1.5, 3)
+	sparkle.SpreadAngle = Vector2.new(180, 180)
+	sparkle.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.6), NumberSequenceKeypoint.new(1, 0) })
+	sparkle.Parent = crate
 	-- Clients pop it in with a bright flash (no parachute).
 	crate:SetAttribute("SpawnFlash", true)
 	crate:SetAttribute("FlashColor", boost.Color)
 	local icon = Instance.new("BillboardGui")
 	icon.Size = UDim2.fromOffset(52, 52)
-	icon.StudsOffset = Vector3.new(0, 2.4, 0)
+	icon.StudsOffset = Vector3.new(0, 2.6, 0)
 	icon.MaxDistance = 140
 	icon.Parent = crate
 	local emoji = Instance.new("TextLabel")
@@ -1423,6 +1463,17 @@ local function spawnDrop()
 	ring.CanCollide = false
 	ring.CanQuery = false
 	ring.CanTouch = false
+	local pillar = part(drop, "LightPillar", Vector3.new(36, 1.4, 1.4), CFrame.new(tileTop + Vector3.new(0, 18, 0)) * CFrame.Angles(0, 0, math.rad(90)), boost.Color, Enum.Material.Neon)
+	pillar.Shape = Enum.PartType.Cylinder
+	pillar.Transparency = 0.6
+	pillar.CanCollide = false
+	pillar.CanQuery = false
+	pillar.CanTouch = false
+	pillar.CastShadow = false
+	for _, timed in { ring, pillar } do
+		timed:SetAttribute("BornAt", born)
+		timed:SetAttribute("Lifetime", CFG.DropLifetime)
+	end
 	ride(drop, stepIndex)
 	drop.ModelStreamingMode = Enum.ModelStreamingMode.Persistent
 	drop.Parent = tower
@@ -1441,7 +1492,7 @@ local function spawnDrop()
 	end
 	table.insert(pickups, {
 		item = crate,
-		radius = 4,
+		radius = CFG.DropGrabRadius,
 		take = function(p: Player, r: any)
 			if taken or L.Phase ~= "Round" then
 				return

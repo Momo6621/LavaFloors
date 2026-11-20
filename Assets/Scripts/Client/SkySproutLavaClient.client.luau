@@ -188,6 +188,7 @@ local function floatText(position: Vector3, text: string)
 end
 
 local FIRE = ColorSequence.new(Color3.fromRGB(255, 220, 80), Color3.fromRGB(255, 60, 10))
+local boostWave: (Vector3, Color3) -> ()
 local SHIELD = ColorSequence.new(Color3.fromRGB(150, 220, 255), Color3.fromRGB(60, 140, 255))
 local PARTY = ColorSequence.new({
 	ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 80, 80)),
@@ -258,8 +259,9 @@ event.OnClientEvent:Connect(function(kind: string, v: any)
 			play("Crown", 1.35)
 			if v.Position then
 				local c = if typeof(v.Color) == "Color3" then v.Color else ORANGE
-				burst(v.Position, ColorSequence.new(Color3.new(1, 1, 1), c), 50, 20)
+				burst(v.Position, ColorSequence.new(Color3.new(1, 1, 1), c), 80, 26)
 				floatText(v.Position + Vector3.new(0, 2, 0), tostring(v.Text or "BOOST!"))
+				boostWave(v.Position, c)
 			end
 			pop(title)
 		elseif v.Kind == "Bomb" then
@@ -497,6 +499,41 @@ local wearTile: (BasePart, CFrame, number?, string, number) -> CFrame
 
 type Rider = { tower: Instance?, tile: Instance? }
 local riders: { [BasePart]: Rider } = {}
+-- Grabbing a drop: a flat shockwave ring rolls out across the floor and a column of light shoots up, both in the
+-- boost's colour.
+boostWave = function(at: Vector3, colour: Color3)
+	local wave = Instance.new("Part")
+	wave.Shape = Enum.PartType.Cylinder
+	wave.Material = Enum.Material.Neon
+	wave.Color = colour
+	wave.Anchored = true
+	wave.CanCollide = false
+	wave.CanQuery = false
+	wave.CanTouch = false
+	wave.CastShadow = false
+	wave.Size = Vector3.new(0.2, 2, 2)
+	wave.CFrame = CFrame.new(at - Vector3.new(0, 4.5, 0)) * CFrame.Angles(0, 0, math.rad(90))
+	wave.Transparency = 0.2
+	wave.Parent = workspace
+	TweenService:Create(wave, TweenInfo.new(0.55, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Size = Vector3.new(0.2, 22, 22), Transparency = 1 }):Play()
+	Debris:AddItem(wave, 0.6)
+	local column = Instance.new("Part")
+	column.Shape = Enum.PartType.Cylinder
+	column.Material = Enum.Material.Neon
+	column.Color = colour
+	column.Anchored = true
+	column.CanCollide = false
+	column.CanQuery = false
+	column.CanTouch = false
+	column.CastShadow = false
+	column.Size = Vector3.new(30, 3, 3)
+	column.CFrame = CFrame.new(at + Vector3.new(0, 11, 0)) * CFrame.Angles(0, 0, math.rad(90))
+	column.Transparency = 0.15
+	column.Parent = workspace
+	TweenService:Create(column, TweenInfo.new(0.45, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Size = Vector3.new(40, 0.2, 0.2), Transparency = 1 }):Play()
+	Debris:AddItem(column, 0.5)
+end
+
 -- Fruit crates appear with a bright flash: a white-hot ball that blooms out in the boost's colour, sparks and a
 -- quick burst of light.
 local function spawnFlash(crate: BasePart)
@@ -661,7 +698,25 @@ Run.PreSimulation:Connect(function()
 		if not tile or not towerModel then
 			continue
 		end
-		local moved = Grid.Delta(towerModel, tile, t) * rest
+		local delta = Grid.Delta(towerModel, tile, t)
+		local moved = delta * rest
+		local pivot = item:GetAttribute("BobPivot")
+		if typeof(pivot) == "Vector3" then
+			local around = delta * CFrame.new(pivot)
+			moved = around * CFrame.new(0, math.sin(t * 3) * 0.45, 0) * CFrame.Angles(0, t * 2.4, 0) * around:Inverse() * moved
+		end
+		local bornAt, lifetime = item:GetAttribute("BornAt"), item:GetAttribute("Lifetime")
+		if type(bornAt) == "number" and type(lifetime) == "number" then
+			local left = math.clamp(1 - (t - bornAt) / lifetime, 0, 1)
+			local hurry = left < 0.3 and math.floor(t * 8) % 2 == 0
+			if item.Name == "LandingRing" then
+				local d = 1.2 + 3.6 * left
+				item.Size = Vector3.new(0.15, d, d)
+				item.Transparency = if hurry then 0.85 else 0.35
+			elseif item.Name == "LightPillar" then
+				item.Transparency = if hurry then 0.9 else 0.55 + math.sin(t * 6) * 0.12
+			end
+		end
 		local fall = Grid.FallLift(item, t)
 		if fall > 0 then
 			moved += Vector3.new(0, fall, 0)
