@@ -745,6 +745,21 @@ task.spawn(function()
 	end
 end)
 
+-- Server goal pill: the shared bar every climber in this server fills together (rises reached).
+local goalIcon = Icon.new():setName("ServerGoal"):setLabel(""):align("Left"):lock():modifyTheme(pill(Color3.fromRGB(235, 90, 20)))
+local function refreshGoal()
+	local have, size = tonumber(workspace:GetAttribute("LavaGoal")), tonumber(workspace:GetAttribute("LavaGoalSize"))
+	if not have or not size or size <= 0 then
+		goalIcon:setEnabled(false)
+		return
+	end
+	goalIcon:setLabel(UI.short(string.format("🌋 Server goal %d/%d", have, size), string.format("🌋 %d/%d", have, size)))
+	goalIcon:setEnabled(true)
+end
+workspace:GetAttributeChangedSignal("LavaGoal"):Connect(refreshGoal)
+workspace:GetAttributeChangedSignal("LavaGoalSize"):Connect(refreshGoal)
+refreshGoal()
+
 -- VIP chat tag
 local TextChatService = game:GetService("TextChatService")
 TextChatService.OnIncomingMessage = function(message: TextChatMessage)

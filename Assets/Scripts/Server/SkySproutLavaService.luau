@@ -109,6 +109,10 @@ local CFG = {
 	-- bubble shield for UnderdogShield seconds. A small catch-up for kids who are still learning; resets when you survive.
 	UnderdogAfter = 3,
 	UnderdogShield = 15,
+	-- Server goal: every rise a real player reaches fills one shared bar for the whole server. At GoalRises everyone who
+	-- climbed since the last goal gets GoalCoins (fixed, same for all), and a new bar starts. Bots don't count.
+	GoalRises = 40,
+	GoalCoins = 30,
 
 	-- Shove
 	ShoveRange = 9,
@@ -290,6 +294,8 @@ local L = {
 	LastCheer = setmetatable({}, { __mode = "k" }) :: any, -- [Player] = time of their last cheer (rate limit)
 	LossStreak = setmetatable({}, { __mode = "k" }) :: any, -- [Player] = rounds in a row knocked out (this server)
 	BotEase = 0, -- extra bot mistake chance after bot wins in a row (see CFG.BotEase)
+	Goal = 0, -- rises climbed toward the server goal (CFG.GoalRises)
+	GoalHelpers = setmetatable({}, { __mode = "k" }) :: any, -- [Player] = true if they climbed since the last goal
 }
 local friends: { [Player]: { [number]: boolean } } = {}
 
@@ -2857,6 +2863,10 @@ local function payout()
 			local opened = tonumber(d.ChestsOpened) or 0
 			-- Near miss: how many rises were left when you went out (your character stands ~3 studs above its tile).
 			local reached = math.clamp(math.floor((r.peak - 3 - CFG.GridBaseY) / CFG.GridRise + 0.5), 0, #CFG.GridSpins)
+			if reached > 0 then
+				L.Goal += reached
+				L.GoalHelpers[p] = true
+			end
 			if A.Season and GameConfig.LavaPass then
 				local xp = GameConfig.LavaPass.XP
 				A.Season.AddXP(p, xp.Played + (if r.crowned then xp.Crowned elseif r.alive then xp.Survived else 0) + (if r.crowned or r.alive then r.embers * xp.Berry else 0))
@@ -2886,6 +2896,25 @@ local function payout()
 			})
 		end
 	end
+	-- Server goal (CFG.GoalRises): when the server's climbers have filled the shared bar, everyone who helped since the
+	-- last one gets the same fixed coins. Published as workspace attributes LavaGoal / LavaGoalSize for the top bar.
+	if L.Goal >= CFG.GoalRises then
+		L.Goal = math.min(L.Goal - CFG.GoalRises, CFG.GoalRises - 1)
+		for p in L.GoalHelpers do
+			local d = data(p)
+			if p.Parent and d then
+				d.Coins = math.min(100000000, d.Coins + CFG.GoalCoins)
+				logCoins(p, "Gameplay", CFG.GoalCoins, "ServerGoal")
+				pushStats(p)
+				event:FireClient(p, "LavaFX", { Kind = "Invite", Text = "🌋 Server goal!", Coins = CFG.GoalCoins })
+			end
+		end
+		table.clear(L.GoalHelpers)
+		for _, p in Players:GetPlayers() do
+			tell(p, "🌋 Server goal reached! Everyone who climbed gets +" .. CFG.GoalCoins .. " coins. Next bar starts now!")
+		end
+	end
+	workspace:SetAttribute("LavaGoal", L.Goal)
 end
 
 -- Tiles wear down while anyone stands on them (they darken, crack and shake on clients) and shatter when worn
@@ -4152,6 +4181,8 @@ end
 function L.Start(arena: any, remote: RemoteEvent, stats: (Player) -> (), notice: (Player, string) -> ())
 	A, event, pushStats, tell = arena, remote, stats, notice
 	workspace:SetAttribute("LavaAwayAfter", CFG.AwayAfter)
+	workspace:SetAttribute("LavaGoal", 0)
+	workspace:SetAttribute("LavaGoalSize", CFG.GoalRises)
 	publishEvent()
 	clearPreview()
 	buildArena()

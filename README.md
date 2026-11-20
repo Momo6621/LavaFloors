@@ -58,6 +58,8 @@ Progression and live-ops:
 - Lava Chest: every round fills a bar on the result card (12 for playing, up to 30 for height, +15 survive, +30 crown).
   At 150 it opens for 100 coins; every 5th chest gives 300. The card always says how close the next chest is
   ("one more round to the chest!"). Fixed coins, nothing random or paid. Numbers are `Chest*` in CFG.
+- Server goal: every rise a real player reaches fills one shared bar (top bar pill "🌋 Server goal 12/40"). When it
+  fills, everyone who climbed since the last one gets 30 coins and a new bar starts. `GoalRises` / `GoalCoins` in CFG.
 - Underdog shield: knocked out 3 rounds in a row, you start the next round in a 15 s bubble shield (shoves only).
   Surviving resets it. `UnderdogAfter` / `UnderdogShield` in CFG.
 - Away: after 2 minutes with no input you sit out the automatic rounds (so nobody is dropped in to fall off while

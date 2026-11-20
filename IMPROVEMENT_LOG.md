@@ -3,6 +3,33 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 15. Server goal
+
+**Research.**
+- Shared progress bars that everyone fills together are a common way to make players care about each other's play,
+  as in Call of Duty: Mobile clan bars and match-3 community challenges
+  ([GameRefinery](https://www.gamerefinery.com/keep-players-engaged-with-communal-mechanics/)).
+- The best versions pair personal play with the shared bar, and only reward players who took part. Plants vs. Zombies
+  locked its community chests until you'd contributed.
+- LAVA Floors already had personal goals (Lava Chest, challenges, best height) but nothing the whole server worked on together.
+
+**Built.** Every rise a real player reaches in a round adds to one bar for the whole server: 40 rises (`CFG.GoalRises`).
+- When it fills, everyone who climbed since the last goal gets 30 coins (`CFG.GoalCoins`), the same for all, with the
+  coin burst and "🌋 Server goal!".
+- The whole server is told, and a new bar starts.
+- Bots don't count. Neither do idle players: they never reach a rise, and they're benched anyway (entry 11).
+- A top bar pill shows "🌋 Server goal 12/40" ("🌋 12/40" on narrow screens), fed by the workspace attributes
+  `LavaGoal` and `LavaGoalSize`.
+- Pacing: a solo player reaching 2–3 rises a round fills it in about 15 rounds; a busy server does it every few rounds.
+
+**Verified.** In a solo Studio play test, with the Studio copy temporarily set to a goal of 3:
+- After rounds 1–3 the goal read 0, 1, then paid out "🌋 Server goal! +30" and reset to 0.
+- The pill read 🌋 0/3 → 1/3 → 0/3.
+- The console showed no errors.
+- Studio was set back to 40 afterwards and matches the repo by chunk hash, for the service and for `LavaFloorsUI`.
+
+Not verified: the pill's look, since Studio was in the background.
+
 ## 14. Adaptive bots
 
 **Research.**
