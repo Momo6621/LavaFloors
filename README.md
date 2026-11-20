@@ -46,6 +46,8 @@ Round extras:
 - Twist vote: at the end of a round everyone votes on one of three twists for the next round.
 - Bots fill rounds that start with 1-3 real climbers (up to 4, labelled with a robot); they hop between safe tiles,
   fall with the floor or the lava and can be shoved off. If no real climbers are left, standing bots win.
+  Every bot win in a row makes them a little clumsier (`BotEase`, up to +0.30 mistake chance); a player win
+  sharpens them back up. They never get better than the base `BotMistake`.
 - Duos twist: everyone is paired (friends first, then players, then bots); teammates share an outline colour, can't
   shove each other, and the last team standing wins (both teammates are crowned).
 

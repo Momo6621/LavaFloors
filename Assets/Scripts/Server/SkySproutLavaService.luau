@@ -70,6 +70,10 @@ local CFG = {
 	BotMax = 3,
 	BotThink = { 0.35, 1.0 }, -- seconds between decisions
 	BotMistake = 0.12, -- chance a decision is a random neighbour
+	-- Adaptive bots: each round the bots win in a row adds BotEase to their mistake chance (up to BotEaseMax); a real
+	-- player winning takes off twice that. Keeps a server of younger players from watching "THE BOTS WIN!" forever.
+	BotEase = 0.06,
+	BotEaseMax = 0.3,
 	BotNames = { "Ember", "Magma", "Cinder", "Flare", "Pumice", "Basalt", "Scoria", "Ash", "Obsidian", "Sparky" },
 
 	-- Anti-cheat: a climber who jumps more than TeleportJump studs in one tick can't grab pickups for a second,
@@ -285,6 +289,7 @@ local L = {
 	Predictions = {} :: { [Player]: string }, -- knocked-out players' free "pick the winner" guesses this round
 	LastCheer = setmetatable({}, { __mode = "k" }) :: any, -- [Player] = time of their last cheer (rate limit)
 	LossStreak = setmetatable({}, { __mode = "k" }) :: any, -- [Player] = rounds in a row knocked out (this server)
+	BotEase = 0, -- extra bot mistake chance after bot wins in a row (see CFG.BotEase)
 }
 local friends: { [Player]: { [number]: boolean } } = {}
 
@@ -3361,7 +3366,7 @@ local function botThink(b: Bot, t: number, taken: { [number]: boolean })
 			end
 		end
 	end
-	if #options > 0 and math.random() < CFG.BotMistake then
+	if #options > 0 and math.random() < CFG.BotMistake + L.BotEase then
 		best = options[math.random(#options)]
 	end
 	if best and (best[1] ~= b.row or best[2] ~= b.col) then
@@ -3702,6 +3707,14 @@ local function runRound()
 		for _, n in botWinners do
 			table.insert(names, n)
 		end
+		-- Adaptive bots (CFG.BotEase): clumsier after each bot win in a row, sharper again when a real player wins.
+		-- Published as the workspace attribute LavaBotEase so it can be checked in Studio.
+		if #roundWinners > 0 then
+			L.BotEase = math.max(0, L.BotEase - CFG.BotEase * 2)
+		elseif #botWinners > 0 then
+			L.BotEase = math.min(CFG.BotEaseMax, L.BotEase + CFG.BotEase)
+		end
+		workspace:SetAttribute("LavaBotEase", L.BotEase)
 		-- Round awards: a shout-out for what players did, so those who didn't win still get named on the banner.
 		-- Real players only, one award each, only for something they actually did, and only with 2+ players.
 		-- No coins: it's recognition, not a reward, so there's nothing to farm.

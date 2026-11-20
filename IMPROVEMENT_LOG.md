@@ -3,6 +3,30 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 14. Adaptive bots
+
+**Research.**
+- Dynamic difficulty adjustment exists to keep players out of boredom and frustration, and recent work reports it helps
+  keep players engaged and feels fairer
+  ([preprint](https://www.preprints.org/manuscript/202511.2251)).
+- Work on young children notes they have fewer strategies for handling frustration
+  ([arXiv 2406.04794](https://arxiv.org/pdf/2406.04794)).
+- The same research says adapting can backfire if players sense it's unfair, so the change should be small and bounded.
+- In LAVA Floors, bots fill small rounds with a fixed 12% mistake chance. In a server of young players, bots can win
+  round after round.
+
+**Built.** Each round the bots win in a row adds 0.06 to their mistake chance, up to +0.30 (`CFG.BotEase`, `CFG.BotEaseMax`).
+- A mistake is a random hop to a neighbouring tile instead of the safest one.
+- A real player winning takes off 0.12. A round the lava wins changes nothing.
+- It's per server and invisible in play. The value is published as the workspace attribute `LavaBotEase` for testing.
+- The bots never get better than the original 12%, so strong players face the same bots as before.
+
+**Verified.** In a solo Studio play test, the player stepped into the lava after phase 1 for 4 rounds. The bots won
+each time, and `LavaBotEase` went 0.06 → 0.12 → 0.18 → 0.24. The console showed no errors, and Studio matches the repo by chunk hash.
+
+Not verified: the drop after a real player wins. A test player can't win while Studio is in the background. That's a
+one-line `math.max(0, …)` next to the tested increase.
+
 ## 13. Fix: Berry Picker missed knocked-out players
 
 **Found** while building the underdog shield. The Berry Picker award (entry 9) counted `r.embers`, but a scorch
