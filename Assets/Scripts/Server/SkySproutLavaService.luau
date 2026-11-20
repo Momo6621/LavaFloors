@@ -125,6 +125,18 @@ local CFG = {
 	JumpTime = 7,
 	EmberBag = 3,
 
+	-- Daily challenges (three a day, the same for everyone)
+	ChallengesPerDay = 3,
+	Challenges = {
+		{ Id = "Play", Text = "Play %d rounds", Goal = 4, Reward = 40 },
+		{ Id = "Survive", Text = "Survive %d rounds", Goal = 2, Reward = 60 },
+		{ Id = "Win", Text = "Win %d round", Goal = 1, Reward = 100 },
+		{ Id = "Drops", Text = "Grab %d supply drops", Goal = 2, Reward = 60 },
+		{ Id = "Berries", Text = "Collect %d strawberries", Goal = 10, Reward = 50 },
+		{ Id = "Phase", Text = "Reach phase %d", Goal = 5, Reward = 60 },
+		{ Id = "Shoves", Text = "Land %d shoves", Goal = 6, Reward = 50 },
+	},
+
 	-- Keep moving
 	CampTime = 4,
 	CampRespawn = 6,
@@ -389,6 +401,81 @@ local function broadcast()
 	}
 	for _, p in Players:GetPlayers() do
 		event:FireClient(p, "LavaState", payload)
+	end
+end
+
+
+-- Daily challenges: everyone gets the same few challenges each day (picked from CFG.Challenges by the date).
+-- Progress is saved on the profile; finishing one pays its coins straight away. The list is sent to the client as
+-- the player's "Challenges" attribute (JSON).
+local HttpService = game:GetService("HttpService")
+
+local function today(): number
+	return math.floor(os.time() / 86400)
+end
+
+local function todaysChallenges(): { any }
+	local pool = table.clone(CFG.Challenges)
+	local rng = Random.new(today() * 7919 + 17)
+	for i = #pool, 2, -1 do
+		local j = rng:NextInteger(1, i)
+		pool[i], pool[j] = pool[j], pool[i]
+	end
+	local list = {}
+	for i = 1, math.min(CFG.ChallengesPerDay, #pool) do
+		table.insert(list, pool[i])
+	end
+	return list
+end
+
+local function dailyState(d: any): any
+	if type(d.Daily) ~= "table" or d.Daily.Day ~= today() then
+		d.Daily = { Day = today(), P = {}, C = {} }
+	end
+	return d.Daily
+end
+
+local function pushChallenges(p: Player)
+	local d = data(p)
+	if not d then
+		return
+	end
+	local daily = dailyState(d)
+	local out = {}
+	for _, c in todaysChallenges() do
+		table.insert(out, {
+			Id = c.Id,
+			Text = string.format(c.Text, c.Goal),
+			Goal = c.Goal,
+			Progress = math.min(c.Goal, daily.P[c.Id] or 0),
+			Reward = c.Reward,
+			Done = daily.C[c.Id] == true,
+		})
+	end
+	p:SetAttribute("Challenges", HttpService:JSONEncode({ Day = today(), List = out }))
+end
+
+-- Record progress: amount is added, or for "best" challenges (like reaching a phase) it is the new best.
+local function challenge(p: Player, id: string, amount: number, best: boolean?)
+	local d = data(p)
+	if not d then
+		return
+	end
+	local daily = dailyState(d)
+	for _, c in todaysChallenges() do
+		if c.Id == id and not daily.C[id] then
+			local now = daily.P[id] or 0
+			daily.P[id] = if best then math.max(now, amount) else now + amount
+			if daily.P[id] >= c.Goal then
+				daily.C[id] = true
+				d.Coins = math.min(100000000, d.Coins + c.Reward)
+				pushStats(p)
+				event:FireClient(p, "LavaFX", { Kind = "Invite", Text = "📋 Challenge done!", Coins = c.Reward })
+				tell(p, "📋 Challenge complete: " .. string.format(c.Text, c.Goal) .. "! +" .. c.Reward .. " coins")
+			end
+			pushChallenges(p)
+			return
+		end
 	end
 end
 
@@ -870,6 +957,7 @@ local function makeEmber(parent: Instance, position: Vector3, stepIndex: number)
 		radius = 3.5,
 		take = function(p: Player, r: any)
 			r.embers += 1
+			challenge(p, "Berries", 1)
 			event:FireClient(p, "LavaFX", { Kind = "Ember", Position = pickupPosition(ember) })
 			ember:Destroy()
 			personal(p)
@@ -1594,6 +1682,7 @@ local function spawnDrop()
 			local at = pickupPosition(crate)
 			finish()
 			applyBoost(p, r, boost, at)
+			challenge(p, "Drops", 1)
 		end,
 	})
 	task.spawn(function()
@@ -2063,6 +2152,7 @@ local function shove(p: Player)
 		event:FireClient(best, "LavaShove", dir * CFG.ShoveSpeed * power + Vector3.new(0, CFG.ShoveLift, 0))
 		event:FireClient(p, "LavaFX", { Kind = "Hit", Position = them.Position })
 		tell(best, "💥 " .. p.DisplayName .. " shoved you!")
+		challenge(p, "Shoves", 1)
 	end
 end
 
@@ -2259,6 +2349,13 @@ local function payout()
 	for p, r in L.Runners do
 		local d = data(p)
 		if p.Parent and d then
+			challenge(p, "Play", 1)
+			if r.crowned or r.alive then
+				challenge(p, "Survive", 1)
+			end
+			if r.crowned then
+				challenge(p, "Win", 1)
+			end
 			local coins = math.floor(r.peak * CFG.CoinsPerStud)
 			local banked = 0
 			if r.crowned then
@@ -2653,6 +2750,7 @@ local function shoveBot(p: Player, b: Bot, dir: Vector3)
 	local from = botPosition(b)
 	local row, col = Grid.TileAt(towerModel, from + dir * CFG.GridTile * 1.6 + Vector3.new(0, 2, 0), now())
 	event:FireClient(p, "LavaFX", { Kind = "Hit", Position = from })
+	challenge(p, "Shoves", 1)
 	if row and col and walkable(Grid.TileState(towerModel, row, col, now())) then
 		setBotTile(b, row, col)
 		b.nextThink = now() + 0.6
@@ -2728,6 +2826,7 @@ local function runRound()
 			for p, r in L.Runners do
 				if r.alive and not r.crowned then
 					tell(p, if phase == #CFG.GridSpins then "🏁 FINAL PHASE — hold on!" else string.format("Phase %d of %d", phase, #CFG.GridSpins))
+					challenge(p, "Phase", phase, true)
 				end
 			end
 		end
@@ -3419,7 +3518,19 @@ function L.Start(arena: any, remote: RemoteEvent, stats: (Player) -> (), notice:
 	end
 	Players.PlayerAdded:Connect(function(p)
 		task.spawn(checkReferral, p)
+		task.spawn(function()
+			if waitData(p) then
+				pushChallenges(p)
+			end
+		end)
 	end)
+	for _, p in Players:GetPlayers() do
+		task.spawn(function()
+			if waitData(p) then
+				pushChallenges(p)
+			end
+		end)
+	end
 	for _, p in Players:GetPlayers() do
 		task.spawn(checkReferral, p)
 	end

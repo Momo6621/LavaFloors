@@ -161,6 +161,8 @@ foot.Size = UDim2.new(1, -24, 0, 26)
 foot.TextWrapped = true
 
 local openPanel: (string) -> ()
+local challengePanel: Frame
+local refreshChallenges: () -> ()
 type Card = { refresh: () -> () }
 local cards: { Card } = {}
 local function card(order: number, swatch: Color3, title: string): (Frame, TextButton)
@@ -586,6 +588,10 @@ openPanel = function(which: string)
 	shop.Visible = false
 	passPanel.Visible = which == "Pass"
 	vipPanel.Visible = which == "VIP"
+	challengePanel.Visible = which == "Challenges"
+	if which == "Challenges" then
+		refreshChallenges()
+	end
 	if which == "Pass" then
 		refreshPass()
 	end
@@ -615,6 +621,67 @@ Icon.new()
 			vipPanel.Visible = false
 		else
 			openPanel("VIP")
+		end
+	end)
+
+-- Daily challenges panel: three challenges with progress bars, from the server's "Challenges" attribute.
+local HttpService = game:GetService("HttpService")
+local builtPanel, challengeBody = panel("📋 DAILY CHALLENGES", UI.Lava, UI.LavaDeep)
+challengePanel = builtPanel
+local challengeList = make("Frame", { Size = UDim2.new(1, 0, 1, -34), BackgroundTransparency = 1 }, challengeBody)
+make("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }, challengeList)
+local challengeFoot = label(challengeBody, "", 15, INK:Lerp(CREAM, 0.35))
+challengeFoot.AnchorPoint = Vector2.new(0, 1)
+challengeFoot.Position = UDim2.fromScale(0, 1)
+challengeFoot.Size = UDim2.new(1, 0, 0, 26)
+refreshChallenges = function()
+	for _, c in challengeList:GetChildren() do
+		if c:IsA("Frame") then
+			c:Destroy()
+		end
+	end
+	local raw = player:GetAttribute("Challenges")
+	local ok, info = pcall(function()
+		return HttpService:JSONDecode(if type(raw) == "string" then raw else "{}")
+	end)
+	local list = if ok and type(info) == "table" and type(info.List) == "table" then info.List else {}
+	for i, c in list do
+		local row: Frame = make("Frame", { LayoutOrder = i, Size = UDim2.new(1, 0, 0, 70), BackgroundColor3 = Color3.new(1, 1, 1) }, challengeList)
+		corner(row, 14)
+		outline(row, 2, if c.Done then GREEN else nil)
+		local text = label(row, (if c.Done then "✅ " else "") .. tostring(c.Text), 20)
+		text.Position = UDim2.fromOffset(14, 6)
+		text.Size = UDim2.new(1, -120, 0, 28)
+		text.TextXAlignment = Enum.TextXAlignment.Left
+		local reward = label(row, "+" .. tostring(c.Reward) .. " 💰", 20, UI.Gold)
+		reward.AnchorPoint = Vector2.new(1, 0)
+		reward.Position = UDim2.new(1, -14, 0, 6)
+		reward.Size = UDim2.fromOffset(100, 28)
+		reward.TextXAlignment = Enum.TextXAlignment.Right
+		local back = make("Frame", { Position = UDim2.fromOffset(14, 42), Size = UDim2.new(1, -28, 0, 14), BackgroundColor3 = UI.Glass, BackgroundTransparency = 0.2 }, row)
+		corner(back, 7)
+		local frac = math.clamp((tonumber(c.Progress) or 0) / math.max(1, tonumber(c.Goal) or 1), 0, 1)
+		local fill = make("Frame", { Size = UDim2.fromScale(frac, 1), BackgroundColor3 = if c.Done then GREEN else UI.Lava, BorderSizePixel = 0 }, back)
+		make("UICorner", { CornerRadius = UDim.new(0, 7) }, fill)
+		local count = label(back, string.format("%d / %d", tonumber(c.Progress) or 0, tonumber(c.Goal) or 0), 12)
+		count.ZIndex = 3
+	end
+	local secs = 86400 - (os.time() % 86400)
+	challengeFoot.Text = string.format("New challenges in %dh %dm", math.floor(secs / 3600), math.floor(secs % 3600 / 60))
+end
+player:GetAttributeChangedSignal("Challenges"):Connect(refreshChallenges)
+refreshChallenges()
+Icon.new()
+	:setName("Challenges")
+	:setLabel("📋 Challenges")
+	:align("Left")
+	:oneClick()
+	:modifyTheme(pill(UI.Lava))
+	:bindEvent("selected", function()
+		if challengePanel.Visible then
+			challengePanel.Visible = false
+		else
+			openPanel("Challenges")
 		end
 	end)
 

@@ -1,7 +1,7 @@
 local C=require(game.ReplicatedStorage.SkySproutConfig)
 local R={}
 function R.floor(points)return math.clamp(1+math.floor(points/C.PointsPerFloor),1,C.MaxFloor)end
-function R.new()return {Version=8,Waystones={},Contracts={},XP=0,Style="Vanguard",Relic="Ember",BossClears={},Hunts={},Stories={},Coins=0,Points=0,BestFloor=1,Wins=0,Losses=0,Knockouts=0,Skin="Mint",Owned={Mint=true},FloorQuests={},Receipts={},LastDaily=0,DailyStreak=0,Crowns=0,Hat="",OwnedHats={},PassSeason=0,PassXP=0,PassFree={},PassPrem={},Tipped=0,WelcomeClaimed=false,Invited={},InviteDay=0,InviteToday=0}end
+function R.new()return {Version=8,Waystones={},Contracts={},XP=0,Style="Vanguard",Relic="Ember",BossClears={},Hunts={},Stories={},Coins=0,Points=0,BestFloor=1,Wins=0,Losses=0,Knockouts=0,Skin="Mint",Owned={Mint=true},FloorQuests={},Receipts={},LastDaily=0,DailyStreak=0,Crowns=0,Hat="",OwnedHats={},PassSeason=0,PassXP=0,PassFree={},PassPrem={},Tipped=0,WelcomeClaimed=false,Invited={},InviteDay=0,InviteToday=0,Daily={Day=0,P={},C={}}}end
 function R.clean(raw)
  local p=R.new();if type(raw)~="table"then return p end
  for _,k in ipairs({"Coins","Points","Wins","Losses","Knockouts","BestFloor","XP","Crowns"})do
@@ -36,6 +36,12 @@ function R.clean(raw)
  if type(raw.LastDaily)=="number"and raw.LastDaily==raw.LastDaily then p.LastDaily=math.clamp(math.floor(raw.LastDaily),0,10000000)end
  if type(raw.DailyStreak)=="number"and raw.DailyStreak==raw.DailyStreak then p.DailyStreak=math.clamp(math.floor(raw.DailyStreak),0,7)end
  p.WelcomeClaimed=raw.WelcomeClaimed==true
+ if type(raw.Daily)=="table"then
+  local day=raw.Daily.Day;if type(day)=="number"and day==day then p.Daily.Day=math.clamp(math.floor(day),0,10000000)end
+  local n=0
+  if type(raw.Daily.P)=="table"then for k,v in pairs(raw.Daily.P)do if type(k)=="string"and #k<=24 and type(v)=="number"and v==v and n<20 then p.Daily.P[k]=math.clamp(math.floor(v),0,100000);n+=1 end end end
+  if type(raw.Daily.C)=="table"then for k,v in pairs(raw.Daily.C)do if type(k)=="string"and #k<=24 and v==true then p.Daily.C[k]=true end end end
+ end
  if type(raw.Invited)=="table"then for _,id in ipairs(raw.Invited)do if type(id)=="number"and id==id and math.abs(id)<1e15 and #p.Invited<200 then table.insert(p.Invited,math.floor(id))end end end
  if type(raw.InviteDay)=="number"and raw.InviteDay==raw.InviteDay then p.InviteDay=math.clamp(math.floor(raw.InviteDay),0,10000000)end
  if type(raw.InviteToday)=="number"and raw.InviteToday==raw.InviteToday then p.InviteToday=math.clamp(math.floor(raw.InviteToday),0,1000)end
