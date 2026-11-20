@@ -94,6 +94,10 @@ local CFG = {
 	ChestCoins = 100,
 	ChestBigEvery = 5,
 	ChestBigCoins = 300,
+	-- Warm-up Hop: a timed stepping-stone run beside the lobby plaza for anyone waiting on a round. Falling in the
+	-- practice lava just sends you back to the start. No coins (nothing to farm); the server's fastest run shows.
+	HopFrom = 22, -- studs from the plaza centre to the start pad, sideways
+	HopMinTime = 2.5, -- runs faster than this are impossible and ignored
 
 	-- Shove
 	ShoveRange = 9,
@@ -870,6 +874,147 @@ local function buildArena()
 			end
 			return rows
 		end)
+
+		-- Warm-up Hop (CFG.HopFrom): stepping stones over a pool of practice lava beside the plaza. The clock runs
+		-- from leaving the green pad to touching the gold one; falling in sends you back to the green pad.
+		local hop = Instance.new("Model")
+		hop.Name = "WarmupHop"
+		hop.Parent = arenaFolder
+		local base = plazaPos + side * CFG.HopFrom
+		local function at(s: number, t: number, y: number): Vector3
+			return base + side * s + toward * t + Vector3.new(0, y, 0)
+		end
+		local turn = CFrame.lookAt(Vector3.zero, side).Rotation
+		local startPad = part(hop, "HopStart", Vector3.new(8, 1, 8), CFrame.new(at(0, 0, 2.5)) * turn, Color3.fromRGB(70, 160, 90), Enum.Material.Slate)
+		local goalPad = part(hop, "HopGoal", Vector3.new(7, 1, 7), CFrame.new(at(39, 0, 8)) * turn, Color3.fromRGB(255, 190, 60), Enum.Material.Slate)
+		for _, s in { { 7, 2.5, 3.5 }, { 12, -2.5, 4.5 }, { 17, 2, 5.5 }, { 22, -2.5, 6.5 }, { 27, 2.5, 7 }, { 32.5, -1, 7.5 } } do
+			local top = s[3]
+			part(hop, "HopStone", Vector3.new(3.6, 1, 3.6), CFrame.new(at(s[1], s[2], top - 0.5)) * turn, Color3.fromRGB(72, 54, 52), Enum.Material.Basalt)
+			local column = part(hop, "HopColumn", Vector3.new(2.4, top - 3, 2.4), CFrame.new(at(s[1], s[2], 2 + (top - 3) / 2)) * turn, Color3.fromRGB(40, 30, 30), Enum.Material.Basalt)
+			column.CanCollide = false
+			column.CanTouch = false
+		end
+		local goalColumn = part(hop, "HopColumn", Vector3.new(5, 5.5, 5), CFrame.new(at(39, 0, 4.75)) * turn, Color3.fromRGB(40, 30, 30), Enum.Material.Basalt)
+		goalColumn.CanTouch = false
+		local pool = part(hop, "HopLava", Vector3.new(14, 0.5, 31), CFrame.new(at(19.75, 0, 2.1)) * turn, Color3.fromRGB(235, 80, 15), Enum.Material.Neon)
+		pool.CanCollide = false
+		pool.CastShadow = false
+		for _, edge in { -1, 1 } do
+			local lip = part(hop, "HopLip", Vector3.new(1.2, 0.8, 33), CFrame.new(at(19.75, edge * 7.6, 2.2)) * turn, Color3.fromRGB(40, 30, 30), Enum.Material.Basalt)
+			lip.CanCollide = false
+			lip.CanTouch = false
+		end
+		local poolGlow = Instance.new("SurfaceLight")
+		poolGlow.Face = Enum.NormalId.Top
+		poolGlow.Range = 14
+		poolGlow.Brightness = 2
+		poolGlow.Color = Color3.fromRGB(255, 120, 40)
+		poolGlow.Parent = pool
+		local function sign(on: BasePart, height: number, first: string, second: string): TextLabel
+			local bb = Instance.new("BillboardGui")
+			bb.Size = UDim2.fromOffset(230, 64)
+			bb.StudsOffset = Vector3.new(0, height, 0)
+			bb.MaxDistance = 120
+			bb.Parent = on
+			local labels = {}
+			for i, t in { first, second } do
+				local l = Instance.new("TextLabel")
+				l.BackgroundTransparency = 1
+				l.Size = UDim2.new(1, 0, if i == 1 then 0.58 else 0.42, 0)
+				l.Position = UDim2.fromScale(0, if i == 1 then 0 else 0.58)
+				l.Font = Enum.Font.FredokaOne
+				l.TextScaled = true
+				l.TextColor3 = if i == 1 then Color3.fromRGB(255, 190, 70) else Color3.new(1, 1, 1)
+				l.Text = t
+				local stroke = Instance.new("UIStroke")
+				stroke.Thickness = 2
+				stroke.Color = Color3.fromRGB(60, 15, 0)
+				stroke.Parent = l
+				l.Parent = bb
+				labels[i] = l
+			end
+			return labels[2]
+		end
+		sign(startPad, 5, "🔥 WARM-UP HOP", "Hop to the gold pad! Falling is safe")
+		local recordLabel = sign(goalPad, 5, "🏁 FINISH", "Be the first to finish!")
+
+		local started: { [Player]: number } = setmetatable({}, { __mode = "k" }) :: any
+		local best: { [Player]: number } = setmetatable({}, { __mode = "k" }) :: any
+		local sentBack: { [Player]: number } = setmetatable({}, { __mode = "k" }) :: any
+		local record = { Name = "", Time = math.huge }
+		local function hopper(hit: BasePart): (Player?, BasePart?)
+			local model: Instance? = hit.Parent
+			if model and model:IsA("Accessory") then
+				model = model.Parent
+			end
+			local p = if model and model:IsA("Model") then Players:GetPlayerFromCharacter(model) else nil
+			if not p or p:GetAttribute("ArenaMode") == "LavaRush" then
+				return nil, nil
+			end
+			local hum = (model :: Instance):FindFirstChildOfClass("Humanoid")
+			if not hum or hum.Health <= 0 then
+				return nil, nil
+			end
+			return p, root(p)
+		end
+		-- The clock starts the moment you leave the green pad: while you're over it, it keeps resetting.
+		task.spawn(function()
+			while hop.Parent do
+				for _, p in Players:GetPlayers() do
+					local r = root(p)
+					if r and p:GetAttribute("ArenaMode") ~= "LavaRush" then
+						local rel = startPad.CFrame:PointToObjectSpace(r.Position)
+						if math.abs(rel.X) < 4.5 and math.abs(rel.Z) < 4.5 and rel.Y > 0 and rel.Y < 8 then
+							started[p] = now()
+						end
+					end
+				end
+				task.wait(0.1)
+			end
+		end)
+		goalPad.Touched:Connect(function(hit)
+			local p, r = hopper(hit)
+			local t0 = if p then started[p] else nil
+			if not p or not r or not t0 then
+				return
+			end
+			started[p] = nil
+			local t = now() - t0
+			if t < CFG.HopMinTime then
+				return
+			end
+			local prev = best[p]
+			local text = string.format("⏱ %.1fs", t)
+			if prev == nil or t < prev then
+				best[p] = t
+			end
+			if t < record.Time then
+				record.Time = t
+				record.Name = p.DisplayName
+				recordLabel.Text = string.format("🏆 Fastest: %s %.1fs", record.Name, record.Time)
+				text ..= "  🏆 SERVER RECORD!"
+			elseif prev and t < prev then
+				text ..= "  NEW BEST!"
+			end
+			event:FireClient(p, "LavaFX", { Kind = "Boost", Position = r.Position, Text = text, Color = Color3.fromRGB(255, 205, 60) })
+		end)
+		pool.Touched:Connect(function(hit)
+			local p, r = hopper(hit)
+			if not p or not r then
+				return
+			end
+			local last = sentBack[p]
+			if last and os.clock() - last < 0.75 then
+				return
+			end
+			sentBack[p] = os.clock()
+			started[p] = nil
+			r.AssemblyLinearVelocity = Vector3.zero
+			local char = p.Character
+			if char then
+				char:PivotTo(CFrame.lookAt(at(0, 0, 6), at(10, 0, 6)))
+			end
+		end)
 	end
 
 	-- A glowing lava strip across the middle of the arena floor, under the floating grid. It runs side to side as
@@ -916,7 +1061,9 @@ local function buildArena()
 	scorch.Shape = Enum.PartType.Cylinder
 	local rng = Random.new(2026)
 	local toTown = math.atan2(CFG.Beacon.Z - c.Z, CFG.Beacon.X - c.X)
-	local avoid = { Vector3.new(-328, 0, 262), Vector3.new(-207, 0, 431) }
+	local fromTown = (Vector3.new(c.X, 0, c.Z) - Vector3.new(CFG.Beacon.X, 0, CFG.Beacon.Z)).Unit
+	local hopMiddle = Vector3.new(CFG.Beacon.X, 0, CFG.Beacon.Z) + Vector3.new(-fromTown.Z, 0, fromTown.X) * (CFG.HopFrom + 20)
+	local avoid = { Vector3.new(-328, 0, 262), Vector3.new(-207, 0, 431), hopMiddle }
 	local roads = {}
 	local floorModel = workspace.SkySprout.Floors:FindFirstChild("Floor_" .. CFG.Floor)
 	local trails = floorModel and floorModel:FindFirstChild("RegionalTrails")

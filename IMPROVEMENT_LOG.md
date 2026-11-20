@@ -3,6 +3,40 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 8. Warm-up Hop in the lobby
+
+**Research.**
+- DevForum threads on round-based games keep coming back to dead time in the lobby: new players who join mid-round,
+  or who get knocked out early, have nothing to do and leave. The suggested fix is something small to play in the
+  lobby (a mini obby, a secret, a mini-game) while you wait
+  ([1](https://devforum.roblox.com/t/how-can-i-make-this-round-based-game-less-boring/312762),
+  [2](https://devforum.roblox.com/t/what-should-i-do-with-the-time-players-have-in-between-games/1124487),
+  [3](https://devforum.roblox.com/t/people-leaving-game-really-early-on/2158215?page=3)).
+- LAVA Floors already covers the people watching (spectating, Pick the winner, Cheers), but the lobby itself had only
+  boards and the join beacons.
+
+**Built.** A short stepping-stone run beside the lobby plaza: a green start pad, six basalt stones rising over a pool
+of practice lava, and a gold finish pad.
+- Falling in is safe: you go straight back to the green pad.
+- The clock runs from leaving the green pad to touching the gold one. The finish shows "⏱ 4.2s", "NEW BEST!" or
+  "🏆 SERVER RECORD!", and the sign over the finish shows the server's fastest run.
+- No coins, so there's nothing to farm. Runs faster than 2.5 s (`CFG.HopMinTime`) are ignored.
+- Players in a round can't use it. Knocked-out players can, between cheers.
+- The volcano rock spires now keep clear of the course: one had landed on the finish pad.
+
+**Verified.** In a Studio play test:
+- Run: green pad → stones → gold pad gave "⏱ 3.0s 🏆 SERVER RECORD!". The finish sign switched to the record.
+- Fall: dropped between the first two stones, I was back on the green pad within 0.5 s, with full health.
+- After the spire fix, nothing overlaps the course except the ground and the plaza edge, and all 16 spires are still placed.
+- The console showed no errors, and Studio matches the repo by chunk hash.
+
+Not verified:
+- Real jumping. The test teleported between stones; the gaps (about 3 studs, rising 1 stud a stone) are meant for the
+  default lobby jump.
+- How it looks, because Studio was in the background.
+- The edit-mode preview copy, which wasn't refreshed. `BuildPreview` fails from the plugin because
+  `SkySproutProfiles` calls `BindToClose`, which only works on a running server. The game builds a fresh map at start.
+
 ## 7. "One more round": Lava Chest and near misses
 
 **Why.** Asked for directly: a mechanic that makes players say "one more run". The two classic drivers are a progress
