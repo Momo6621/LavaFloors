@@ -219,6 +219,24 @@ end
 
 -- Grid helpers
 
+-- Floor tiles are a sculpted stone slab (Creator Store mesh kept in ReplicatedStorage.TileMesh) tinted by the theme;
+-- falls back to a plain block if the template is missing.
+local function tilePart(parent: Instance, name: string, size: Vector3, cf: CFrame, color: Color3): BasePart
+	local template = game.ReplicatedStorage:FindFirstChild("TileMesh")
+	if not template or not template:IsA("MeshPart") then
+		return part(parent, name, size, cf, color, Enum.Material.Slate)
+	end
+	local tile = template:Clone()
+	tile.Name = name
+	tile.Anchored = true
+	tile.Size = size
+	tile.CFrame = cf
+	tile.Color = color
+	tile.Material = Enum.Material.Slate
+	tile.Parent = parent
+	return tile
+end
+
 local function tileDelta(stepIndex: number): CFrame
 	return Grid.Delta(tower, platforms[stepIndex], workspace:GetServerTimeNow())
 end
@@ -1530,33 +1548,39 @@ local function giveCrownHat(p: Player)
 	if old then
 		old:Destroy()
 	end
-	local hat = Instance.new("Model")
+	-- A jewelled gold crown (Creator Store model, kept in ReplicatedStorage.CrownModel) sized to the head.
+	local template = game.ReplicatedStorage:FindFirstChild("CrownModel")
+	if not template or not template:IsA("Model") then
+		return
+	end
+	local hat = template:Clone()
 	hat.Name = "LavaCrownHat"
-	local gold = Color3.fromRGB(255, 205, 70)
-	local top = head.CFrame * CFrame.new(0, head.Size.Y / 2 + 0.25, 0)
-	local pieces = {}
-	local band = part(hat, "Band", Vector3.new(0.45, 1.5, 1.5), top * CFrame.Angles(0, 0, math.rad(90)), gold, Enum.Material.Foil)
-	band.Shape = Enum.PartType.Cylinder
-	table.insert(pieces, band)
-	for i = 0, 4 do
-		local a = i * math.pi * 2 / 5
-		local spike = part(hat, "Spike", Vector3.new(0.32, 0.55, 0.32), top * CFrame.new(math.cos(a) * 0.6, 0.45, math.sin(a) * 0.6), gold, Enum.Material.Foil)
-		local gem = part(hat, "Gem", Vector3.new(0.22, 0.22, 0.22), spike.CFrame * CFrame.new(0, 0.35, 0), Color3.fromRGB(255, 80, 60), Enum.Material.Neon)
-		gem.Shape = Enum.PartType.Ball
-		table.insert(pieces, spike)
-		table.insert(pieces, gem)
+	local _, size = hat:GetBoundingBox()
+	hat:ScaleTo(head.Size.X * 1.25 / math.max(size.X, size.Z))
+	local _, scaled = hat:GetBoundingBox()
+	hat:PivotTo(head.CFrame * CFrame.new(0, head.Size.Y / 2 + scaled.Y * 0.4, 0))
+	for _, piece in hat:GetDescendants() do
+		if piece:IsA("BasePart") then
+			piece.Anchored = false
+			piece.CanCollide = false
+			piece.CanTouch = false
+			piece.CanQuery = false
+			piece.Massless = true
+			local weld = Instance.new("WeldConstraint")
+			weld.Part0 = head
+			weld.Part1 = piece
+			weld.Parent = piece
+		end
 	end
-	for _, piece in pieces do
-		piece.Anchored = false
-		piece.CanCollide = false
-		piece.CanTouch = false
-		piece.CanQuery = false
-		piece.Massless = true
-		local weld = Instance.new("WeldConstraint")
-		weld.Part0 = head
-		weld.Part1 = piece
-		weld.Parent = piece
-	end
+	local shine = Instance.new("ParticleEmitter")
+	shine.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+	shine.Color = ColorSequence.new(Color3.fromRGB(255, 240, 160))
+	shine.LightEmission = 1
+	shine.Rate = 6
+	shine.Lifetime = NumberRange.new(0.5, 0.9)
+	shine.Speed = NumberRange.new(0.5, 1.5)
+	shine.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.35), NumberSequenceKeypoint.new(1, 0) })
+	shine.Parent = hat.PrimaryPart
 	hat.Parent = character
 	task.delay(120, function()
 		if hat.Parent then
@@ -1609,7 +1633,7 @@ local function buildTower()
 		for col = 1, size do
 			local index = (row - 1) * size + col
 			local ring, light = Grid.Ring(size, row, col), (row + col) % 2 == 1
-			local tile = part(model, "Tile" .. index, Vector3.new(CFG.GridTile, 1.2, CFG.GridTile), Grid.TileCFrame(model, row, col, -math.huge), tileColour(Themes.Get(L.Theme), ring, light), Enum.Material.SmoothPlastic)
+			local tile = tilePart(model, "Tile" .. index, Vector3.new(CFG.GridTile, 1.2, CFG.GridTile), Grid.TileCFrame(model, row, col, -math.huge), tileColour(Themes.Get(L.Theme), ring, light))
 			tile:SetAttribute("TileRing", ring)
 			tile:SetAttribute("TileLight", light)
 			tile:SetAttribute("StepIndex", index)
@@ -1619,9 +1643,7 @@ local function buildTower()
 			local warn = part(model, "WarnPlate", Vector3.new(CFG.GridTile - 0.6, 0.12, CFG.GridTile - 0.6), tile.CFrame * CFrame.new(0, 0.66, 0), Color3.fromRGB(255, 45, 45), Enum.Material.Neon)
 			warn.Transparency = 1
 			warn:SetAttribute("NoTheme", true)
-			local cap = part(model, "TileCap", Vector3.new(CFG.GridTile - 1, 0.1, CFG.GridTile - 1), tile.CFrame * CFrame.new(0, 0.62, 0), tile.Color:Lerp(Color3.new(1, 1, 1), 0.16), Enum.Material.SmoothPlastic)
-			cap:SetAttribute("NoTheme", true)
-			for _, deco in { under, warn, cap } do
+			for _, deco in { under, warn } do
 				deco.CanCollide = false
 				deco.CanQuery = false
 				deco.CanTouch = false
@@ -1630,7 +1652,6 @@ local function buildTower()
 			ride(tile, index)
 			ride(under, index)
 			ride(warn, index)
-			ride(cap, index)
 			table.insert(platforms, tile)
 		end
 	end
