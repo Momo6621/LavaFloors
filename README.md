@@ -56,6 +56,8 @@ Progression and live-ops:
 - Lava Chest: every round fills a bar on the result card (12 for playing, up to 30 for height, +15 survive, +30 crown).
   At 150 it opens for 100 coins; every 5th chest gives 300. The card always says how close the next chest is
   ("one more round to the chest!"). Fixed coins, nothing random or paid. Numbers are `Chest*` in CFG.
+- Round awards: with 2+ players the winner banner also names a Top Climber (best non-winner), Shove Champ, Berry
+  Picker and Fruit Grabber. One award per player, only for something they did, no coins.
 - Warm-up Hop: a timed stepping-stone run over practice lava beside the lobby plaza, for anyone waiting on a round.
   Falling in sends you back to the start; the finish sign shows the server's fastest run. No coins.
 - Near miss: knocked out one or two rises from the crown, the result card says "😱 SO CLOSE! N rises left".

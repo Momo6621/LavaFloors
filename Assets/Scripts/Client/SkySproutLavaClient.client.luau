@@ -240,14 +240,14 @@ local function fitEndStack()
 	local fit = if fitScale and fitScale:IsA("UIScale") then fitScale.Scale else 1
 	local top = GuiService:GetGuiInset().Y / fit + NOTICE_BOTTOM + 10
 	endStack.Position = UDim2.new(0.5, 0, 0, top)
-	local need = (if banner.Visible then 120 else 0) + (if result.Visible then 210 else 0) + (if banner.Visible and result.Visible then 10 else 0)
+	local need = (if banner.Visible then banner.Size.Y.Offset else 0) + (if result.Visible then 210 else 0) + (if banner.Visible and result.Visible then 10 else 0)
 	local room = workspace.CurrentCamera.ViewportSize.Y / fit - top - 12
 	endScale.Scale = if need > 0 then math.clamp(room / need, 0.45, 1) else 1
 end
 banner:GetPropertyChangedSignal("Visible"):Connect(fitEndStack)
 result:GetPropertyChangedSignal("Visible"):Connect(fitEndStack)
 workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fitEndStack)
-make("UISizeConstraint", { MaxSize = Vector2.new(520, 120) }, banner)
+make("UISizeConstraint", { MaxSize = Vector2.new(520, 190) }, banner)
 make("UICorner", { CornerRadius = UDim.new(0, 22) }, banner)
 make("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(255, 225, 80), Color3.fromRGB(255, 150, 30)) }, banner)
 make("UIStroke", { Thickness = 5, Color = Color3.fromRGB(120, 60, 0), ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, banner)
@@ -255,9 +255,13 @@ local bannerTitle: TextLabel = make("TextLabel", { BackgroundTransparency = 1, P
 stroked(bannerTitle, 3)
 local bannerNames: TextLabel = make("TextLabel", { BackgroundTransparency = 1, Position = UDim2.fromOffset(10, 64), Size = UDim2.new(1, -20, 0, 44), Font = FONT, TextScaled = true, TextColor3 = Color3.new(1, 1, 1), Text = "" }, banner)
 stroked(bannerNames)
+-- Round awards (Top Climber, Shove Champ, ...): a third line, only when the server sends some.
+local bannerAwards: TextLabel = make("TextLabel", { BackgroundTransparency = 1, Position = UDim2.fromOffset(10, 110), Size = UDim2.new(1, -20, 0, 70), Font = FONT, TextScaled = true, TextColor3 = Color3.new(1, 1, 1), Text = "", Visible = false }, banner)
+stroked(bannerAwards)
 UI.glass(banner, 22, UI.Gold)
 UI.text(bannerTitle, "title")
 UI.text(bannerNames, "body")
+UI.text(bannerAwards, "body")
 
 -- Final showdown announcement: a big glass card in the middle of the screen for a few seconds.
 -- First-round coach cards: a new player's first round walks them through the basics, one tip every few seconds.
@@ -732,7 +736,25 @@ event.OnClientEvent:Connect(function(kind: string, v: any)
 		end
 		bannerTitle.Text = if #names == 0 then "🌋 THE LAVA WINS!" elseif onlyBots then "🤖 THE BOTS WIN!" elseif #names == 1 then "🌋 ESCAPED THE VOLCANO!" else "🌋 THEY ESCAPED!"
 		bannerNames.Text = if #names == 0 then "Nobody survived this time" else table.concat(names, "  •  ")
+		local awards = {}
+		if type(v.Awards) == "table" then
+			for _, a in v.Awards do
+				if type(a) == "table" and type(a.Icon) == "string" and type(a.Title) == "string" and type(a.Name) == "string" then
+					table.insert(awards, a.Icon .. " " .. a.Title .. ": " .. a.Name)
+				end
+			end
+		end
+		-- Two awards per line so the text stays readable on phones.
+		local lines = {}
+		for i = 1, #awards, 2 do
+			table.insert(lines, if awards[i + 1] then awards[i] .. "   " .. awards[i + 1] else awards[i])
+		end
+		bannerAwards.Text = table.concat(lines, "\n")
+		bannerAwards.Size = UDim2.new(1, -20, 0, if #lines > 1 then 70 else 38)
+		bannerAwards.Visible = #awards > 0
+		banner.Size = UDim2.new(1, 0, 0, if #lines > 1 then 190 elseif #lines == 1 then 158 else 120)
 		banner.Visible = true
+		fitEndStack()
 		pop(banner)
 		play("Crown", 1.1)
 		if type(v.Positions) == "table" then

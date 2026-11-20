@@ -248,6 +248,8 @@ type Runner = {
 	alive: boolean,
 	crowned: boolean,
 	embers: number,
+	shoves: number,
+	drops: number,
 	enteredAt: number,
 	nextShove: number,
 	shieldUntil: number,
@@ -1855,6 +1857,7 @@ end
 local function applyBoost(p: Player, r: Runner, boost: Boost, at: Vector3)
 	local character = p.Character
 	local hum = character and character:FindFirstChildOfClass("Humanoid")
+	r.drops += 1
 	event:FireClient(p, "LavaFX", { Kind = "Boost", Position = at, Text = boost.Name, Color = boost.Color })
 	if boost.Id == "Speed" and hum then
 		r.speedUntil = now() + CFG.SpeedTime
@@ -2387,6 +2390,8 @@ local function enter(p: Player): boolean
 		alive = true,
 		crowned = false,
 		embers = 0,
+		shoves = if existing then existing.shoves else 0,
+		drops = if existing then existing.drops else 0,
 		enteredAt = now(),
 		nextShove = 0,
 		shieldUntil = if existing then existing.shieldUntil else 0,
@@ -2501,6 +2506,7 @@ local function shove(p: Player)
 	end
 	event:FireClient(p, "LavaFX", { Kind = "Swing" })
 	if shoveNearestBot(p, me.Position, me.CFrame.LookVector, bestDist) then
+		r.shoves += 1
 		return
 	end
 	local target = best and L.Runners[best]
@@ -2518,6 +2524,7 @@ local function shove(p: Player)
 		event:FireClient(p, "LavaFX", { Kind = "Hit", Position = them.Position })
 		tell(best, "💥 " .. p.DisplayName .. " shoved you!")
 		challenge(p, "Shoves", 1)
+		r.shoves += 1
 	end
 end
 
@@ -3678,8 +3685,48 @@ local function runRound()
 		for _, n in botWinners do
 			table.insert(names, n)
 		end
+		-- Round awards: a shout-out for what players did, so those who didn't win still get named on the banner.
+		-- Real players only, one award each, only for something they actually did, and only with 2+ players.
+		-- No coins: it's recognition, not a reward, so there's nothing to farm.
+		local awards = {}
+		local climbers = 0
+		for p in L.Runners do
+			if p.Parent then
+				climbers += 1
+			end
+		end
+		if climbers >= 2 then
+			local given: { [Player]: boolean } = {}
+			local function award(icon: string, title: string, score: (Runner) -> number)
+				local top: Player?, topScore = nil, 0
+				for p, r in L.Runners do
+					if p.Parent and not given[p] then
+						local s = score(r)
+						if s > topScore or (s > 0 and s == topScore and top and p.UserId < top.UserId) then
+							top, topScore = p, s
+						end
+					end
+				end
+				if top then
+					given[top] = true
+					table.insert(awards, { Icon = icon, Title = title, Name = top.DisplayName })
+				end
+			end
+			award("🧗", "Top Climber", function(r)
+				return if r.crowned then 0 else math.floor(r.peak)
+			end)
+			award("💪", "Shove Champ", function(r)
+				return r.shoves
+			end)
+			award("🍓", "Berry Picker", function(r)
+				return r.embers
+			end)
+			award("🍍", "Fruit Grabber", function(r)
+				return r.drops
+			end)
+		end
 		for _, p in Players:GetPlayers() do
-			event:FireClient(p, "LavaWinners", { Names = names, Positions = positions })
+			event:FireClient(p, "LavaWinners", { Names = names, Positions = positions, Awards = awards })
 		end
 		for p, pick in L.Predictions do
 			local d = data(p)

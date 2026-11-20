@@ -3,6 +3,38 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 9. Round awards on the winner banner
+
+**Research.**
+- Game-design writing on keeping losing players engaged says people enjoy a game they didn't win when they were
+  good at something in it, and party hosts spread recognition with named awards beyond first place
+  ([League of Game Makers, "Hey, loser"](https://www.leagueofgamemakers.com/hey-loser-keeping-players-engaged/)).
+- The same idea is the "bonus stars" at the end of a party-board game.
+- LAVA Floors only named the winners. Everyone else saw "THE BOTS WIN!" or "Nobody survived".
+
+**Built.** With two or more real players in a round, the winner banner adds up to four shout-outs:
+- 🧗 Top Climber: the highest climber who wasn't crowned.
+- 💪 Shove Champ: the most shoves landed, on players or bots.
+- 🍓 Berry Picker: the most strawberries.
+- 🍍 Fruit Grabber: the most supply drops.
+
+Rules:
+- One award per player, so more kids get named.
+- An award only goes to someone who actually did the thing. A tie goes to the lower UserId.
+- No coins, so there's nothing to farm.
+- Shown two per line, so the text stays readable. The banner grows from 120 to 158 or 190 and the end stack refits.
+- Shoves and drops carry over if a phase-1 knockout drops you back in.
+
+**Verified.** In a 2-player Studio multiplayer test:
+- Real round 1: "🧗 Top Climber: Player1". Player2 did nothing and got nothing. The banner was 158 tall with the line showing.
+- Real round 2: "🧗 Top Climber: Player2".
+- A 4-award payload from the server showed both lines, and the banner grew to 190 with the text fitting. A malformed
+  award entry was dropped.
+- The console showed no errors, and Studio matches the repo by chunk hash for both scripts.
+
+Not verified: a real Shove Champ, Berry Picker or Fruit Grabber. Both test rounds ended in under 25 s, before the bots
+came within shoving range. The counters are one line each, next to the existing shove challenge counter and the drop pickup.
+
 ## 8. Warm-up Hop in the lobby
 
 **Research.**
