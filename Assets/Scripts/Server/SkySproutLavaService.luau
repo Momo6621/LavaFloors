@@ -72,6 +72,11 @@ local CFG = {
 	BotMistake = 0.12, -- chance a decision is a random neighbour
 	BotNames = { "Ember", "Magma", "Cinder", "Flare", "Pumice", "Basalt", "Scoria", "Ash", "Obsidian", "Sparky" },
 
+	-- Anti-cheat: a climber who jumps more than TeleportJump studs in one tick can't grab pickups for a second,
+	-- and one who isn't over the grid for OffGridLimit seconds (hovering/flying) is scorched.
+	TeleportJump = 12,
+	OffGridLimit = 4,
+
 	-- Shove
 	ShoveRange = 9,
 	ShoveCooldown = 0.8,
@@ -228,6 +233,9 @@ type Runner = {
 	jumpUntil: number,
 	rescue: boolean,
 	nextLift: number,
+	lastPos: Vector3?,
+	blinkUntil: number?,
+	offGridSince: number?,
 }
 
 type Phase = "Idle" | "Countdown" | "Round" | "Results"
@@ -3049,11 +3057,17 @@ local function runRound()
 			if me then
 				active += 1
 				lastActive = p
+				-- The client owns its character's position: a sudden jump means a teleport, so no pickups for a moment.
+				if r.lastPos and (me.Position - r.lastPos).Magnitude > CFG.TeleportJump then
+					r.blinkUntil = now() + 1
+				end
+				r.lastPos = me.Position
+				local canPick = now() >= (r.blinkUntil or 0)
 				for k = #pickups, 1, -1 do
 					local pick = pickups[k]
 					if not pick.item.Parent then
 						table.remove(pickups, k)
-					elseif (pickupPosition(pick.item) - me.Position).Magnitude < pick.radius then
+					elseif canPick and (pickupPosition(pick.item) - me.Position).Magnitude < pick.radius then
 						table.remove(pickups, k)
 						pick.take(p, r)
 					end
@@ -3071,6 +3085,7 @@ local function runRound()
 							r.enteredAt = now()
 							me.AssemblyLinearVelocity = Vector3.zero
 							p.Character:PivotTo(CFrame.new((tileDelta(stepIndex) * tile.CFrame).Position + Vector3.new(0, 4.5, 0)))
+							r.lastPos = nil -- our own teleport, not a cheat
 							tell(p, "🪂 RESCUED! Back on the grid.")
 						else
 							scorch(p, r)
@@ -3082,6 +3097,14 @@ local function runRound()
 					local row, col = Grid.TileAt(tower :: Model, me.Position, now())
 					if row and col then
 						occupied[(row - 1) * CFG.GridSize + col] = true
+						r.offGridSince = nil
+					elseif not lateOpen() then
+						-- Not over the grid: a real fall reaches the lava in a second or two, so a long stay means hovering.
+						r.offGridSince = r.offGridSince or now()
+						if now() - (r.offGridSince :: number) > CFG.OffGridLimit then
+							r.offGridSince = nil
+							scorch(p, r)
+						end
 					end
 				end
 			end
