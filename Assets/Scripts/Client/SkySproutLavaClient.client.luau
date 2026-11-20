@@ -82,6 +82,21 @@ local LOW_END = (function(): boolean
 	return ok and quality ~= Enum.SavedQualitySetting.Automatic and quality.Value <= 3
 end)()
 local EFFECTS = if LOW_END then 0.5 else 1
+-- Comfort: Roblox's own Reduce Motion setting (Settings > Accessibility) turns off camera shake, the FOV kick, speed
+-- streaks, tile wobble and blinking warnings here. Warnings stay on, just steady.
+local GuiService = game:GetService("GuiService")
+local function readReducedMotion(): boolean
+	local ok, on = pcall(function()
+		return (GuiService :: any).ReducedMotionEnabled
+	end)
+	return ok and on == true
+end
+local REDUCED_MOTION = readReducedMotion()
+pcall(function()
+	GuiService:GetPropertyChangedSignal("ReducedMotionEnabled"):Connect(function()
+		REDUCED_MOTION = readReducedMotion()
+	end)
+end)
 local function fieryPill(color: Color3): { any }
 	return UI.pill(color)
 end
@@ -973,7 +988,7 @@ wearTile = function(tile: BasePart, moved: CFrame, crumble: number?, state: stri
 		local w = math.min(1, crumble)
 		tile.Color = look.color:Lerp(CRACKED, w * 0.75)
 		tile.Material = if w > 0.66 then Enum.Material.CrackedLava elseif w > 0.33 then Enum.Material.Cobblestone else Enum.Material.Slate
-		if w > 0.66 then
+		if w > 0.66 and not REDUCED_MOTION then
 			local shake = (w - 0.66) * 0.5
 			moved *= CFrame.new(math.noise(t * 20, tile.Position.X) * shake, 0, math.noise(t * 20, tile.Position.Z) * shake)
 				* CFrame.Angles(math.noise(t * 15, 1) * shake * 0.2, 0, math.noise(t * 15, 2) * shake * 0.2)
@@ -1006,9 +1021,40 @@ local function tileUnderFeet(): BasePart?
 	return nil
 end
 
+-- A ⚠ symbol on each red warning plate, so the warning doesn't rely on colour alone (red on orange is hard to tell
+-- apart with red-green colour blindness). Made locally the first time a plate is seen.
+local warnMarks: { [BasePart]: SurfaceGui } = {}
+local function warnMark(plate: BasePart): SurfaceGui
+	local mark = warnMarks[plate]
+	if mark then
+		return mark
+	end
+	mark = Instance.new("SurfaceGui")
+	mark.Name = "WarnMark"
+	mark.Face = Enum.NormalId.Top
+	mark.CanvasSize = Vector2.new(200, 200)
+	mark.LightInfluence = 0
+	mark.Enabled = false
+	local label = Instance.new("TextLabel")
+	label.BackgroundTransparency = 1
+	label.Size = UDim2.fromScale(1, 1)
+	label.Font = FONT
+	label.TextScaled = true
+	label.Text = "⚠"
+	label.TextColor3 = Color3.fromRGB(30, 8, 8)
+	label.Parent = mark
+	local stroke = Instance.new("UIStroke")
+	stroke.Thickness = 6
+	stroke.Color = Color3.new(1, 1, 1)
+	stroke.Parent = label
+	mark.Parent = plate
+	warnMarks[plate] = mark
+	return mark
+end
+
 Run.PreSimulation:Connect(function()
 	local t = workspace:GetServerTimeNow()
-	local blink = math.floor(t * 8) % 2 == 0
+	local blink = REDUCED_MOTION or math.floor(t * 8) % 2 == 0
 	for item, info in riders do
 		if not item.Parent then
 			riders[item] = nil
@@ -1075,7 +1121,9 @@ Run.PreSimulation:Connect(function()
 		item.CFrame = if CollectionService:HasTag(item, "LavaEmber") then moved * CFrame.Angles(0, t * 3, 0) else moved
 		if item.Name == "WarnPlate" then
 			-- Red only for rings about to be left behind; tiles that break show wear and cracks instead.
-			item.Transparency = if state == "Warning" and crumble == nil then (if blink then 0.05 else 0.6) else 1
+			local warning = state == "Warning" and crumble == nil and not broken
+			item.Transparency = if warning then (if blink then 0.05 else 0.6) else 1
+			warnMark(item).Enabled = warning
 		end
 	end
 	local character = player.Character
@@ -1098,7 +1146,7 @@ type Layer = { Count: number, Radius: NumberRange, Span: number, Drift: number, 
 type Floater = { part: BasePart, layer: Layer, angle: number, radius: number, y: number, spin: number }
 
 local LAYERS: { [string]: Layer } = {
-	Streak = { Count = math.ceil(70 * EFFECTS), Radius = NumberRange.new(54, 95), Span = 70, Drift = 18, Rush = 13 },
+	Streak = { Count = if REDUCED_MOTION then 0 else math.ceil(70 * EFFECTS), Radius = NumberRange.new(54, 95), Span = 70, Drift = 18, Rush = 13 },
 	Rock = { Count = math.ceil(28 * EFFECTS), Radius = NumberRange.new(66, 94), Span = 110, Drift = 8, Rush = 5.5 },
 	Cloud = { Count = math.ceil(18 * EFFECTS), Radius = NumberRange.new(150, 230), Span = 160, Drift = 3, Rush = 2.2 },
 }
@@ -1213,7 +1261,7 @@ Run.RenderStepped:Connect(function(dt: number)
 	lastGridY = gridY
 	rush += (climbing - rush) * math.min(1, dt * 5)
 	local camera = workspace.CurrentCamera
-	local kick = math.clamp(rush / 5, 0, 1) * FOV_KICK
+	local kick = if REDUCED_MOTION then 0 else math.clamp(rush / 5, 0, 1) * FOV_KICK
 	camera.FieldOfView += kick - fovApplied
 	fovApplied = kick
 	local cx, cz = tower:GetAttribute("CenterX"), tower:GetAttribute("CenterZ")
@@ -1556,6 +1604,9 @@ Run:BindToRenderStep("LavaRumble", Enum.RenderPriority.Camera.Value + 1, functio
 end)
 
 local function rumble(strength: number)
+	if REDUCED_MOTION then
+		return
+	end
 	shakeStrength = strength
 	shakeUntil = os.clock() + SHAKE_TIME
 end
@@ -1740,7 +1791,7 @@ Run.RenderStepped:Connect(function(dt: number)
 	meterFloor.Position = UDim2.fromScale(0.5, 1 - meterFloorFrac)
 	local theme = LavaThemes.Get(workspace:GetAttribute("LavaTheme"))
 	local danger = math.clamp(1 - (meterFloorFrac - lavaFrac) / 0.12, 0, 1)
-	local blink = danger > 0.5 and math.floor(t * 6) % 2 == 0
+	local blink = danger > 0.5 and (REDUCED_MOTION or math.floor(t * 6) % 2 == 0)
 	meterFloor.BackgroundColor3 = if blink then Color3.fromRGB(255, 70, 40) else Color3.fromHSV(theme.TileHue or 0.05, 0.35, 1)
 	meterFloorStroke.Color = if danger > 0.5 then Color3.fromRGB(120, 10, 0) else Color3.fromRGB(40, 20, 30)
 	meterCrown.TextTransparency = if meterFloorFrac > 0.97 then 0 else 0.35

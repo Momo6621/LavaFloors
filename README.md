@@ -53,6 +53,8 @@ Progression and live-ops:
 - Daily challenges: three a day for everyone (CFG.Challenges), paid on completion; shown in the Challenges panel.
 - Codes: typed into the Challenges panel, once per account (CFG.Codes, server-only). Launch codes LAVA, VOLCANO, ESCAPE.
 - Titles over your head from total crowns (CFG.Titles), and a gold pillar with fireworks over every winner.
+- Accessibility: red warning plates also carry a ⚠ symbol (not colour alone), and Roblox's Reduce Motion setting turns
+  off camera shake, the FOV kick, speed streaks, tile wobble and blinking (warnings stay on, steady).
 - Weekly Top Climbers board in the lobby: crowns won this week across all servers (OrderedDataStore
   `LavaWeeklyCrowns_v1`, one scope per week), merged with the climbers in the server. Resets Monday 00:00 UTC.
 - Seasonal events (SkySproutConfig.Events): Spooky Eruption (Oct 20 - Nov 3) and Frostfire Festival (Dec 18 - Jan 4)

@@ -3,6 +3,34 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 5. Accessibility: ⚠ on warning tiles, and Reduce Motion
+
+**Research.** A DevForum accessibility guide written by a disabled developer, and the replies to it, warn against
+showing status by colour alone. Adding a symbol next to the colour helps colour-blind players without extra settings
+([DevForum guide](https://devforum.roblox.com/t/making-accessible-games-for-the-disability-aware-era-a-not-fully-comprehensive-guide-by-an-actual-disabled-developer/1375919/2),
+[colour-blind threads](https://devforum.roblox.com/t/how-can-i-make-a-red-green-colourblind-mode-for-my-ui/1001221)).
+Roblox added a Reduce Motion setting that games read through `GuiService.ReducedMotionEnabled`
+([Roblox accessibility guidelines](https://create.roblox.com/docs/production/publishing/accessibility),
+[announcement](https://devforum.roblox.com/t/introducing-accessibility-settings/2723187)).
+
+**Gap.** The tiles about to be left behind were marked by a blinking **red** plate on orange and brown tiles, the
+hardest pairing for red-green colour blindness, and the core skill of the game is reading those tiles. The game also
+had a lot of motion (camera shake, FOV kick, speed streaks, tile wobble, blinking) and ignored Reduce Motion.
+
+**Built.**
+- Every warning plate shows a dark ⚠ with a white outline while it warns, so the cue is a shape as well as a colour.
+- With Reduce Motion on: no eruption camera shake, no FOV kick, no speed streaks and no wobble on crumbling tiles (the
+  cracks still show). Warning plates and the meter's danger state stay steady instead of blinking.
+
+**Verified.** Studio play test:
+- `ReducedMotionEnabled` reads fine on the client (off by default).
+- All 81 plates got a mark, and up to 30 lit up when a ring was about to be left behind.
+- Over about 6,200 samples, each mark was on exactly when its plate showed (0 mismatches).
+- The console showed no errors, and Studio matches the repo byte for byte.
+
+Not verified: the Reduce Motion "on" path, because the setting is the player's own Roblox menu toggle and can't be
+set from a script. It needs a hands-on check: turn on Reduce Motion in the Roblox menu during a play test.
+
 ## 4. Personal best height
 
 **Research.** Kids like floor-is-lava games because they're easy to pick up and the lava keeps rising, pushing you
