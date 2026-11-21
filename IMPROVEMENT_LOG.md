@@ -3,6 +3,35 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 31. 🎈 Big Heads twist
+
+**Research.** Lists of 2026 party picks name variety as the main draw of games like Epic Minigames, along with quick
+rounds, simple rules and cosmetics ([Bloxodes party list](https://bloxodes.com/lists/top-trending-roblox-party-casual-games),
+[Bloxodes group games](https://bloxodes.com/articles/roblox-games-for-groups), [Beebom](https://beebom.com/best-roblox-games/amp/)).
+LAVA Floors had 9 twists, all of which change the rules or the floor. None was just for laughs.
+
+**Change.** A new twist, Big Heads (weight 2, also in the end-of-round twist vote):
+- Every climber's head grows by `BigHeadScale` (1.75×) for the round, bots included.
+- The head grows through the Humanoid's `HeadScale`, so hair and face scale with it; fruit hats and the crown are
+  rebuilt to sit on the bigger head.
+- Bodies, speed, jumps and shoves are unchanged.
+- The original size is stored on the Humanoid (`LavaBaseHead`) and put back on knockout (`scorch`) and at round end
+  (`release`).
+- 2× hid too much of the floor ahead behind your own head in the third-person camera, so it's 1.75×.
+
+**Verified.** In Studio play tests with `StudioForceMutator = "BigHeads"`:
+- The banner read "🎈 Big Heads". The player's head went from 0.743 to 1.300 at 1.75× (1.485 at 2×), and bot heads
+  doubled at 2×.
+- Walk speed stayed 24 and jump 48.
+- After the knockout the head was back to 0.743, the attribute was cleared and walk speed was 18.
+- Screenshots were taken in the round, and the console was clean.
+- Studio matches the repo by chunk hash; place saved as version 53.
+
+**Found, not fixed here.** Bot eyes and fruit hats have been ~380 studs away from their bots in every round, Classic
+included. `makeBot` sets `rootPart.CFrame` while the model is still outside the workspace, so the welded eyes and hat
+stay at the build spot. That's the next fix. Until then, bots with big heads have no eyes or hat, which is the same
+as before this change.
+
 ## 30. Lava Pass XP rebalanced for 3-phase rounds
 
 **Why.** The owner asked to match entry 18: the pass paid the same XP per round while rounds got about 30% shorter,

@@ -35,8 +35,9 @@ one supply drop pops in far from everyone, floating out of reach under a beam of
 ring shrinks away. Drops are fruit: banana (speed), pineapple (super jump), blueberry (shield), coconut (rescue) and
 watermelon (berry bag). Strawberries on the tiles are bonus points if you survive. Fruit hats are in the shop.
 
-Every round also rolls a twist (Low Gravity, Turbo Spin, Hole Party, Speed Rush, Shield Party, Drop Party, Hot Potato)
-and a world theme (Sunset, Blue Inferno, Purple Moon, Starry Night).
+Every round also rolls a twist (Low Gravity, Turbo Spin, Hole Party, Speed Rush, Shield Party, Drop Party, Hot Potato,
+Duos, Big Heads) and a world theme (Sunset, Blue Inferno, Purple Moon, Starry Night). Big Heads is just a look: every
+climber's head (bots too) grows 1.75x for the round, and speed, jumps and shoves stay the same.
 
 The arena sits inside a volcano crater. The lobby is on the crater floor, a wide gap in the rim faces the town so
 you can walk out onto the island, and the grid climbs the inside of the crater: the last rise lifts it just over the

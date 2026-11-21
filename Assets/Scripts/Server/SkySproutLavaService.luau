@@ -48,6 +48,7 @@ local CFG = {
 	CharacterScale = 0.62,
 	RoundWalkSpeed = 24,
 	SpeedRushWalkSpeed = 30,
+	BigHeadScale = 1.75, -- Big Heads twist: head size multiplier (just a look; bodies, speed and jumps stay the same)
 
 	-- Lava
 	LavaBelow = 7,
@@ -228,6 +229,7 @@ local MUTATORS: { Mutator } = {
 	{ Id = "DropParty", Name = "🎁 Drop Party", Weight = 2 },
 	{ Id = "HotPotato", Name = "💣 Hot Potato", Weight = 3 },
 	{ Id = "Duos", Name = "👥 Duos", Weight = 2 },
+	{ Id = "BigHeads", Name = "🎈 Big Heads", Weight = 2 },
 }
 -- Twist vote: when a round ends everyone gets a few twists to pick from; the most votes wins (ties and no votes are
 -- settled at random among the options).
@@ -2472,6 +2474,34 @@ local function placeAtBeacon(p: Player)
 	end
 end
 
+-- Big Heads twist: grow (or restore) an R15 head through the Humanoid's HeadScale, so hair and face scale with it.
+-- The original value is kept on the Humanoid; fruit hats and the crown are welded to the head, so they are rebuilt
+-- to sit on the new size.
+local function setBigHead(p: Player, big: boolean)
+	local character = p.Character
+	local hum = character and character:FindFirstChildOfClass("Humanoid")
+	local headScale = hum and hum:FindFirstChild("HeadScale")
+	if not character or not hum or not headScale or not headScale:IsA("NumberValue") then
+		return
+	end
+	local base = hum:GetAttribute("LavaBaseHead")
+	if big and base == nil then
+		hum:SetAttribute("LavaBaseHead", headScale.Value)
+		headScale.Value *= CFG.BigHeadScale
+	elseif not big and type(base) == "number" then
+		headScale.Value = base
+		hum:SetAttribute("LavaBaseHead", nil)
+	else
+		return
+	end
+	if character:FindFirstChild("FruitHat") then
+		applyHat(p)
+	end
+	if character:FindFirstChild("LavaCrownHat") then
+		giveCrownHat(p)
+	end
+end
+
 local function release(p: Player, toBeacon: boolean)
 	L.Runners[p] = nil
 	if p.Parent and p:GetAttribute("ArenaMode") == "LavaRush" then
@@ -2481,6 +2511,7 @@ local function release(p: Player, toBeacon: boolean)
 			hum.WalkSpeed = GameConfig.WalkSpeed
 			restoreJump(hum)
 		end
+		setBigHead(p, false)
 		if toBeacon then
 			placeAtBeacon(p)
 		end
@@ -2530,6 +2561,9 @@ local function enter(p: Player): boolean
 	if hum then
 		hum.WalkSpeed = baseWalkSpeed()
 		setJump(hum, CFG.RoundJumpPower)
+	end
+	if L.Mutator.Id == "BigHeads" then
+		setBigHead(p, true)
 	end
 	local existing = L.Runners[p]
 	L.Runners[p] = {
@@ -2613,6 +2647,7 @@ local function scorch(p: Player, r: Runner)
 			hum.WalkSpeed = GameConfig.WalkSpeed
 			restoreJump(hum)
 		end
+		setBigHead(p, false)
 		placeAtBeacon(p)
 	end
 	personal(p)
@@ -3332,6 +3367,10 @@ local function makeBot(name: string, row: number, col: number): Bot?
 	if not hum or not rootPart or not rootPart:IsA("BasePart") then
 		model:Destroy()
 		return nil
+	end
+	local headScale = hum:FindFirstChild("HeadScale")
+	if L.Mutator.Id == "BigHeads" and headScale and headScale:IsA("NumberValue") then
+		headScale.Value *= CFG.BigHeadScale -- the rig applies it once the bot is parented into the workspace
 	end
 	hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
 	hum:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
