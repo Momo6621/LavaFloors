@@ -3,6 +3,32 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 25. Follow a climber, and a roomier HUD
+
+**Follow a climber.** Knocked-out players only had the high overhead orbit, so they couldn't keep an eye on a friend.
+Earlier research (entries 1 and 6) found that watching keeps knocked-out players around.
+- ◀ ▶ buttons (46 px, touch-friendly) beside the spectate bar cycle between the overhead view and following any
+  climber still in the round, players or bots.
+- The chase camera sits just outside and above them, looking back across the floor, and eases in. With Reduce
+  Motion it cuts instead.
+- The bar reads "👀 Watching *Name*". If that climber falls, the view returns to overhead.
+
+**Roomier HUD.** The owner asked to space out the UI. Screenshots across these tests found:
+- The end-of-round cards (winner banner, result card, twist vote) sat about 10 px apart, and the column didn't
+  allow for the vote card. The cards are now 20 px apart (`END_GAP`), and the column keeps clear of the vote card
+  (104 px plus the 70 px under it plus an 18 px gap) while it shows, shrinking to fit if needed.
+- The "FINAL SHOWDOWN" card could still be up when the round ended, on top of the winner banner. It now hides when
+  winners are announced, and sits lower (42% instead of 36%) so it clears the notice toast.
+- The cheer bar sat 8 px above the spectate bar. Now it's 22 px.
+- A 774 px-wide window overflowed the top bar ("Chall…" under Invite). `UI.short` now also picks the short labels
+  below 900 px wide.
+
+**Verified.** In 2- and 3-player Studio multiplayer tests, with real mouse clicks in the spectator's window:
+- ▶ switched the bar to "👀 Watching Player1" and the camera to a close chase view of Player1 on their tile.
+- The end-of-round screenshot shows the banner, result card and vote separated, with no showdown card on top.
+- The spectate screenshot shows the cheer bar clear of the spectate bar, and a top bar that fits.
+- The console showed no errors, and Studio matches the repo by chunk hash.
+
 ## 24. Why you fell
 
 **Research.** Writing on failure in game design agrees that a loss should be attributable and explained, with a

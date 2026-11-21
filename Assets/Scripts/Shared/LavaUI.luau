@@ -169,9 +169,11 @@ function U.fitScreen(gui: ScreenGui)
 	watch()
 end
 
--- Top bar label: the full text on big screens, the short one on phones.
+-- Top bar label: the full text on big screens, the short one on phones and on windows too narrow for the full
+-- labels side by side (a ~770 px wide window overflowed the top bar).
+local NARROW_WIDTH = 900
 function U.short(full: string, compact: string): string
-	return if U.isCompact() then compact else full
+	return if U.isCompact() or workspace.CurrentCamera.ViewportSize.X < NARROW_WIDTH then compact else full
 end
 
 return U

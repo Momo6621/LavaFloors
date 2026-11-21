@@ -152,8 +152,10 @@ local endStack: Frame = make("Frame", {
 	AutomaticSize = Enum.AutomaticSize.Y,
 	BackgroundTransparency = 1,
 }, gui)
-make("UIListLayout", { FillDirection = Enum.FillDirection.Vertical, HorizontalAlignment = Enum.HorizontalAlignment.Center, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 10) }, endStack)
+local END_GAP = 20 -- space between the end-of-round cards, so the banner and result card read as separate cards
+make("UIListLayout", { FillDirection = Enum.FillDirection.Vertical, HorizontalAlignment = Enum.HorizontalAlignment.Center, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, END_GAP) }, endStack)
 local endScale: UIScale = make("UIScale", {}, endStack)
+local endBottomReserve = 0 -- screen kept free at the bottom (the twist vote card while it shows); set further down
 
 local result: Frame = make("Frame", {
 	LayoutOrder = 2,
@@ -242,8 +244,8 @@ local function fitEndStack()
 	local fit = if fitScale and fitScale:IsA("UIScale") then fitScale.Scale else 1
 	local top = GuiService:GetGuiInset().Y / fit + NOTICE_BOTTOM + 10
 	endStack.Position = UDim2.new(0.5, 0, 0, top)
-	local need = (if banner.Visible then banner.Size.Y.Offset else 0) + (if result.Visible then 210 else 0) + (if banner.Visible and result.Visible then 10 else 0)
-	local room = workspace.CurrentCamera.ViewportSize.Y / fit - top - 12
+	local need = (if banner.Visible then banner.Size.Y.Offset else 0) + (if result.Visible then 210 else 0) + (if banner.Visible and result.Visible then END_GAP else 0)
+	local room = workspace.CurrentCamera.ViewportSize.Y / fit - top - 12 - endBottomReserve
 	endScale.Scale = if need > 0 then math.clamp(room / need, 0.45, 1) else 1
 end
 banner:GetPropertyChangedSignal("Visible"):Connect(fitEndStack)
@@ -322,7 +324,7 @@ end
 
 local showdownCard: Frame = make("Frame", {
 	AnchorPoint = Vector2.new(0.5, 0.5),
-	Position = UDim2.fromScale(0.5, 0.36),
+	Position = UDim2.fromScale(0.5, 0.42), -- low enough to clear the notice toast under the top bar
 	Size = UDim2.new(0.9, 0, 0, 110),
 	Visible = false,
 	ZIndex = 5,
@@ -343,6 +345,11 @@ local voteCard: Frame = make("Frame", {
 	ZIndex = 4,
 }, gui)
 make("UISizeConstraint", { MaxSize = Vector2.new(600, 104) }, voteCard)
+-- While the vote shows, the end-of-round cards keep clear of it (its 104 px, the 70 px under it and an 18 px gap).
+voteCard:GetPropertyChangedSignal("Visible"):Connect(function()
+	endBottomReserve = if voteCard.Visible then 104 + 70 + 18 else 0
+	fitEndStack()
+end)
 local voteTitle: TextLabel = make("TextLabel", { BackgroundTransparency = 1, Position = UDim2.fromOffset(10, 4), Size = UDim2.new(1, -20, 0, 28), Font = FONT, TextScaled = true, Text = "🗳️ VOTE THE NEXT TWIST", ZIndex = 5 }, voteCard)
 UI.glass(voteCard, 18)
 UI.text(voteTitle, "title")
@@ -378,7 +385,7 @@ local CHEERS = { "🔥", "👏", "😂", "😱", "💪", "🎉" }
 local cheerBar: Frame = make("Frame", {
 	Name = "CheerBar",
 	AnchorPoint = Vector2.new(0.5, 1),
-	Position = UDim2.new(0.5, 0, 1, -66),
+	Position = UDim2.new(0.5, 0, 1, -80), -- 22 px above the spectate bar (it was 8 px and read as one block)
 	Size = UDim2.fromOffset(#CHEERS * 50 + 6, 52),
 	Visible = false,
 	ZIndex = 4,
@@ -483,6 +490,25 @@ stroked(spectateLabel)
 make("UIPadding", { PaddingLeft = UDim.new(0, 14), PaddingRight = UDim.new(0, 14), PaddingTop = UDim.new(0, 4), PaddingBottom = UDim.new(0, 4) }, spectateLabel)
 UI.glass(spectateLabel, 17)
 UI.text(spectateLabel, "body")
+-- ◀ ▶ either side of the spectate bar: cycle between the overhead view and following one climber (set up in Spectate).
+local spectateButtons: { TextButton } = {}
+for i, arrow in { "◀", "▶" } do
+	local b: TextButton = make("TextButton", {
+		Name = if i == 1 then "FollowPrev" else "FollowNext",
+		AnchorPoint = Vector2.new(if i == 1 then 1 else 0, 0.5),
+		Position = UDim2.new(if i == 1 then 0 else 1, if i == 1 then -8 else 8, 0.5, 0),
+		Size = UDim2.fromOffset(46, 46),
+		Font = FONT,
+		TextScaled = true,
+		Text = arrow,
+		TextColor3 = Color3.new(1, 1, 1),
+		BackgroundColor3 = Color3.fromRGB(40, 20, 12),
+		AutoButtonColor = true,
+	}, spectateLabel)
+	make("UICorner", { CornerRadius = UDim.new(1, 0) }, b)
+	stroked(b)
+	table.insert(spectateButtons, b)
+end
 
 local function pop(target: GuiObject)
 	local scale = target:FindFirstChildOfClass("UIScale") or make("UIScale", {}, target)
@@ -735,6 +761,7 @@ event.OnClientEvent:Connect(function(kind: string, v: any)
 			play("Crown", 1.6)
 		end
 	elseif kind == "LavaWinners" then
+		showdownCard.Visible = false -- the round is over; don't leave the showdown card on top of the winner banner
 		local names = if type(v.Names) == "table" then v.Names else {}
 		local onlyBots = #names > 0
 		for _, n in names do
@@ -1537,11 +1564,58 @@ local function stopSpectate(byPlayer: boolean?)
 	Run:UnbindFromRenderStep("LavaSpectate")
 	workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
 end
+-- Follow a climber: the ◀ ▶ buttons cycle through everyone still climbing (players and bots); nil = overhead view.
+local OVERHEAD_TEXT = "👀 Spectating from above · next round soon"
+local followKey: string? = nil
+local function climbers(towerModel: Instance): { { key: string, name: string, root: BasePart } }
+	local list = {}
+	for _, other in Players:GetPlayers() do
+		local r = other.Character and other.Character:FindFirstChild("HumanoidRootPart")
+		if other ~= player and other:GetAttribute("ArenaMode") == "LavaRush" and r and r:IsA("BasePart") then
+			table.insert(list, { key = "P" .. other.UserId, name = other.DisplayName, root = r })
+		end
+	end
+	for _, m in towerModel:GetChildren() do
+		if m:IsA("Model") and string.sub(m.Name, 1, 4) == "Bot_" then
+			local r = m.PrimaryPart or m:FindFirstChildWhichIsA("BasePart")
+			if r then
+				table.insert(list, { key = m.Name, name = "🤖 " .. string.sub(m.Name, 5), root = r })
+			end
+		end
+	end
+	return list
+end
+local function cycleFollow(step: number)
+	local floors = workspace:FindFirstChild("SkySprout") and workspace.SkySprout:FindFirstChild("Floors")
+	local towerModel = floors and floors:FindFirstChild("LavaRushTower", true)
+	if not towerModel then
+		return
+	end
+	local list = climbers(towerModel)
+	local index = 0 -- 0 = overhead
+	for i, c in list do
+		if c.key == followKey then
+			index = i
+		end
+	end
+	index = (index + step) % (#list + 1)
+	followKey = if index == 0 then nil else list[index].key
+	spectateLabel.Text = if index == 0 then OVERHEAD_TEXT else "👀 Watching " .. list[index].name
+end
+spectateButtons[1].Activated:Connect(function()
+	cycleFollow(-1)
+end)
+spectateButtons[2].Activated:Connect(function()
+	cycleFollow(1)
+end)
+
 local function startSpectate()
 	if spectating then
 		return
 	end
 	spectating = true
+	followKey = nil
+	spectateLabel.Text = OVERHEAD_TEXT
 	spectateLabel.Visible = true
 	local started = os.clock()
 	Run:BindToRenderStep("LavaSpectate", Enum.RenderPriority.Camera.Value + 1, function()
@@ -1554,9 +1628,30 @@ local function startSpectate()
 			stopSpectate()
 			return
 		end
+		local cam = workspace.CurrentCamera
+		if followKey then
+			-- Chase camera: just outside the followed climber, looking back across the floor at them.
+			local target
+			for _, c in climbers(towerModel) do
+				if c.key == followKey then
+					target = c
+				end
+			end
+			if target then
+				local at = target.root.Position
+				local out = Vector3.new(at.X - centre.Position.X, 0, at.Z - centre.Position.Z)
+				out = if out.Magnitude > 1 then out.Unit else Vector3.new(0, 0, 1)
+				local goal = CFrame.lookAt(at + out * 13 + Vector3.new(0, 8, 0), at + Vector3.new(0, 1.5, 0))
+				cam.CameraType = Enum.CameraType.Scriptable
+				cam.CFrame = cam.CFrame:Lerp(goal, if REDUCED_MOTION then 1 else 0.15)
+				return
+			end
+			-- They're out of the round: back to the overhead view.
+			followKey = nil
+			spectateLabel.Text = OVERHEAD_TEXT
+		end
 		local a = (os.clock() - started) * 0.08
 		local ease = math.min(1, (os.clock() - started) / 1.2) -- swoop up into the overhead view
-		local cam = workspace.CurrentCamera
 		cam.CameraType = Enum.CameraType.Scriptable
 		local overhead = centre.Position + Vector3.new(math.cos(a) * 16, 62 + 8 * ease, math.sin(a) * 16)
 		local swoop = centre.Position + Vector3.new(math.cos(a) * 40, 20, math.sin(a) * 40)
