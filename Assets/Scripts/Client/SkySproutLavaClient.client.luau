@@ -144,10 +144,11 @@ UI.text(info, "body")
 -- End-of-round cards stack in one column (winner banner on top, your result under it) that starts just below the
 -- notice strip, so the notice, banner and result never cover each other. The column shrinks to fit short screens.
 local NOTICE_BOTTOM = 156 -- the notice toast in LavaFloorsUI sits at 116..156 below the top bar
+local NOTICE_GAP = 18 -- space between that toast and the first end-of-round card
 local endStack: Frame = make("Frame", {
 	Name = "EndStack",
 	AnchorPoint = Vector2.new(0.5, 0),
-	Position = UDim2.new(0.5, 0, 0, NOTICE_BOTTOM + 10),
+	Position = UDim2.new(0.5, 0, 0, NOTICE_BOTTOM + NOTICE_GAP),
 	Size = UDim2.new(1, -24, 0, 0),
 	AutomaticSize = Enum.AutomaticSize.Y,
 	BackgroundTransparency = 1,
@@ -242,7 +243,7 @@ local function fitEndStack()
 	-- Work in the HUD's own (screen-fit scaled) units so phones line up with the scaled notice strip.
 	local fitScale = gui:FindFirstChild("ScreenFit")
 	local fit = if fitScale and fitScale:IsA("UIScale") then fitScale.Scale else 1
-	local top = GuiService:GetGuiInset().Y / fit + NOTICE_BOTTOM + 10
+	local top = GuiService:GetGuiInset().Y / fit + NOTICE_BOTTOM + NOTICE_GAP
 	endStack.Position = UDim2.new(0.5, 0, 0, top)
 	local need = (if banner.Visible then banner.Size.Y.Offset else 0) + (if result.Visible then 210 else 0) + (if banner.Visible and result.Visible then END_GAP else 0)
 	local room = workspace.CurrentCamera.ViewportSize.Y / fit - top - 12 - endBottomReserve
@@ -761,7 +762,9 @@ event.OnClientEvent:Connect(function(kind: string, v: any)
 			play("Crown", 1.6)
 		end
 	elseif kind == "LavaWinners" then
-		showdownCard.Visible = false -- the round is over; don't leave the showdown card on top of the winner banner
+		-- The round is over: clear mid-round cards so they don't sit on top of the winner banner and result card.
+		showdownCard.Visible = false
+		coachCard.Visible = false
 		local names = if type(v.Names) == "table" then v.Names else {}
 		local onlyBots = #names > 0
 		for _, n in names do

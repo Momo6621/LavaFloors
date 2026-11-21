@@ -3,6 +3,21 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 26. Roomier HUD on phones
+
+**Found** by repeating the end-of-round check on the Galaxy A06 (705×338 viewport) after entry 25:
+- The first-round coach tip ("NEW HERE? TIP 5 / 5") stayed up after the round ended, over the winner banner and
+  result card. A tip lasts 5 s even if the round ends during it.
+- The notice toast (now carrying the "why you fell" line) touched the top of the winner banner.
+
+**Fix.**
+- When winners are announced, any coach tip is hidden along with the showdown card.
+- The end-of-round column starts 18 px below the notice toast instead of 10 (`NOTICE_GAP`).
+
+**Verified.** Galaxy A06 screenshots before and after. After: no coach card at round end, a clear gap between the
+toast and the banner, and the banner and result card as separate cards. Studio matches the repo by chunk hash, and
+the simulator was reset to the default viewport.
+
 ## 25. Follow a climber, and a roomier HUD
 
 **Follow a climber.** Knocked-out players only had the high overhead orbit, so they couldn't keep an eye on a friend.
