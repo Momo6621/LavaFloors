@@ -3,6 +3,31 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 32. Fix: bots finally wear their eyes and fruit hats
+
+**Why.** Testing entry 31 showed that every bot's glowing ember eyes and fruit hat were about 380 studs away from the
+bot, in every round. Bots have been plain rock figures since the golem look was added. The bots are kids' first
+rivals in a quiet server, and the look exists so they're easy to tell apart from players.
+
+**Research.** A WeldConstraint is inactive while its parts are outside the Workspace
+([WeldConstraint docs](https://create.roblox.com/docs/en-us/reference/engine/classes/WeldConstraint.md)). DevForum
+threads on welds placed before spawning give the same fix: parent first, then move
+([PivotTo before spawning](https://devforum.roblox.com/t/using-pivotto-to-move-the-model-before-spawning-it-causes-the-weld-positions-to-become-incorrect/4188036),
+[welds made outside Workspace](https://devforum.roblox.com/t/weld-constraint-sets-part-cframe-to-the-rootparts-of-a-assembly-when-created-outside-workspace/835450)).
+
+**Change.** In `makeBot`:
+- The bot is parented into the tower before its eyes and hat are welded on.
+- The whole model is then moved with `PivotTo`, instead of setting only `rootPart.CFrame`.
+- In Big Heads rounds the bot is built with `HumanoidDescription.HeadScale`. Raising `HeadScale` on the finished rig
+  regrew the head a frame later, which brought back the default face and reset the basalt material.
+
+**Verified.** In Studio play tests:
+- Big Heads round: 3 bots with 1.28-stud heads, basalt, no face decal. Eyes stayed on the front of the head (same
+  offset after 5 s of hopping), and hats sat on the head.
+- Classic round: 0.73-stud heads, eyes on the face, hat bottoms at the head top.
+- Screenshots show the golems with fruit hats and ember eyes. The console was clean.
+- Studio matches the repo by chunk hash; place saved as version 55.
+
 ## 31. 🎈 Big Heads twist
 
 **Research.** Lists of 2026 party picks name variety as the main draw of games like Epic Minigames, along with quick
@@ -29,8 +54,7 @@ LAVA Floors had 9 twists, all of which change the rules or the floor. None was j
 
 **Found, not fixed here.** Bot eyes and fruit hats have been ~380 studs away from their bots in every round, Classic
 included. `makeBot` sets `rootPart.CFrame` while the model is still outside the workspace, so the welded eyes and hat
-stay at the build spot. That's the next fix. Until then, bots with big heads have no eyes or hat, which is the same
-as before this change.
+stay at the build spot. Fixed in entry 32.
 
 ## 30. Lava Pass XP rebalanced for 3-phase rounds
 

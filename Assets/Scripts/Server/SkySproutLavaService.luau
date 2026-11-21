@@ -3352,6 +3352,11 @@ local function makeBot(name: string, row: number, col: number): Bot?
 	for _, k in { "HeadColor", "LeftArmColor", "RightArmColor", "TorsoColor", "LeftLegColor", "RightLegColor" } do
 		(desc :: any)[k] = skin
 	end
+	if L.Mutator.Id == "BigHeads" then
+		-- Built big from the start: changing HeadScale on the finished rig regrows the head a moment later, which
+		-- brings the face back and resets the rock material after the golem look is applied.
+		desc.HeadScale = CFG.BigHeadScale
+	end
 	local ok, model = pcall(function()
 		return Players:CreateHumanoidModelFromDescription(desc, Enum.HumanoidRigType.R15)
 	end)
@@ -3368,10 +3373,9 @@ local function makeBot(name: string, row: number, col: number): Bot?
 		model:Destroy()
 		return nil
 	end
-	local headScale = hum:FindFirstChild("HeadScale")
-	if L.Mutator.Id == "BigHeads" and headScale and headScale:IsA("NumberValue") then
-		headScale.Value *= CFG.BigHeadScale -- the rig applies it once the bot is parented into the workspace
-	end
+	-- Into the workspace before anything is welded on or moved: a WeldConstraint is inactive outside it, so eyes and a
+	-- hat welded out there stayed at the build spot when the bot was moved.
+	model.Parent = towerModel
 	hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
 	hum:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
 	rootPart.Anchored = true
@@ -3450,9 +3454,10 @@ local function makeBot(name: string, row: number, col: number): Bot?
 	rootPart:SetAttribute("BotStand", stand)
 	rootPart:SetAttribute("BotYaw", math.random() * math.pi * 2)
 	setBotTile(b, row, col)
-	rootPart.CFrame = botTileTop(b, now()) * CFrame.new(0, stand, 0)
+	-- Move the whole model (eyes and hat included) so the root lands on the tile.
+	local target = botTileTop(b, now()) * CFrame.new(0, stand, 0)
+	model:PivotTo(target * rootPart.CFrame:ToObjectSpace(model:GetPivot()))
 	CollectionService:AddTag(rootPart, "LavaBot")
-	model.Parent = towerModel
 	return b
 end
 
