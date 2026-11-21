@@ -3,6 +3,23 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 40. Shove and hot potato knockout reasons checked (no change needed)
+
+**Why.** Entry 24 added a one-line "why you fell" reason to every knockout. The 💥 shove and 💣 hot potato reasons were
+never seen in a test: lining up two players took more than three attempts, so it was stopped and logged as
+untested. Entry 39's method (pin one player beside the other every frame, then shove) made the test possible.
+
+**Checked.** 2-player Studio test. Both players ran the survival driver so they didn't lose tiles to the camp
+crumble, and each was set to drop into the lava 0.3 s after a shove or blast:
+- Classic round: Player1 pinned beside Player2 and shoved. Player2 got "💥 Player1 shoved you!", then after the fall
+  "💥 Player1 shoved you off. Keep away from the edges!"
+- Hot Potato round (forced on the server): Player2 got the bomb, then "💥 BOOM! The bomb went off in your hands!",
+  then after the fall "💣 The hot potato blew up on you. Pass it on quickly!"
+- An earlier try where the players stood still showed "🪨 Your tile crumbled from standing still", which is the
+  right reason for that case.
+
+No code changed. The forced-twist attribute was cleared afterwards.
+
 ## 39. Shoves you can feel (and see from the sidelines)
 
 **Research.** Game-feel guides list knockback, a short camera nudge (about 0.1–0.3 s), sound and particles at the
