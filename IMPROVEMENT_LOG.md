@@ -3,6 +3,38 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 19. King of the Pillar
+
+**Research.** King-of-the-hill design writing says one contested high spot is simple to read and generates tension,
+and a payoff you only keep if you hold out raises the stakes
+([game design patterns](https://www.math.vu.nl/~eliens/multimedia/media/pattern-kingofthehill.html),
+[Halopedia](https://www.halopedia.org/King_of_the_Hill)). The new store thumbnail shows a crowned climber on the
+centre pillar, but players couldn't actually get up there.
+
+**Built.**
+- Three light stone ledges spiral up the pillar, 60° apart and 4.5 studs apart in height (`PillarLedges`,
+  `PillarLedgeStep`; a round jump reaches about 5.8). The 60° spacing means each hop clears the column instead of
+  passing through it.
+- A strawberry waits on the cap each round. Like every strawberry, it's only banked if you survive.
+- Camping isn't possible: standing up there wears the centre tile, and when it shatters the pillar drops with it.
+- **Two fixes so the top is actually playable:**
+  - `LavaGrid.TileAt` treated anything over 14 studs above the floor as off-grid, which would have scorched climbers
+    on the top ledge as "hovering". Around the pillar's tile and its 8 neighbours the limit is now the pillar top
+    plus 8 (tower attribute `PillarTop`). Everywhere else keeps 14.
+  - The client only carried players on `Tile<n>` parts found by an overlap query, which skips the pillar (it's left
+    out of queries so the camera ignores it). The client now checks the pillar and ledges by shape during a climb
+    and carries the player with the centre tile. The tower lookup is cached.
+
+**Verified.** In Studio play tests:
+- On the cap for 3.5 s: still climbing (not scorched), centred on the cap the whole time, and the strawberry collected.
+- On the lowest ledge while the floor spun 179°: stayed dead centre on the ledge, at a steady height.
+- Ledge tops measured at 4.5, 9 and 13.5 studs above the tile.
+- Screenshots in the Sunset and Blue Inferno themes show the ledges, the lighter ledge colour, and the strawberry on the cap.
+- The console showed no errors, and Studio matches the repo by chunk hash for the service, client and `LavaGrid`.
+
+Not verified: a real player jumping up the ledges. The positions were teleported; the heights and gaps are within
+a round jump on paper.
+
 ## 18. Rebalance coins and chest for 3-phase rounds
 
 **Why.** After the switch to 3 phases (entry 16), a round paid the same as before but took about 44 s instead of about

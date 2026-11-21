@@ -320,7 +320,14 @@ function G.TileAt(tower: Instance, position: Vector3, t: number): (number?, numb
 	local rel = frame:PointToObjectSpace(position)
 	local mid = (size + 1) / 2
 	local col, row = math.floor(rel.X / step + mid + 0.5), math.floor(rel.Z / step + mid + 0.5)
-	if row < 1 or row > size or col < 1 or col > size or rel.Y < 0 or rel.Y > 14 then
+	-- Standing height above the floor that still counts as "on the grid". Around the pillar (its tile and the eight
+	-- next to it, which its ledges overhang) it reaches up to the pillar top, so climbers up there aren't treated as
+	-- hovering and are still carried with the floor.
+	local limit = 14
+	if tower:GetAttribute("Pillar") == true and math.max(math.abs(row - mid), math.abs(col - mid)) <= 1 then
+		limit = (attr(tower, "PillarTop") or 16) + 8
+	end
+	if row < 1 or row > size or col < 1 or col > size or rel.Y < 0 or rel.Y > limit then
 		return nil, nil
 	end
 	return row, col

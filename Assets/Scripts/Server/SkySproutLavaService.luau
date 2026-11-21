@@ -41,6 +41,8 @@ local CFG = {
 	GridShrink = { 0, 2, 1 }, -- back to 5x5 in phase 2, a 3x3 finale in phase 3
 	GridDrops = { 4, 3, 2 },
 	PillarHeight = 16, -- the basalt pillar on the centre tile that blocks the view across the grid
+	PillarLedges = 3, -- stepping ledges spiralling up the pillar to a strawberry on top
+	PillarLedgeStep = 4.5, -- height between ledges (a round jump reaches ~5.8)
 	RoundJumpPower = 48,
 	CharacterScale = 0.62,
 	RoundWalkSpeed = 24,
@@ -2240,6 +2242,7 @@ local function buildTower()
 	model:SetAttribute("CenterX", c.X)
 	model:SetAttribute("CenterZ", c.Z)
 	model:SetAttribute("Pillar", true)
+	model:SetAttribute("PillarTop", CFG.PillarHeight + 0.8) -- cap height above the tile; LavaGrid.TileAt uses it
 
 	table.clear(wear)
 	local size = CFG.GridSize
@@ -2290,7 +2293,15 @@ local function buildTower()
 			piece.CanQuery = false
 			piece.CanTouch = false
 		end
+		-- King of the Pillar: three ledges spiral up the side (60 degrees apart, so each hop clears the column) to
+		-- a strawberry on the cap. Standing up there wears the centre tile like anywhere else, so nobody can camp it.
+		for k = 1, CFG.PillarLedges do
+			local ledge = part(pillar, "PillarLedge", Vector3.new(2.6, 1, 2.6), base * CFrame.Angles(0, math.rad(60 * (k - 1)), 0) * CFrame.new(4.6, k * CFG.PillarLedgeStep - 0.5, 0), Color3.fromRGB(160, 116, 84), Enum.Material.Slate) -- lighter than the column so the way up reads at a glance
+			ledge.CanQuery = false
+			ledge.CanTouch = false
+		end
 		ride(pillar, centreIndex)
+		makeEmber(model, (base * CFrame.new(0, h + 0.8 + 2.2, 0)).Position, centreIndex)
 	end
 
 	local startTiles = {}

@@ -1158,6 +1158,7 @@ end
 local standingOn: BasePart? = nil
 local standingCFrame: CFrame? = nil
 local footParams = OverlapParams.new()
+local pillarTower: Instance? = nil
 local function tileUnderFeet(): BasePart?
 	local character = player.Character
 	local r = character and character:FindFirstChild("HumanoidRootPart")
@@ -1169,6 +1170,35 @@ local function tileUnderFeet(): BasePart?
 	for _, hit in workspace:GetPartBoundsInBox(r.CFrame * CFrame.new(0, -3.2, 0), Vector3.new(2, 1.6, 2), footParams) do
 		if string.match(hit.Name, "^Tile%d+$") and CollectionService:HasTag(hit, "LavaRider") then
 			return hit
+		end
+	end
+	-- The centre pillar and its ledges are left out of spatial queries (so the camera ignores them), so check them by
+	-- shape: standing on one means riding the centre tile, which they move with exactly.
+	if player:GetAttribute("ArenaMode") ~= "LavaRush" then
+		return nil
+	end
+	if not (pillarTower and pillarTower.Parent) then
+		pillarTower = workspace:FindFirstChild("LavaRushTower", true) -- only searched again after the tower is rebuilt
+	end
+	local tower = pillarTower
+	local pillar = tower and tower:FindFirstChild("CentrePillar")
+	if pillar then
+		local feet = r.Position - Vector3.new(0, 3.2, 0)
+		for _, piece in pillar:GetChildren() do
+			if piece:IsA("Part") then
+				local size = piece.Size
+				local top = if piece.Shape == Enum.PartType.Cylinder then size.X / 2 else size.Y / 2
+				local half = if piece.Shape == Enum.PartType.Cylinder then Vector2.new(size.Y / 2, size.Y / 2) else Vector2.new(size.X / 2, size.Z / 2)
+				local flat = Vector3.new(feet.X - piece.Position.X, 0, feet.Z - piece.Position.Z)
+				local rel = piece.CFrame:VectorToObjectSpace(flat)
+				local inside = if piece.Shape == Enum.PartType.Cylinder then flat.Magnitude <= half.X + 0.8 else math.abs(rel.X) <= half.X + 0.8 and math.abs(rel.Z) <= half.Y + 0.8
+				local above = feet.Y - (piece.Position.Y + top)
+				if inside and above > -1 and above < 1.6 then
+					local size9 = tower:GetAttribute("Size")
+					local index = if type(size9) == "number" then (size9 * size9 + 1) / 2 else 41
+					return tower:FindFirstChild("Tile" .. index) :: BasePart?
+				end
+			end
 		end
 	end
 	return nil
