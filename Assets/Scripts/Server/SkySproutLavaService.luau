@@ -128,6 +128,10 @@ local CFG = {
 	GemAllCoins = 100,
 	GemRadius = 5, -- studs from your root to the gem centre
 	GemHintAfter = 25, -- seconds after joining, one hint that gems are hidden (skipped once all are found)
+	-- Backdrop volcano models (Creator Store) ship heavy emitters: one far cone ran 500 fire particles a second. They
+	-- sit 400+ studs away, mostly behind the crater wall, so each emitter is capped at this many live particles
+	-- (rate x lifetime) to spare low-end phones.
+	BackdropParticleCap = 120,
 	-- Away: seconds without any input before a player sits out the automatic rounds (published as the workspace
 	-- attribute LavaAwayAfter for the client). Any input brings them back.
 	AwayAfter = 120,
@@ -1492,6 +1496,11 @@ local function buildBackdrop()
 		m:PivotTo(CFrame.new(m:GetPivot().Position) * CFrame.Angles(0, yaw, 0))
 		local bb, bs = m:GetBoundingBox()
 		m:PivotTo(m:GetPivot() + (at - Vector3.new(bb.Position.X, bb.Position.Y - bs.Y / 2, bb.Position.Z)))
+		for _, d in m:GetDescendants() do
+			if d:IsA("ParticleEmitter") and d.Rate * d.Lifetime.Max > CFG.BackdropParticleCap then
+				d.Rate = CFG.BackdropParticleCap / d.Lifetime.Max
+			end
+		end
 		m.Parent = scene
 		return m
 	end

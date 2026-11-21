@@ -3,6 +3,40 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 35. Performance check for low-end phones: half the particles
+
+**Research.** DevForum developers note that games with younger audiences tend to have more players on lower-end
+devices ([DevForum](https://devforum.roblox.com/t/how-many-people-are-playing-on-low-end-devices/3358138)), and
+that crashes and frame drops make players leave at once
+([DevForum](https://devforum.roblox.com/t/every-time-i-publish-an-update-with-the-slightest-change-my-average-playtime-drops-to-nearly-half/4551961)).
+Entry 22 checked for leaks; nothing had measured rendering cost.
+
+**Measured** with `SceneAnalysisService`:
+
+| | Draw calls | Triangles |
+|---|---|---|
+| Lobby, toward the grid | 222 | 253k |
+| Lobby, toward the island | 269 | 213k |
+| Mid-round | 158 | 145k |
+
+All are well under the roughly 600 draw calls / 800k triangles where most devices hold 60 fps. There are about 6,000
+instances and 50 lights, of which only 4 stage lights cast shadows.
+
+Particles were the outlier: about 6,300 live particles (rate × lifetime) across the workspace. Two background
+volcano cones from the Creator Store each ran a 500/s fire emitter with 2 s lifetimes, plus two large smoke
+emitters, which is about 1,900 particles per cone. Both cones sit 560 studs out, hidden behind the crater wall from
+the lobby and mostly hidden from the island.
+
+**Change.** When backdrop models are placed, each emitter is capped at `BackdropParticleCap` (120) live particles by
+lowering its rate. Nothing else changes.
+
+**Verified.**
+- Live particles went from 6,303 to 3,149 (backdrop: 1,280).
+- In island screenshots before and after, the only visible difference is a faint smoke trail behind the peaks. The
+  main background volcano still throws embers from the lobby.
+- The console was clean. Studio matches the repo by chunk hash; place saved as version 59.
+- Not measured: frame rate on a real phone.
+
 ## 34. 💎 Lava gems hidden around the lobby
 
 **Research.**
