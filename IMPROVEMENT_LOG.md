@@ -3,6 +3,28 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 22. Leak check over many rounds (no change needed)
+
+**Why.** DevForum threads on round-based games describe memory that climbs every round from leftover connections or
+instances, and phones hit their memory limit first
+([1](https://devforum.roblox.com/t/i-disconnect-all-connections-and-even-that-is-not-helping-eliminate-lag-buildup-in-my-game/1601284),
+[2](https://devforum.roblox.com/t/server-untrackedmemory-goes-up-and-never-comes-down-again/134529),
+[3](https://devforum.roblox.com/t/why-is-my-memory-building-up-this-is-incredibly-annoying/2025341)).
+LAVA Floors rebuilds its tower every round, and this session added several per-round systems (pillar, ledges,
+awards, goal, away and underdog tracking).
+
+**Checked.** In a solo Studio play test of 7 rounds, the client stepped into the lava after phase 1 each round.
+After each round I logged instance counts and memory on both sides:
+- Server workspace: about 3,500 instances every time. The dips to about 2,600 are rounds caught between tower builds.
+- Tile riders: 267–323. Strawberries: 6–7.
+- Client workspace: 3,100–4,000. PlayerGui: 1,565–1,590. Camera children: 125.
+- Studio's total memory (one process shared by server and client, so only a rough signal): about 2.2 GB early,
+  falling to about 1.4 GB.
+- No upward trend in any count, and no console errors.
+
+Nothing to fix. Worth repeating with real devices and a longer session before launch, using the Developer Console's
+memory tags.
+
 ## 21. Phone and tablet layout pass
 
 **Research.** About 80% of Roblox sessions are on mobile
