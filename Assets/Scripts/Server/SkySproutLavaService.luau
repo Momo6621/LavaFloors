@@ -114,6 +114,20 @@ local CFG = {
 	HopMinTime = 2.5, -- runs faster than this are impossible and ignored
 	HopCrackDelay = 0.6, -- a cracked stone drops this long after someone lands on it
 	HopCrackBack = 3, -- and comes back after this long
+	-- Lobby gems: glowing lava crystals hidden around the plaza, crater and island for waiting players to hunt. Each
+	-- pays GemCoins once per account; the last one pays GemAllCoins on top. Gem centres, fixed to the current layout
+	-- (the first sits over the Warm-up Hop goal, so move it if the hop moves).
+	Gems = {
+		Vector3.new(-236.5, 10.8, 215.5), -- over the Warm-up Hop goal
+		Vector3.new(-217, 3.8, 256.6), -- behind the Top Climbers board
+		Vector3.new(-106, 4.8, 115.5), -- under a palm on the island's south side
+		Vector3.new(-16.5, 4.8, 330), -- at the foot of a palm out on the island (clears the tall grass)
+		Vector3.new(51, 4.6, 264), -- by a palm on the east beach
+	},
+	GemCoins = 25,
+	GemAllCoins = 100,
+	GemRadius = 5, -- studs from your root to the gem centre
+	GemHintAfter = 25, -- seconds after joining, one hint that gems are hidden (skipped once all are found)
 	-- Away: seconds without any input before a player sits out the automatic rounds (published as the workspace
 	-- attribute LavaAwayAfter for the client). Any input brings them back.
 	AwayAfter = 120,
@@ -4395,6 +4409,100 @@ local function clearPreview()
 	end
 end
 
+-- Lobby gems (CFG.Gems). The server checks who is close enough; each client spins them and hides the ones it has
+-- already found (player attribute "LavaGems", a list of ids like "G1,G3").
+local function buildGems()
+	local floorModel = workspace.SkySprout.Floors:FindFirstChild("Floor_" .. CFG.Floor)
+	if not floorModel then
+		return
+	end
+	local old = floorModel:FindFirstChild("LobbyGems")
+	if old then
+		old:Destroy()
+	end
+	local folder = Instance.new("Folder")
+	folder.Name = "LobbyGems"
+	for i, at in CFG.Gems do
+		local gem = Instance.new("Part")
+		gem.Name = "G" .. i
+		gem.Size = Vector3.new(1.3, 1.3, 1.3)
+		gem.CFrame = CFrame.new(at) * CFrame.Angles(math.rad(45), 0, math.rad(45))
+		gem.Material = Enum.Material.Neon
+		gem.Color = Color3.fromRGB(255, 120, 40)
+		gem.Anchored = true
+		gem.CanCollide, gem.CanQuery, gem.CanTouch, gem.CastShadow = false, false, false, false
+		gem:SetAttribute("NoTheme", true)
+		local light = Instance.new("PointLight")
+		light.Color = gem.Color
+		light.Range = 9
+		light.Brightness = 1.5
+		light.Parent = gem
+		local sparkle = Instance.new("ParticleEmitter")
+		sparkle.Rate = 4
+		sparkle.Lifetime = NumberRange.new(0.8, 1.4)
+		sparkle.Speed = NumberRange.new(0.5, 1.5)
+		sparkle.SpreadAngle = Vector2.new(180, 180)
+		sparkle.Size = NumberSequence.new(0.25, 0)
+		sparkle.LightEmission = 1
+		sparkle.Color = ColorSequence.new(Color3.fromRGB(255, 220, 120), Color3.fromRGB(255, 120, 40))
+		sparkle.Parent = gem
+		gem.Parent = folder
+	end
+	folder.Parent = floorModel
+end
+
+local function gemList(d: any): (string, number)
+	local ids = {}
+	for i = 1, #CFG.Gems do
+		if d.Gems and d.Gems["G" .. i] then
+			table.insert(ids, "G" .. i)
+		end
+	end
+	return table.concat(ids, ","), #ids
+end
+
+local function gemLoop()
+	local seen: { [Player]: number } = setmetatable({}, { __mode = "k" }) :: any
+	while true do
+		task.wait(0.25)
+		for _, p in Players:GetPlayers() do
+			local d = data(p)
+			local r = root(p)
+			if d and r then
+				d.Gems = d.Gems or {}
+				local list, found = gemList(d)
+				if p:GetAttribute("LavaGems") == nil then
+					p:SetAttribute("LavaGems", list)
+				end
+				if not seen[p] then
+					seen[p] = os.clock()
+				elseif seen[p] > 0 and os.clock() - seen[p] >= CFG.GemHintAfter then
+					seen[p] = 0
+					if found < #CFG.Gems then
+						tell(p, string.format("💎 %d lava gems are hidden around the volcano and the island. Can you find them all?", #CFG.Gems - found))
+					end
+				end
+				for i, at in CFG.Gems do
+					local id = "G" .. i
+					if not d.Gems[id] and (r.Position - at).Magnitude <= CFG.GemRadius then
+						d.Gems[id] = true
+						list, found = gemList(d)
+						local all = found == #CFG.Gems
+						local coins = CFG.GemCoins + (if all then CFG.GemAllCoins else 0)
+						d.Coins = math.min(100000000, d.Coins + coins)
+						pushStats(p)
+						logCoins(p, "Gameplay", coins, if all then "LobbyGemsAll" else "LobbyGem")
+						p:SetAttribute("LavaGems", list)
+						event:FireClient(p, "LavaFX", { Kind = "Invite", Text = string.format("💎 Gem %d/%d", found, #CFG.Gems), Coins = coins })
+						tell(p, if all then string.format("💎 All %d lava gems found! +%d coins", #CFG.Gems, coins)
+							else string.format("💎 Lava gem %d/%d! +%d coins. %d more hidden around the volcano and island.", found, #CFG.Gems, coins, #CFG.Gems - found))
+					end
+				end
+			end
+		end
+	end
+end
+
 function L.BuildPreview()
 	clearPreview()
 	buildArena()
@@ -4422,6 +4530,7 @@ function L.Start(arena: any, remote: RemoteEvent, stats: (Player) -> (), notice:
 	publishEvent()
 	clearPreview()
 	buildArena()
+	buildGems()
 	buildBackdrop()
 	if GameConfig.PartyMode then
 		islandMode()
@@ -4707,6 +4816,7 @@ function L.Start(arena: any, remote: RemoteEvent, stats: (Player) -> (), notice:
 	for _, p in Players:GetPlayers() do
 		task.spawn(checkReferral, p)
 	end
+	task.spawn(gemLoop)
 	task.spawn(loop)
 	print("Lava Rush ready — floor-is-lava rounds on floor 1.")
 end

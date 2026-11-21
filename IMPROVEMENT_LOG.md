@@ -3,6 +3,44 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 34. 💎 Lava gems hidden around the lobby
+
+**Research.**
+- A DevForum request on round-based games names players who join mid-round and wait as a top onboarding problem
+  ([DevForum](https://devforum.roblox.com/t/allow-developers-to-mark-servers-as-unpreferred-for-new-player-joins/3680997)).
+- Replies on lobby design suggest giving waiting players places to walk and a few secrets to find.
+- Roblox's June 2026 discovery update weights day-1 retention more heavily
+  ([Roblox newsroom](https://about.roblox.com/newsroom/2026/06/optimizing-discovery-great-games-reach-millions-players-roblox)),
+  and Roblox's [strategy docs](https://create.roblox.com/docs/get-started/strategies) recommend short-term goals.
+- LAVA Floors already had the Warm-up Hop, but nothing to discover.
+
+**Change.**
+- 5 glowing lava gems (a neon crystal with a light and sparkles, built from parts; no generated content):
+  - over the Warm-up Hop goal (a reward for finishing it);
+  - tucked behind the Top Climbers board;
+  - under a palm on the island's south side;
+  - at the foot of a palm further out on the island;
+  - by a palm on the east beach.
+- A server loop checks distance every 0.25 s. Each gem pays 25 coins once per account; the fifth pays 100 more, so
+  225 in total.
+- Finds save in the profile (`Gems`, added to `SkySproutRules.new` and `clean`). The player attribute `LavaGems`
+  tells the client which gems to hide; the rest spin and bob (they stay still with Reduce Motion).
+- One hint about 25 s after joining, unless every gem is already found.
+- First positions tried: one behind the far beacon across the crater sat beside the round's lava, so it moved to an
+  island palm. Island gems were raised to clear the tall grass, and the beach gem was nudged off a palm trunk.
+
+**Verified.**
+- Screenshots at every spot.
+- Pickup test, teleporting onto each gem:
+  - coins 39 → 64 → 89 → 114 → 139 → 264 (the fifth paid 125);
+  - `LavaGems` went from "" to "G1,G2,G3,G4,G5";
+  - found gems went invisible for the player;
+  - going back to a found gem paid nothing.
+- `SkySproutRules.clean` kept G1 and G3, dropped bad entries, and gave an old profile an empty `Gems`.
+- The console was clean. Repo and Studio match by chunk hash for the service, client and rules; place saved as
+  version 58.
+- Not verified: the 25 s hint message, and saving across sessions (Studio can't reach DataStores).
+
 ## 33. 🍓 Strawberry gift from the sidelines
 
 **Research.** The developer of Spleef Battles, a disappearing-floor elimination game, planned a "Sabotage Machine"

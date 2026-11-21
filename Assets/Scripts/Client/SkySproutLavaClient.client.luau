@@ -2262,3 +2262,49 @@ Run.Heartbeat:Connect(function()
 		end
 	end
 end)
+
+-- Lobby gems: spin and bob the hidden lava gems, and hide the ones you've already found (the server lists them in
+-- the "LavaGems" attribute). Gems stream in and out, so this works on whatever is loaded.
+do
+	local function foundSet(): { [string]: boolean }
+		local set = {}
+		for id in string.gmatch(tostring(player:GetAttribute("LavaGems") or ""), "[^,]+") do
+			set[id] = true
+		end
+		return set
+	end
+	local found = foundSet()
+	player:GetAttributeChangedSignal("LavaGems"):Connect(function()
+		found = foundSet()
+	end)
+	local home: { [BasePart]: Vector3 } = setmetatable({}, { __mode = "k" }) :: any
+	local TILT = CFrame.Angles(math.rad(45), 0, math.rad(45))
+	Run.RenderStepped:Connect(function()
+		local floors = workspace:FindFirstChild("SkySprout") and workspace.SkySprout:FindFirstChild("Floors")
+		local floor1 = floors and floors:FindFirstChild("Floor_1")
+		local folder = floor1 and floor1:FindFirstChild("LobbyGems")
+		if not folder then
+			return
+		end
+		local t = os.clock()
+		for _, gem in folder:GetChildren() do
+			if gem:IsA("BasePart") then
+				local at = home[gem]
+				if not at then
+					at = gem.Position
+					home[gem] = at
+				end
+				local hidden = found[gem.Name] == true
+				gem.Transparency = if hidden then 1 else 0
+				for _, fx in gem:GetChildren() do
+					if fx:IsA("PointLight") or fx:IsA("ParticleEmitter") then
+						fx.Enabled = not hidden
+					end
+				end
+				if not hidden and not REDUCED_MOTION then
+					gem.CFrame = CFrame.new(at + Vector3.new(0, math.sin(t * 2) * 0.25, 0)) * CFrame.Angles(0, t * 1.5, 0) * TILT
+				end
+			end
+		end
+	end)
+end

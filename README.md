@@ -79,6 +79,9 @@ Progression and live-ops:
 - Warm-up Hop: a timed little puzzle run over practice lava beside the lobby plaza, for anyone waiting on a round:
   a round pillar, a fork where one stone is cracked (⚠, it drops a moment after you land), a narrow beam, a step
   up and a second fork. Falling in sends you back to the start; the finish sign shows the server's fastest run. No coins.
+- Lava gems: 5 glowing gems are hidden around the lobby, the Warm-up Hop and the island. Each pays 25 coins once per
+  account, and the last one pays 100 more. A hint comes about 25 s after joining, and gems you've found disappear
+  for you. Saved as `Gems` in the profile; positions and coins are `Gems*` in CFG.
 - Near miss: knocked out one or two rises from the crown, the result card says "😱 SO CLOSE! N rises left".
 - Cheers: anyone not climbing (knocked out or sitting a round out) gets a bar of six preset emoji. A tap floats
   the emoji with your name up everyone's screen. No typing; the server allows one every 1.2 s (CFG.CheerCooldown).
