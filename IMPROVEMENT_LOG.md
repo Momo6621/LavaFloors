@@ -3,6 +3,35 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 37. Controller shortcuts for spectators and the twist vote
+
+**Research.** Roblox runs on Xbox and PlayStation. On a gamepad, on-screen buttons need Roblox's UI selection mode
+(press Select, then steer a highlight), which DevForum developers call hard to get right and players rarely find
+([DevForum](https://devforum.roblox.com/t/is-it-me-or-is-making-guis-gamepad-compatible-incredibly-frustrating/117420)).
+The recommended fix is to bind actions directly or set `GuiService.SelectedObject` for the player
+([new selection APIs](https://devforum.roblox.com/t/new-gamepad-ui-selection-apis/1791278),
+[setting the starting selection](https://devforum.roblox.com/t/is-there-a-way-to-set-the-selected-button-for-controller-navigation/89328)).
+LAVA Floors mapped shove (R2) and raise (Y), but everything a spectator does needed selection mode.
+
+**Change.**
+- While spectating, L1 / R1 switch who you follow, and X sends the 🍓 gift when it's available. The binding exists
+  only while spectating.
+- With a gamepad in use, small L1 / R1 labels appear under the ◀ ▶ arrows and the gift reads "🍓 Gift (X)". They
+  switch with the last input type. The gift button grew to 104 px to fit.
+- When the twist vote opens for a controller player, the selection starts on the first option. It's cleared when
+  the vote closes, so the controller goes back to the character.
+
+**Verified.** 2-player Studio test; Player1 was kept alive with the survival driver:
+- The action was not bound while Player2 was climbing and was bound once they were spectating. A keyboard player
+  saw no pad hints and the plain "🍓 Gift" label.
+- Real R1 presses (sent with Studio's input tool) changed the bar to "👀 Watching Player1" and showed the gift
+  button.
+- A real X press ran the gift send: the button hid. The round ended at that moment, so no gift bubble came back. The
+  server side of gifting was verified with clicks in entry 33.
+- The consoles were clean. Studio matches the repo by chunk hash; place saved as version 61.
+- Not testable here: Studio's input tool reports gamepad buttons as keyboard input, so the pad hints and the vote
+  auto-select (both need a real gamepad as the last input type) still need a real controller.
+
 ## 36. Honour Roblox's Text Size setting
 
 **Research.** Roblox's [accessibility guide](https://create.roblox.com/docs/en-us/production/publishing/accessibility)

@@ -26,7 +26,9 @@ button). A raised tile doesn't wear.
 
 When you fall, a short line says why and how to avoid it next time (shoved, your tile crumbled from standing still,
 a tile dropped away, the edge was left behind, the hot potato, or you slipped). If you fall while others are still going, the camera swings out to spectate the floor until the round ends; the
-◀ ▶ buttons switch to following any climber still in the round, players or bots.
+◀ ▶ buttons switch to following any climber still in the round, players or bots. On a controller, L1 / R1 switch
+who you follow and X sends the strawberry gift; when the twist vote opens, the selection starts on the first option
+so the D-pad and A vote right away.
 When it does, everyone sees a winner banner with confetti over the winners.
 
 Whoever is still standing after phase 3 gets crowned. With two or more players, the last one standing wins

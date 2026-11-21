@@ -361,6 +361,26 @@ local voteButtons: { [string]: TextButton } = {}
 local voteNames: { [string]: string } = {}
 local myVote: string? = nil
 local voteEndsAt = 0
+-- Controller players: true when the last input came from a gamepad.
+local function usingGamepad(): boolean
+	return string.sub(game:GetService("UserInputService"):GetLastInputType().Name, 1, 7) == "Gamepad"
+end
+-- When the vote card opens for a controller player, put the selection on the first option so the D-pad and A vote
+-- straight away (otherwise they'd have to find Roblox's UI selection mode first).
+local function selectFirstVote()
+	if not usingGamepad() then
+		return
+	end
+	local first: TextButton? = nil
+	for _, b in voteButtons do
+		if not first or b.LayoutOrder < first.LayoutOrder then
+			first = b
+		end
+	end
+	if first then
+		GuiService.SelectedObject = first
+	end
+end
 
 -- Pick the winner: while you're out, tap one of the climbers still standing; if they win you get a few coins.
 local predictCard: Frame = make("Frame", {
@@ -409,7 +429,7 @@ for i, emoji in CHEERS do
 end
 -- 🍓 Gift: once a round, send a strawberry to the climber you're following (◀ ▶ on the spectate bar). Shown only
 -- while following a player who is still climbing; the server checks everything again.
-local giftButton: TextButton = make("TextButton", { Name = "Gift", LayoutOrder = #CHEERS + 1, Size = UDim2.fromOffset(88, 42), Font = FONT, TextScaled = true, Text = "🍓 Gift", Visible = false, ZIndex = 5 }, cheerBar)
+local giftButton: TextButton = make("TextButton", { Name = "Gift", LayoutOrder = #CHEERS + 1, Size = UDim2.fromOffset(104, 42), Font = FONT, TextScaled = true, Text = "🍓 Gift", Visible = false, ZIndex = 5 }, cheerBar)
 make("UICorner", { CornerRadius = UDim.new(0, 12) }, giftButton)
 UI.button(giftButton, UI.LavaDeep)
 local giftSent = false
@@ -418,15 +438,16 @@ local function setGiftTarget(userId: number?)
 	giftTarget = userId
 	local show = userId ~= nil and not giftSent
 	giftButton.Visible = show
-	cheerBar.Size = UDim2.fromOffset(#CHEERS * 50 + 6 + (if show then 94 else 0), 52)
+	cheerBar.Size = UDim2.fromOffset(#CHEERS * 50 + 6 + (if show then 110 else 0), 52)
 end
-giftButton.Activated:Connect(function()
+local function sendGift()
 	if giftTarget and not giftSent then
 		giftSent = true
 		event:FireServer("LavaGift", giftTarget)
 		setGiftTarget(nil)
 	end
-end)
+end
+giftButton.Activated:Connect(sendGift)
 local cheerFeed: Frame = make("Frame", { Name = "CheerFeed", BackgroundTransparency = 1, AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -56, 0.92, 0), Size = UDim2.fromOffset(150, 260), ZIndex = 4 }, gui)
 local liveCheers = 0
 local function showCheer(name: string, emoji: string)
@@ -530,8 +551,35 @@ for i, arrow in { "◀", "▶" } do
 	}, spectateLabel)
 	make("UICorner", { CornerRadius = UDim.new(1, 0) }, b)
 	stroked(b)
+	local hint: TextLabel = make("TextLabel", {
+		Name = "PadHint",
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.new(0.5, 0, 1, 2),
+		Size = UDim2.fromOffset(34, 16),
+		BackgroundTransparency = 1,
+		Font = FONT,
+		TextScaled = true,
+		Text = if i == 1 then "L1" else "R1",
+		TextColor3 = Color3.new(1, 1, 1),
+		Visible = false,
+	}, b)
+	stroked(hint)
 	table.insert(spectateButtons, b)
 end
+-- Controller hints: L1 / R1 under the follow arrows and (X) on the gift button while a gamepad is in use (the
+-- buttons themselves are bound while spectating, see startSpectate).
+local function refreshPadHints()
+	local pad = usingGamepad()
+	for _, b in spectateButtons do
+		local hint = b:FindFirstChild("PadHint")
+		if hint and hint:IsA("TextLabel") then
+			hint.Visible = pad
+		end
+	end
+	giftButton.Text = if pad then "🍓 Gift (X)" else "🍓 Gift"
+end
+game:GetService("UserInputService").LastInputTypeChanged:Connect(refreshPadHints)
+refreshPadHints()
 
 local function pop(target: GuiObject)
 	local scale = target:FindFirstChildOfClass("UIScale") or make("UIScale", {}, target)
@@ -765,11 +813,13 @@ event.OnClientEvent:Connect(function(kind: string, v: any)
 					result.Visible = false
 					voteCard.Visible = true
 					pop(voteCard)
+					selectFirstVote()
 				end
 			end)
 		else
 			voteCard.Visible = #options > 0
 			pop(voteCard)
+			selectFirstVote()
 		end
 	elseif kind == "LavaVoteCounts" then
 		if type(v) == "table" then
@@ -780,6 +830,10 @@ event.OnClientEvent:Connect(function(kind: string, v: any)
 		end
 	elseif kind == "LavaVoteResult" then
 		voteCard.Visible = false
+		local selected = GuiService.SelectedObject
+		if selected and selected:IsDescendantOf(voteCard) then
+			GuiService.SelectedObject = nil -- hand the controller back to the character
+		end
 		if v.Id and myVote == v.Id then
 			play("Crown", 1.6)
 		end
@@ -1587,6 +1641,7 @@ local function stopSpectate(byPlayer: boolean?)
 	end
 	spectateLabel.Visible = false
 	setGiftTarget(nil)
+	game:GetService("ContextActionService"):UnbindAction("LavaFollowPad")
 	Run:UnbindFromRenderStep("LavaSpectate")
 	workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
 end
@@ -1645,6 +1700,22 @@ local function startSpectate()
 	followKey = nil
 	spectateLabel.Text = OVERHEAD_TEXT
 	setGiftTarget(nil)
+	-- Controller: L1 / R1 switch who you follow and X sends the strawberry gift, without UI selection mode.
+	game:GetService("ContextActionService"):BindAction("LavaFollowPad", function(_, inputState, input)
+		if inputState ~= Enum.UserInputState.Begin then
+			return Enum.ContextActionResult.Pass
+		end
+		if input.KeyCode == Enum.KeyCode.ButtonL1 then
+			cycleFollow(-1)
+		elseif input.KeyCode == Enum.KeyCode.ButtonR1 then
+			cycleFollow(1)
+		elseif input.KeyCode == Enum.KeyCode.ButtonX and giftButton.Visible then
+			sendGift()
+		else
+			return Enum.ContextActionResult.Pass
+		end
+		return Enum.ContextActionResult.Sink
+	end, false, Enum.KeyCode.ButtonL1, Enum.KeyCode.ButtonR1, Enum.KeyCode.ButtonX)
 	spectateLabel.Visible = true
 	local started = os.clock()
 	Run:BindToRenderStep("LavaSpectate", Enum.RenderPriority.Camera.Value + 1, function()
