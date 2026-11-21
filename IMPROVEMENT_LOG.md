@@ -3,6 +3,33 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 21. Phone and tablet layout pass
+
+**Research.** About 80% of Roblox sessions are on mobile
+([Search Engine Land](https://searchengineland.com/guide/roblox-users),
+[HostingAdvice](https://www.hostingadvice.com/studies/roblox-statistics/)). Most of this session's checks had been
+in a desktop-sized Studio window.
+
+**Checked** with Studio's Device Simulator, in play mode, in the lobby countdown and mid-round:
+- Samsung Galaxy A06 (800×360, the smallest phone listed; 705×338 viewport with touch controls).
+- iPad 10th gen (1180×820).
+
+**Found and fixed on the phone:**
+- **Top bar overflow in the lobby.** The Lava Rush toggle's "✅ Queued" label pushed the right-hand group over the
+  "🌋 0/40" goal pill. On phones the toggle now shows "✅", "🔥 Go!" or "🔥" (via `UI.short`); the full words stay on
+  bigger screens.
+- **Coach card under the RAISE button.** The first-round tip card (90% wide at 70% height) ran under RAISE and
+  reached toward the thumbstick. On phones it now sits in the clear band between them: 45% wide, centred at
+  42.5% across.
+
+**Fine as built:** the round HUD on the phone (title card, phase label, climb meter, RAISE, SHOVE, jump), and the
+whole tablet layout (full top bar labels with room to spare; the coach card clears RAISE).
+
+**Verified.** Screenshots before and after on the Galaxy A06 and on the iPad:
+- The phone's coach card measures x 141–458 of 705. The thumbstick ends at about 130 and RAISE starts at about 472.
+- The console showed no errors, and Studio matches the repo by chunk hash.
+- The Device Simulator was reset to the default viewport afterwards.
+
 ## 20. Your own tile cracks out loud
 
 **Research.**

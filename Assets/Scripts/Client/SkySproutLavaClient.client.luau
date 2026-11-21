@@ -281,6 +281,11 @@ local coachText: TextLabel = make("TextLabel", { BackgroundTransparency = 1, Pos
 UI.glass(coachCard, 18, UI.Gold)
 UI.text(coachStep, "title")
 UI.text(coachText, "body")
+if UI.isCompact() then
+	-- Phones: keep the coach card between the thumbstick (bottom left) and the Raise / Shove buttons (right).
+	coachCard.Position = UDim2.fromScale(0.425, 0.7)
+	coachCard.Size = UDim2.new(0.45, 0, 0, 74)
+end
 local coachRunning = false
 local function runCoach()
 	if coachRunning or player:GetAttribute("Tutorial") ~= true then
@@ -836,7 +841,8 @@ Run.RenderStepped:Connect(function(dt)
 	local inRush = mode == "LavaRush" and me.Running
 
 	local joinable = state.Phase == "Round" and state.LavaY < state.BaseY + 40
-	local label = if me.Queued then "✅ Queued" elseif joinable then "🔥 Jump in!" else "🔥 Lava Rush"
+	-- Short labels on phones: the long "✅ Queued" pushed the right-hand top bar group over the server-goal pill.
+	local label = if me.Queued then UI.short("✅ Queued", "✅") elseif joinable then UI.short("🔥 Jump in!", "🔥 Go!") else UI.short("🔥 Lava Rush", "🔥")
 	local enabled = onFloor1 and not inRush and (mode == "Lobby" or me.Queued)
 	if enabled ~= lastEnabled then
 		lastEnabled = enabled
