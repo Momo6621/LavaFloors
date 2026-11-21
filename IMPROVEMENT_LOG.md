@@ -3,6 +3,32 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 20. Your own tile cracks out loud
+
+**Research.**
+- Xbox Accessibility Guideline 103 asks for key cues through more than one sense, with rumble as a supplement, so
+  players who miss the visual still get the warning
+  ([XAG 103](https://devdocs.xbox.com/gaming/accessibility/xbox-accessibility-guidelines/103),
+  [Game Accessibility Guidelines](https://gameaccessibilityguidelines.com/?p=21)).
+- In LAVA Floors the tile under you wearing out (darkening, cracking, shaking) was visual only. Your own character
+  usually hides that tile from the third-person camera, and there was no sound until it shattered.
+
+**Built.** On the client:
+- A low crack plays when the tile you're standing on is half worn.
+- A lower crack and a short gamepad buzz come when it's 85% worn, just before it breaks.
+- Each stage plays once per tile and resets if the tile recovers.
+- It covers camping wear and planned holes alike (`Grid.Crumble`). It reuses the existing Shove sound at lower
+  pitches, so no new audio.
+- The buzz uses `HapticService`, only where vibration is supported.
+
+**Verified.** In a Studio play test, a player was pinned to one tile during a round:
+- Crack at 2.2 s, when wear was 0.5.
+- Second crack at 3.6 s, at wear 0.85.
+- The existing shatter sound at 4.4 s, when the tile broke.
+- The console showed no errors, and Studio matches the repo by chunk hash.
+
+Not verified: the gamepad buzz, because no controller was connected.
+
 ## 19. King of the Pillar
 
 **Research.** King-of-the-hill design writing says one contested high spot is simple to read and generates tension,

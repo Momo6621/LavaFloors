@@ -79,7 +79,8 @@ Progression and live-ops:
 - Near miss: knocked out one or two rises from the crown, the result card says "😱 SO CLOSE! N rises left".
 - Cheers: anyone not climbing (knocked out or sitting a round out) gets a bar of six preset emoji. A tap floats
   the emoji with your name up everyone's screen. No typing; the server allows one every 1.2 s (CFG.CheerCooldown).
-- Accessibility: red warning plates also carry a ⚠ symbol (not colour alone), and Roblox's Reduce Motion setting turns
+- Accessibility: the tile under you cracks out loud when it's half worn and again (with a gamepad buzz) just before
+  it breaks, since your own character often hides it from the camera. Red warning plates also carry a ⚠ symbol (not colour alone), and Roblox's Reduce Motion setting turns
   off camera shake, the FOV kick, speed streaks, tile wobble and blinking (warnings stay on, steady).
 - Weekly Top Climbers board in the lobby: crowns won this week across all servers (OrderedDataStore
   `LavaWeeklyCrowns_v1`, one scope per week), merged with the climbers in the server. Resets Monday 00:00 UTC.

@@ -1204,6 +1204,40 @@ local function tileUnderFeet(): BasePart?
 	return nil
 end
 
+-- Your own tile cracking: a low crack when the tile under you is half worn, and a lower one with a short gamepad buzz
+-- when it's about to break. Your character usually hides that tile from the camera, so the warning shouldn't be
+-- visual only (Xbox Accessibility Guideline 103: key cues through more than one sense).
+local HapticService = game:GetService("HapticService")
+local crackHeard: { [BasePart]: number } = setmetatable({}, { __mode = "k" }) :: any -- tile -> crack stage already played
+local function buzz()
+	pcall(function()
+		if HapticService:IsVibrationSupported(Enum.UserInputType.Gamepad1) then
+			HapticService:SetMotor(Enum.UserInputType.Gamepad1, Enum.VibrationMotor.Small, 0.6)
+			task.delay(0.18, function()
+				HapticService:SetMotor(Enum.UserInputType.Gamepad1, Enum.VibrationMotor.Small, 0)
+			end)
+		end
+	end)
+end
+local function crackCue(tile: BasePart?)
+	local tower = tile and tile.Parent
+	local row, col = if tile then tile:GetAttribute("Row") else nil, if tile then tile:GetAttribute("Col") else nil
+	if not tile or not tower or type(row) ~= "number" or type(col) ~= "number" then
+		return
+	end
+	local worn = Grid.Crumble(tower, row, col, workspace:GetServerTimeNow()) or 0
+	local stage = if worn >= 0.85 then 2 elseif worn >= 0.5 then 1 else 0
+	if stage == 0 then
+		crackHeard[tile] = nil
+	elseif stage > (crackHeard[tile] or 0) then
+		crackHeard[tile] = stage
+		play("Shove", if stage == 2 then 0.32 else 0.42)
+		if stage == 2 then
+			buzz()
+		end
+	end
+end
+
 -- A ⚠ symbol on each red warning plate, so the warning doesn't rely on colour alone (red on orange is hard to tell
 -- apart with red-green colour blindness). Made locally the first time a plate is seen.
 local warnMarks: { [BasePart]: SurfaceGui } = {}
@@ -1320,6 +1354,7 @@ Run.PreSimulation:Connect(function()
 	end
 	standingOn = tileUnderFeet()
 	standingCFrame = if standingOn then standingOn.CFrame else nil
+	crackCue(standingOn)
 end)
 
 -- Climb parallax: local-only rocks, clouds and light streaks drift down past the grid in three depth layers,
