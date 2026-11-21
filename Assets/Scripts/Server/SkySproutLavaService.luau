@@ -11,6 +11,7 @@ local Themes = require(game.ReplicatedStorage:WaitForChild("LavaThemes")) :: any
 local Grid = require(game.ReplicatedStorage:WaitForChild("LavaGrid")) :: any
 local FruitModels = game.ReplicatedStorage:WaitForChild("FruitModels")
 local applyHat: (Player) -> ()
+local applyTitle: (Player) -> ()
 local wear: { [number]: number } = {}
 local tileColour: (any, number, boolean) -> Color3
 
@@ -198,14 +199,21 @@ local CFG = {
 	JumpTime = 7,
 	EmberBag = 3,
 
-	-- Titles shown over your head, earned by total crowns (highest one you qualify for)
+	-- Titles shown over your head. Crown titles unlock with total crowns; the others with another achievement (Need).
+	-- Players pick which unlocked title to show (the 🏷️ button in the Challenges panel); "Auto" shows the best crown
+	-- title, as before.
 	Titles = {
-		{ Crowns = 1, Text = "🔥 Lava Walker", Color = Color3.fromRGB(255, 170, 90) },
-		{ Crowns = 5, Text = "🌋 Crater Climber", Color = Color3.fromRGB(255, 120, 60) },
-		{ Crowns = 15, Text = "👑 Volcano King", Color = Color3.fromRGB(255, 215, 80) },
-		{ Crowns = 40, Text = "💎 Magma Legend", Color = Color3.fromRGB(120, 220, 255) },
-		{ Crowns = 100, Text = "⭐ Eternal Flame", Color = Color3.fromRGB(255, 240, 160) },
+		{ Id = "Walker", Crowns = 1, Text = "🔥 Lava Walker", Color = Color3.fromRGB(255, 170, 90) },
+		{ Id = "Climber", Crowns = 5, Text = "🌋 Crater Climber", Color = Color3.fromRGB(255, 120, 60) },
+		{ Id = "King", Crowns = 15, Text = "👑 Volcano King", Color = Color3.fromRGB(255, 215, 80) },
+		{ Id = "Legend", Crowns = 40, Text = "💎 Magma Legend", Color = Color3.fromRGB(120, 220, 255) },
+		{ Id = "Eternal", Crowns = 100, Text = "⭐ Eternal Flame", Color = Color3.fromRGB(255, 240, 160) },
+		{ Id = "Gems", Need = "Gems", Text = "🔶 Gem Hunter", Color = Color3.fromRGB(255, 150, 60) },
+		{ Id = "Chests", Need = "Chests", Text = "🎁 Chest Cracker", Color = Color3.fromRGB(255, 200, 90) },
+		{ Id = "Kind", Need = "Gifts", Text = "🍓 Kind Climber", Color = Color3.fromRGB(255, 130, 160) },
 	},
+	TitleChests = 5, -- Lava Chests opened for 🎁 Chest Cracker (Gem Hunter needs every lava gem)
+	TitleGifts = 5, -- strawberry gifts sent for 🍓 Kind Climber
 
 	-- Redeemable codes: CODE = { Coins = n, Until = optional os.time() expiry }. Server-only, once per account.
 	Codes = {
@@ -3080,6 +3088,10 @@ local function payout()
 			if chestAfter >= CFG.ChestGoal then
 				chestAfter -= CFG.ChestGoal
 				d.ChestsOpened = (tonumber(d.ChestsOpened) or 0) + 1
+				if d.ChestsOpened == CFG.TitleChests then
+					applyTitle(p)
+					tell(p, "🏷️ New title: 🎁 Chest Cracker! Pick it with the 🏷️ button in 📋 Challenges.")
+				end
 				chestCoins = if d.ChestsOpened % CFG.ChestBigEvery == 0 then CFG.ChestBigCoins else CFG.ChestCoins
 				d.Coins = math.min(100000000, d.Coins + chestCoins)
 				logCoins(p, "Gameplay", chestCoins, "LavaChest")
@@ -3240,18 +3252,57 @@ local function crownPlayer(p: Player, r: Runner)
 end
 
 -- Title tag: the best title your crowns have earned, floating over your head everywhere.
-local function applyTitle(p: Player)
+local function titleUnlocked(t: any, d: any, crowns: number): boolean
+	if t.Crowns then
+		return crowns >= t.Crowns
+	elseif not d then
+		return false
+	elseif t.Need == "Gems" then
+		for i = 1, #CFG.Gems do
+			if not (d.Gems and d.Gems["G" .. i]) then
+				return false
+			end
+		end
+		return true
+	elseif t.Need == "Chests" then
+		return (tonumber(d.ChestsOpened) or 0) >= CFG.TitleChests
+	elseif t.Need == "Gifts" then
+		return (tonumber(d.GiftsSent) or 0) >= CFG.TitleGifts
+	end
+	return false
+end
+
+-- Shows the player's chosen title (d.Title: a title Id, "Auto" for the best crown title, or "None") and publishes
+-- the unlocked ones for the picker as the "LavaTitles" attribute (JSON: List of {Id, Text}, Current).
+applyTitle = function(p: Player)
+	local d = data(p)
+	local crowns = tonumber(p:GetAttribute("Crowns")) or 0
+	local auto, chosen = nil, nil
+	local unlocked = {}
+	for _, t in CFG.Titles do
+		if titleUnlocked(t, d, crowns) then
+			if t.Crowns then
+				auto = t
+			end
+			if d and d.Title == t.Id then
+				chosen = t
+			end
+			table.insert(unlocked, { Id = t.Id, Text = t.Text })
+		end
+	end
+	local pick = if d and type(d.Title) == "string" and d.Title ~= "" then d.Title else "Auto"
+	local list = { { Id = "Auto", Text = if auto then "Auto: " .. auto.Text else "Auto" } }
+	for _, t in unlocked do
+		table.insert(list, t)
+	end
+	table.insert(list, { Id = "None", Text = "No title" })
+	local current = if pick == "None" then "None" elseif chosen then chosen.Id else "Auto"
+	p:SetAttribute("LavaTitles", HttpService:JSONEncode({ List = list, Current = current }))
+	local best = if current == "None" then nil elseif chosen then chosen else auto
 	local character = p.Character
 	local head = character and character:FindFirstChild("Head")
 	if not head then
 		return
-	end
-	local crowns = tonumber(p:GetAttribute("Crowns")) or 0
-	local best = nil
-	for _, t in CFG.Titles do
-		if crowns >= t.Crowns then
-			best = t
-		end
 	end
 	local tag = head:FindFirstChild("LavaTitle")
 	if not best then
@@ -4327,6 +4378,24 @@ function L.HandleAction(p: Player, action: unknown, _value: unknown): boolean
 		end
 		return true
 	end
+	if action == "LavaTitle" then
+		-- Pick which title to show: "Auto", "None" or the Id of a title this player has unlocked.
+		local d = data(p)
+		if d and type(_value) == "string" and #_value <= 24 then
+			local ok = _value == "Auto" or _value == "None"
+			local crowns = tonumber(p:GetAttribute("Crowns")) or 0
+			for _, t in CFG.Titles do
+				if t.Id == _value and titleUnlocked(t, d, crowns) then
+					ok = true
+				end
+			end
+			if ok then
+				d.Title = _value
+				applyTitle(p)
+			end
+		end
+		return true
+	end
 	if action == "LavaGift" then
 		-- Strawberry gift: once a round, someone who is out can send a strawberry to a climber they're watching.
 		-- It counts like one picked off the floor (banked only if that climber survives). Never to yourself or a bot.
@@ -4337,6 +4406,14 @@ function L.HandleAction(p: Player, action: unknown, _value: unknown): boolean
 		if L.Phase == "Round" and not stillIn and not L.Gifted[p] and target and target ~= p and tr and tr.alive and not tr.crowned and target:GetAttribute("ArenaMode") == "LavaRush" then
 			L.Gifted[p] = true
 			tr.embers += CFG.GiftBerries
+			local gd = data(p)
+			if gd then
+				gd.GiftsSent = (tonumber(gd.GiftsSent) or 0) + 1
+				if gd.GiftsSent == CFG.TitleGifts then
+					applyTitle(p)
+					tell(p, "🏷️ New title: 🍓 Kind Climber! Pick it with the 🏷️ button in 📋 Challenges.")
+				end
+			end
 			local at = root(target)
 			if at then
 				event:FireClient(target, "LavaFX", { Kind = "Ember", Position = at.Position })
@@ -4505,6 +4582,10 @@ local function gemLoop()
 						event:FireClient(p, "LavaFX", { Kind = "Invite", Text = string.format("💎 Gem %d/%d", found, #CFG.Gems), Coins = coins })
 						tell(p, if all then string.format("💎 All %d lava gems found! +%d coins", #CFG.Gems, coins)
 							else string.format("💎 Lava gem %d/%d! +%d coins. %d more hidden around the volcano and island.", found, #CFG.Gems, coins, #CFG.Gems - found))
+						if all then
+							applyTitle(p)
+							tell(p, "🏷️ New title: 🔶 Gem Hunter! Pick it with the 🏷️ button in 📋 Challenges.")
+						end
 					end
 				end
 			end

@@ -3,6 +3,36 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 38. Pick your title, and three new ones to earn
+
+**Research.** Parent guides say kids love customising how they look and that playing Roblox is mostly about friends
+([Qustodio](https://www.qustodio.com/blog/is-roblox-safe-for-kids-app-safety-guide-for-parents/),
+[Screenwise](https://screenwiseapp.com/guides/understanding-roblox-s-social-features)). LAVA Floors' overhead title
+was picked automatically from total crowns, so a new player had no title and no say. Other achievements (gems,
+chests, kindness) weren't shown anywhere.
+
+**Change.**
+- Three new titles:
+  - 🔶 Gem Hunter: every lava gem found.
+  - 🎁 Chest Cracker: 5 Lava Chests opened.
+  - 🍓 Kind Climber: 5 strawberry gifts sent (a new saved counter, `GiftsSent`).
+- Each one announces itself when unlocked.
+- A 🏷️ button in the Challenges panel footer cycles through Auto (the best crown title, as before), every unlocked
+  title, and No title.
+- The server only accepts unlocked picks, saves the choice as `Title`, and shows it over your head.
+- The panel, its body and the button got unique names so tests can click them by path.
+
+**Verified.** In a Studio play test:
+- Before any unlocks the list was just Auto and No title, and picking Gem Hunter while locked was refused.
+- Collecting the five gems added 🔶 Gem Hunter.
+- Three real clicks on the 🏷️ button went Gem Hunter (shown over the head) → No title (tag removed) → Auto. A
+  fourth click went back to Gem Hunter.
+- `SkySproutRules.clean` kept `Title` and `GiftsSent`, dropped a 40-character title and a non-number, and gave an
+  old profile the defaults.
+- The console was clean. Repo and Studio match by chunk hash for the service, rules and UI; place saved as version
+  63.
+- Not tested in play: the Chest Cracker and Kind Climber unlocks (they need 5 chests or 5 gifts).
+
 ## 37. Controller shortcuts for spectators and the twist vote
 
 **Research.** Roblox runs on Xbox and PlayStation. On a gamepad, on-screen buttons need Roblox's UI selection mode

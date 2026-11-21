@@ -64,7 +64,10 @@ Round extras:
 Progression and live-ops:
 - Daily challenges: three a day for everyone (CFG.Challenges), paid on completion; shown in the Challenges panel.
 - Codes: typed into the Challenges panel, once per account (CFG.Codes, server-only). Launch codes LAVA, VOLCANO, ESCAPE.
-- Titles over your head from total crowns (CFG.Titles), and a gold pillar with fireworks over every winner.
+- Titles over your head (CFG.Titles), and a gold pillar with fireworks over every winner. Crown titles unlock with
+  total crowns; 🔶 Gem Hunter (every lava gem), 🎁 Chest Cracker (5 Lava Chests) and 🍓 Kind Climber (5 strawberry
+  gifts) unlock with other achievements. The 🏷️ button in the Challenges panel picks which unlocked title to show
+  (or Auto for the best crown title, or none). Saved as `Title` in the profile.
 - Lava Chest: every round fills a bar on the result card (12 for playing, up to 30 for height, +15 survive, +30 crown).
   At 215 it opens for 100 coins; every 5th chest gives 300. The card always says how close the next chest is
   ("one more round to the chest!"). Fixed coins, nothing random or paid. Numbers are `Chest*` in CFG.

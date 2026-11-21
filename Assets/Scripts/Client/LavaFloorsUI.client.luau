@@ -629,6 +629,8 @@ Icon.new()
 local HttpService = game:GetService("HttpService")
 local builtPanel, challengeBody = panel("📋 DAILY CHALLENGES", UI.Lava, UI.LavaDeep)
 challengePanel = builtPanel
+builtPanel.Name = "ChallengesPanel" -- unique names so tests can reach the title button by path
+challengeBody.Name = "Body"
 local challengeList = make("Frame", { Size = UDim2.new(1, 0, 1, -92), BackgroundTransparency = 1 }, challengeBody)
 -- Codes: type one in and redeem it (the server checks it and pays once per account).
 local codeRow = make("Frame", { AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 0, 1, -30), Size = UDim2.new(1, 0, 0, 48), BackgroundTransparency = 1 }, challengeBody)
@@ -661,7 +663,48 @@ make("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.Lay
 local challengeFoot = label(challengeBody, "", 15, INK:Lerp(CREAM, 0.35))
 challengeFoot.AnchorPoint = Vector2.new(0, 1)
 challengeFoot.Position = UDim2.fromScale(0, 1)
-challengeFoot.Size = UDim2.new(1, 0, 0, 26)
+challengeFoot.Size = UDim2.new(0.42, 0, 0, 26)
+challengeFoot.TextXAlignment = Enum.TextXAlignment.Left
+-- Title picker: cycles through the titles you've unlocked (server list in the "LavaTitles" attribute); the server
+-- checks the pick and shows it over your head.
+local titleButton = button(challengeBody, "🏷️ Title", UI.LavaDeep, UDim2.new(0.56, 0, 0, 26))
+titleButton.Name = "TitleButton"
+titleButton.AnchorPoint = Vector2.new(1, 1)
+titleButton.Position = UDim2.fromScale(1, 1)
+titleButton.TextSize = 15
+local function titleInfo(): ({ { Id: string, Text: string } }, string)
+	local ok, info = pcall(function()
+		local raw = player:GetAttribute("LavaTitles")
+		return HttpService:JSONDecode(if type(raw) == "string" then raw else "{}")
+	end)
+	local list = if ok and type(info) == "table" and type(info.List) == "table" then info.List else {}
+	return list, if ok and type(info) == "table" and type(info.Current) == "string" then info.Current else "Auto"
+end
+local function refreshTitle()
+	local list, current = titleInfo()
+	local text = "Auto"
+	for _, t in list do
+		if t.Id == current then
+			text = tostring(t.Text)
+		end
+	end
+	titleButton.Text = string.format("🏷️ %s  ▶", text)
+end
+titleButton.Activated:Connect(function()
+	local list, current = titleInfo()
+	if #list < 2 then
+		return
+	end
+	local index = 1
+	for i, t in list do
+		if t.Id == current then
+			index = i
+		end
+	end
+	event:FireServer("LavaTitle", tostring(list[index % #list + 1].Id))
+end)
+player:GetAttributeChangedSignal("LavaTitles"):Connect(refreshTitle)
+refreshTitle()
 refreshChallenges = function()
 	for _, c in challengeList:GetChildren() do
 		if c:IsA("Frame") then
