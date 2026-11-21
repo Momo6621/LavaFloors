@@ -3,6 +3,25 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 18. Rebalance coins and chest for 3-phase rounds
+
+**Why.** After the switch to 3 phases (entry 16), a round paid the same as before but took about 44 s instead of about
+63 s (countdown 4 s + start 3 s + phases + results and vote 7 s). So coins and Lava Chests came about 1.4–1.5× faster
+per minute against unchanged shop prices. The owner asked to bring them back to the old pace.
+
+**Change.** Round rewards are scaled to 0.7× (44 / 63):
+- `CoinsPerStud`: 0.15 → 0.105.
+- `SurviveCoins`: 20 → 14.
+- `CrownCoins`: 60 → 42.
+- `EmberCoins`: 3 → 2.
+- `ChestGoal`: 150 → 215, with the same fill per round, so a chest still comes about every 4.5 minutes for an average player.
+
+Unchanged: the personal-best bonus, Pick the winner, the server goal, challenge rewards and Lava Pass XP (still per round).
+
+**Verified.** In a Studio play test, a knockout at height 40 paid 14 coins: 4 for height plus the 10-coin first-best
+bonus. Chest fill was 27 of 215. By the same maths a crowned round pays about 50 before strawberries, against 72
+before (0.69×). Studio matches the repo by chunk hash.
+
 ## 17. Fix: the hop's cracked-stone ⚠
 
 **Found** while checking the cracked stones by hand.

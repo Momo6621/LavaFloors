@@ -93,7 +93,7 @@ local CFG = {
 	CheerCooldown = 1.2,
 	-- Lava Chest: every round fills a bar (a bit for playing, more for climbing, surviving or winning). A full bar opens
 	-- a chest of coins; every 5th chest is a big one. Fixed rewards, nothing random, nothing to buy.
-	ChestGoal = 150, -- about one chest every 4 rounds for an average player
+	ChestGoal = 215, -- about one chest every 6 short rounds (~4.5 min) for an average player, the same pace as before 3-phase rounds
 	ChestPlay = 12,
 	ChestClimb = 30, -- scaled by how high you got (crown height = all of it)
 	ChestSurvive = 15,
@@ -125,11 +125,12 @@ local CFG = {
 	ShoveSpeed = 66,
 	ShoveLift = 18,
 
-	-- Rewards
-	EmberCoins = 3,
-	CoinsPerStud = 0.15,
-	SurviveCoins = 20,
-	CrownCoins = 60,
+	-- Rewards. Scaled to 0.7x when rounds went from 7 phases to 3: a round cycle is now ~44 s instead of ~63 s, so
+	-- this keeps coins per minute where they were (it was 3 / 0.15 / 20 / 60).
+	EmberCoins = 2,
+	CoinsPerStud = 0.105,
+	SurviveCoins = 14,
+	CrownCoins = 42,
 	XPPerCoin = 2,
 	FriendBonus = (GameConfig.FriendDeal and GameConfig.FriendDeal.Bonus) or 0.25,
 

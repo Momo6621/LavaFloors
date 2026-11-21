@@ -59,7 +59,7 @@ Progression and live-ops:
 - Codes: typed into the Challenges panel, once per account (CFG.Codes, server-only). Launch codes LAVA, VOLCANO, ESCAPE.
 - Titles over your head from total crowns (CFG.Titles), and a gold pillar with fireworks over every winner.
 - Lava Chest: every round fills a bar on the result card (12 for playing, up to 30 for height, +15 survive, +30 crown).
-  At 150 it opens for 100 coins; every 5th chest gives 300. The card always says how close the next chest is
+  At 215 it opens for 100 coins; every 5th chest gives 300. The card always says how close the next chest is
   ("one more round to the chest!"). Fixed coins, nothing random or paid. Numbers are `Chest*` in CFG.
 - Server goal: every rise a real player reaches fills one shared bar (top bar pill "🌋 Server goal 12/40"). When it
   fills, everyone who climbed since the last one gets 30 coins and a new bar starts. `GoalRises` / `GoalCoins` in CFG.
