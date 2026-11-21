@@ -3,6 +3,15 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 29. Warm-up Hop checked with real jump physics (no change needed)
+
+**Why.** The redesigned hop (entry 16) had only been checked by teleporting. After entry 28 everyone in the lobby
+has walk 18 and jump power 40, which reaches only about 4.1 studs.
+
+**Checked.** The same physics-driven method as the pillar (entry 23): stand on each piece, `MoveTo` the next, jump,
+and check the landing. The route is start pad → round pillar → fork-1 solid stone → beam → step → fork-2 solid
+stone → gold pad. Three full runs landed 18 of 18 hops. No change needed.
+
 ## 28. Fix: knocked-out players kept round movement in the lobby
 
 **Found** during the hands-on checks. A player whose round ended normally went back to lobby movement (walk 18,
