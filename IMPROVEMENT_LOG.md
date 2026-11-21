@@ -3,6 +3,18 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 27. Teach the pillar climb
+
+**Why.** King of the Pillar (entries 19 and 23) only pays off if players know it's there. The first-round coach
+taught climbing, red tiles, shoving and fruit, but not the pillar. Onboarding guidance (entry 10's research) favours
+teaching through play with short, timely prompts.
+
+**Change.** A sixth first-round tip, shown before the last one: "🗿 Climb the pillar's ledges to grab the strawberry
+on top!". Tips are 5 s each, so all six fit in a 33 s round.
+
+**Verified.** In a Studio play test of a first round, with the player kept alive, tips 1–6 appeared in order and tip
+5 was the pillar tip. Studio matches the repo by chunk hash.
+
 ## 26. Roomier HUD on phones
 
 **Found** by repeating the end-of-round check on the Galaxy A06 (705×338 viewport) after entry 25:

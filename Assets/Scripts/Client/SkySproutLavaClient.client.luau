@@ -301,6 +301,7 @@ local function runCoach()
 		"🔴 Tiles that glow red or crack are about to fall. Keep moving!",
 		if touch then "💥 Tap SHOVE to push rivals toward the edge." else "🖱️ Click to shove rivals toward the edge.",
 		"🍍 Jump into floating fruit for power-ups!",
+		"🗿 Climb the pillar's ledges to grab the strawberry on top!",
 		"👑 Be the last one standing to win the crown!",
 	}
 	task.spawn(function()
