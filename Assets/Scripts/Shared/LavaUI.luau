@@ -143,7 +143,26 @@ function U.isCompact(): boolean
 	return camera.ViewportSize.Y < COMPACT_HEIGHT
 end
 
--- Scale a whole ScreenGui (sizes and positions) to the screen height, between 0.7 and 1.
+-- The player's Roblox text size setting. The engine doesn't enlarge TextScaled text for it, and nearly all of this UI
+-- is TextScaled, so fitScreen grows the whole GUI by this much instead, as far as the screen has room.
+local GuiService = game:GetService("GuiService")
+local TEXT_SIZE_SCALE: { [Enum.PreferredTextSize]: number } = {
+	[Enum.PreferredTextSize.Medium] = 1,
+	[Enum.PreferredTextSize.Large] = 1.15,
+	[Enum.PreferredTextSize.Larger] = 1.3,
+	[Enum.PreferredTextSize.Largest] = 1.45,
+}
+local DESIGN_WIDTH = 960 -- narrowest width the UI still fits at scale 1 (only limits growing for the text setting)
+
+function U.textScale(): number
+	local ok, size = pcall(function()
+		return GuiService.PreferredTextSize
+	end)
+	return if ok then TEXT_SIZE_SCALE[size] or 1 else 1
+end
+
+-- Scale a whole ScreenGui (sizes and positions) to the screen height, between 0.7 and 1, then up to U.textScale()
+-- for players who picked a larger text size, as far as the screen's height and width leave room.
 function U.fitScreen(gui: ScreenGui)
 	local scale = gui:FindFirstChild("ScreenFit") or Instance.new("UIScale")
 	scale.Name = "ScreenFit"
@@ -152,9 +171,15 @@ function U.fitScreen(gui: ScreenGui)
 		local camera = workspace.CurrentCamera
 		local height = camera and camera.ViewportSize.Y or 0
 		if height >= 100 then -- ignore placeholder sizes while the window is loading or hidden
-			scale.Scale = math.clamp(height / DESIGN_HEIGHT, 0.7, 1)
+			local s = math.clamp(height / DESIGN_HEIGHT, 0.7, 1)
+			local wanted = U.textScale()
+			if wanted > 1 then
+				s = math.max(s, math.min(wanted, height / DESIGN_HEIGHT, camera.ViewportSize.X / DESIGN_WIDTH))
+			end
+			scale.Scale = s
 		end
 	end
+	GuiService:GetPropertyChangedSignal("PreferredTextSize"):Connect(fit)
 	-- Follow the current camera: Roblox can swap the camera object, and its size changes with the window.
 	local watching: RBXScriptConnection? = nil
 	local function watch()

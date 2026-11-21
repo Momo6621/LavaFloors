@@ -3,6 +3,32 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 36. Honour Roblox's Text Size setting
+
+**Research.** Roblox's [accessibility guide](https://create.roblox.com/docs/en-us/production/publishing/accessibility)
+says players may find small text hard to read, and lets them pick Large, Larger or Largest text
+(`GuiService.PreferredTextSize`). It also says text with `TextScaled` "will not be scaled by the PreferredTextSize
+value". Nearly every label in LAVA Floors is TextScaled, so the setting did nothing in the game. Young readers are
+the players who need it most.
+
+**Change.**
+- `LavaUI.fitScreen` already scales both HUD ScreenGuis to the screen height (0.7–1).
+- It now also reads the setting: Large, Larger and Largest grow the UI to 1.15×, 1.3× and 1.45×.
+- It only grows as far as the screen leaves room: the UI never gets smaller than its 560 px tall / 960 px wide
+  design space.
+- It updates live when the setting changes.
+- Medium (the default) and phones are exactly as before.
+
+**Verified.** In a Studio play test:
+- At Medium the scale was 1.000, the same as before.
+- `PreferredTextSize` is read-only, so I loaded a fresh LavaUI copy with `textScale` returning 1.45 (Largest) and
+  re-applied it to the live HUD. The scale became 1.177, limited by the 1130 px window width.
+- Screenshots mid-round and at round end show everything larger with no overlaps: the round banner, coin pill, coach
+  tip, Raise button, why-you-fell line, winner banner, result card and twist vote.
+- That play test also showed entry 34's 25 s gem hint, which entry 34 had left unverified.
+- The console was clean. Studio matches the repo by chunk hash; place saved as version 60.
+- Not tested: a real device with the setting changed. TopbarPlus top bar buttons keep their own size.
+
 ## 35. Performance check for low-end phones: half the particles
 
 **Research.** DevForum developers note that games with younger audiences tend to have more players on lower-end

@@ -91,7 +91,9 @@ Progression and live-ops:
   `GiftBerries` in CFG.
 - Accessibility: the tile under you cracks out loud when it's half worn and again (with a gamepad buzz) just before
   it breaks, since your own character often hides it from the camera. Red warning plates also carry a ⚠ symbol (not colour alone), and Roblox's Reduce Motion setting turns
-  off camera shake, the FOV kick, speed streaks, tile wobble and blinking (warnings stay on, steady).
+  off camera shake, the FOV kick, speed streaks, tile wobble and blinking (warnings stay on, steady). Roblox's
+  Text Size setting (Large / Larger / Largest) grows the game's HUD by 1.15x / 1.3x / 1.45x, as far as the screen
+  has room (`U.textScale` in LavaUI). The engine doesn't enlarge TextScaled text on its own.
 - Weekly Top Climbers board in the lobby: crowns won this week across all servers (OrderedDataStore
   `LavaWeeklyCrowns_v1`, one scope per week), merged with the climbers in the server. Resets Monday 00:00 UTC.
 - Seasonal events (SkySproutConfig.Events): Spooky Eruption (Oct 20 - Nov 3) and Frostfire Festival (Dec 18 - Jan 4)
