@@ -3,6 +3,22 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 30. Lava Pass XP rebalanced for 3-phase rounds
+
+**Why.** The owner asked to match entry 18: the pass paid the same XP per round while rounds got about 30% shorter,
+so it filled about 1.4× faster per minute.
+
+**Change.** Per-round pass XP is scaled to 0.7×:
+- Played: 20 → 14.
+- Survived: 30 → 21.
+- Crowned: 50 → 35.
+- Per banked strawberry: 5 → 4 (3.5 rounded up).
+
+`XPPerTier` stays 100, so XP players already have keeps its meaning.
+
+**Verified.** In a Studio play test, a knocked-out round raised `PassXP` from 0 to 14. Studio matches the repo by
+chunk hash for the config, service and client.
+
 ## 29. Warm-up Hop checked with real jump physics (no change needed)
 
 **Why.** The redesigned hop (entry 16) had only been checked by teleporting. After entry 28 everyone in the lobby
