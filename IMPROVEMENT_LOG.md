@@ -3,6 +3,31 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 39. Shoves you can feel (and see from the sidelines)
+
+**Research.** Game-feel guides list knockback, a short camera nudge (about 0.1–0.3 s), sound and particles at the
+impact point as the layers that make a hit satisfying, and warn that juice must not hide cause and effect
+([itch.io juice guide](https://itch.io/blog/1059831/making-a-game-feel-juicy-with-simple-effects),
+[Mega Cat juice guide](https://megacatstudios.com/blogs/game-development/mega-cat-developer-juice-guide-v1-0-08-23-17),
+[Game Developer](https://gamedeveloper.com/design/6-mistakes-that-ll-drain-the-juice-out-of-your-game)). Shoving is
+LAVA Floors' core interaction. Before this change, only the shover heard a sound and saw a small burst, and the
+victim got a red tint. Bystanders and spectators saw someone fly off with no visible cause.
+
+**Change.**
+- Shover: a 💥 floats over the target, plus a short camera kick (0.15 strength, 0.2 s).
+- Victim: a firmer camera jolt (0.4, 0.35 s), and a 0.15 s buzz on a controller.
+- Everyone else within 160 studs gets a lighter puff and a 💥 where the shove landed. The server's new
+  `shoveImpact` sends it for player and bot shoves.
+- `rumble()` gained a length parameter, and a weaker shake no longer cuts a stronger eruption shake short.
+- Reduce Motion still turns all camera shake off.
+
+**Verified.** 2-player Studio test with listeners on both clients:
+- Player1 shoving Player2 sent Hit to Player1 and the knockback to Player2, and no ShoveSeen to the victim.
+- Player1 shoving Bot_Ash sent Hit to Player1 and ShoveSeen to Player2.
+- Both client consoles were empty.
+- Studio matches the repo by chunk hash for the service and client; place saved as version 64.
+- Not verified: the look of the shake and buzz (screen capture can't time a shove) and a real controller buzz.
+
 ## 38. Pick your title, and three new ones to earn
 
 **Research.** Parent guides say kids love customising how they look and that playing Roblox is mostly about friends

@@ -2737,6 +2737,17 @@ local shoveNearestBot: (Player, Vector3, Vector3, number) -> boolean = function(
 	return false
 end
 
+-- Shove impact: the shover gets the full hit (sound, burst, 💥 and a short camera kick on their client); everyone
+-- else gets a lighter 💥 puff where it landed, so spectators can see who shoved whom.
+local function shoveImpact(p: Player, victim: Player?, at: Vector3)
+	event:FireClient(p, "LavaFX", { Kind = "Hit", Position = at })
+	for _, other in Players:GetPlayers() do
+		if other ~= p and other ~= victim then
+			event:FireClient(other, "LavaFX", { Kind = "ShoveSeen", Position = at })
+		end
+	end
+end
+
 local function shove(p: Player)
 	local r = L.Runners[p]
 	local me = root(p)
@@ -2780,7 +2791,7 @@ local function shove(p: Player)
 		if target then
 			target.shovedBy, target.shovedAt = p.DisplayName, now()
 		end
-		event:FireClient(p, "LavaFX", { Kind = "Hit", Position = them.Position })
+		shoveImpact(p, best, them.Position)
 		tell(best, "💥 " .. p.DisplayName .. " shoved you!")
 		challenge(p, "Shoves", 1)
 		r.shoves += 1
@@ -3729,7 +3740,7 @@ local function shoveBot(p: Player, b: Bot, dir: Vector3)
 	local towerModel = tower :: Model
 	local from = botPosition(b)
 	local row, col = Grid.TileAt(towerModel, from + dir * CFG.GridTile * 1.6 + Vector3.new(0, 2, 0), now())
-	event:FireClient(p, "LavaFX", { Kind = "Hit", Position = from })
+	shoveImpact(p, nil, from)
 	challenge(p, "Shoves", 1)
 	if row and col and walkable(Grid.TileState(towerModel, row, col, now())) then
 		setBotTile(b, row, col)

@@ -587,6 +587,10 @@ local function pop(target: GuiObject)
 	TweenService:Create(scale, TweenInfo.new(0.3, Enum.EasingStyle.Back), { Scale = 1 }):Play()
 end
 
+-- Camera shake (strength, seconds); the real one is set up with the eruption effects below. A no-op until then, in
+-- case an event arrives while the script is still loading.
+local rumble: (number, number?) -> () = function(_: number, _: number?) end
+
 local function burst(position: Vector3, colors: ColorSequence, amount: number, speed: number)
 	local anchor: Part = make("Part", { Anchored = true, CanCollide = false, CanQuery = false, CanTouch = false, Transparency = 1, Size = Vector3.one, CFrame = CFrame.new(position) }, workspace)
 	local e: ParticleEmitter = make("ParticleEmitter", {
@@ -659,6 +663,15 @@ event.OnClientEvent:Connect(function(kind: string, v: any)
 			Debris:AddItem(attachment, 0.2)
 			play("Shove", 0.9)
 			tint.BackgroundTransparency = 0.6
+			-- You got shoved: a firm camera jolt and a short buzz on a controller, so the hit is felt, not just seen.
+			rumble(0.4, 0.35)
+			local haptics = game:GetService("HapticService")
+			if haptics:IsVibrationSupported(Enum.UserInputType.Gamepad1) then
+				haptics:SetMotor(Enum.UserInputType.Gamepad1, Enum.VibrationMotor.Large, 0.5)
+				task.delay(0.15, function()
+					haptics:SetMotor(Enum.UserInputType.Gamepad1, Enum.VibrationMotor.Large, 0)
+				end)
+			end
 		end
 	elseif kind == "LavaFX" then
 		if v.Kind == "Ember" then
@@ -671,9 +684,19 @@ event.OnClientEvent:Connect(function(kind: string, v: any)
 			play("Scorch")
 			tint.BackgroundTransparency = 0.25
 		elseif v.Kind == "Hit" then
+			-- Your shove landed: sound, burst, a 💥 over them and a small camera kick.
 			play("Shove", 1.2)
 			if v.Position then
 				burst(v.Position, FIRE, 12, 18)
+				floatText(v.Position + Vector3.new(0, 2.5, 0), "💥")
+			end
+			rumble(0.15, 0.2)
+		elseif v.Kind == "ShoveSeen" then
+			-- Someone else's shove landed nearby: a lighter puff and 💥 so it's clear what happened.
+			local cam = workspace.CurrentCamera
+			if v.Position and cam and (cam.CFrame.Position - v.Position).Magnitude < 160 then
+				burst(v.Position, FIRE, 8, 14)
+				floatText(v.Position + Vector3.new(0, 2.5, 0), "💥")
 			end
 		elseif v.Kind == "Shield" then
 			play("Crown", 1.6)
@@ -2085,23 +2108,30 @@ end)
 local SHAKE_TIME = 0.7
 local shakeUntil = 0
 local shakeStrength = 0
+local shakeLength = SHAKE_TIME
 Run:BindToRenderStep("LavaRumble", Enum.RenderPriority.Camera.Value + 1, function()
 	local left = shakeUntil - os.clock()
 	if left <= 0 then
 		return
 	end
-	local k = shakeStrength * (left / SHAKE_TIME)
+	local k = shakeStrength * (left / shakeLength)
 	local t = os.clock() * 30
 	local cam = workspace.CurrentCamera
 	cam.CFrame *= CFrame.new(math.noise(t, 0.3) * k, math.noise(t, 1.7) * k, 0) * CFrame.Angles(0, 0, math.noise(t, 3.1) * k * 0.02)
 end)
 
-local function rumble(strength: number)
+rumble = function(strength: number, length: number?)
 	if REDUCED_MOTION then
 		return
 	end
+	-- A weaker shake (a shove kick) never cuts a stronger one (an eruption) short.
+	local left = shakeUntil - os.clock()
+	if left > 0 and shakeStrength * (left / shakeLength) > strength then
+		return
+	end
 	shakeStrength = strength
-	shakeUntil = os.clock() + SHAKE_TIME
+	shakeLength = length or SHAKE_TIME
+	shakeUntil = os.clock() + shakeLength
 end
 
 local function fallingRock(tower: Instance, lavaY: number)
