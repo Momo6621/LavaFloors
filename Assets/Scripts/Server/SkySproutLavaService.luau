@@ -2607,6 +2607,12 @@ local function scorch(p: Player, r: Runner)
 	tell(p, knockoutReason(r))
 	if p:GetAttribute("ArenaMode") == "LavaRush" then
 		p:SetAttribute("ArenaMode", "Lobby")
+		-- Back to lobby movement, as release() does at round end; a phase-1 drop-back sets round values again.
+		local hum = p.Character and p.Character:FindFirstChildOfClass("Humanoid")
+		if hum then
+			hum.WalkSpeed = GameConfig.WalkSpeed
+			restoreJump(hum)
+		end
 		placeAtBeacon(p)
 	end
 	personal(p)
@@ -2731,7 +2737,7 @@ local function dropBombLook()
 		glow:Destroy()
 	end
 	local hum = character and character:FindFirstChildOfClass("Humanoid")
-	if hum then
+	if hum and holder and holder:GetAttribute("ArenaMode") == "LavaRush" then -- a knocked-out holder keeps lobby speed
 		hum.WalkSpeed = baseWalkSpeed()
 	end
 end

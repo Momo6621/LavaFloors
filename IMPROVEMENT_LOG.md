@@ -3,6 +3,21 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 28. Fix: knocked-out players kept round movement in the lobby
+
+**Found** during the hands-on checks. A player whose round ended normally went back to lobby movement (walk 18,
+jump power 40), but a player knocked out mid-round kept the round's walk 24 and jump power 48 in the lobby. Only
+`release()` at round end restored them. So the lobby, including the Warm-up Hop, felt different depending on how
+your last round ended.
+
+**Fix.**
+- `scorch` restores lobby walk speed and jump when it sends the player to the lobby. A phase-1 drop-back sets the
+  round values again on re-entry.
+- The hot-potato cleanup now only resets speed for a holder who is still climbing.
+
+**Verified.** In a Studio play test, the lobby at start read walk 18 / jump 40, in the round 24 / 48, and after a
+knockout past phase 1 18 / 40 again. Studio matches the repo by chunk hash.
+
 ## 27. Teach the pillar climb
 
 **Why.** King of the Pillar (entries 19 and 23) only pays off if players know it's there. The first-round coach
