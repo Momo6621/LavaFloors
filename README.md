@@ -82,6 +82,10 @@ Progression and live-ops:
 - Near miss: knocked out one or two rises from the crown, the result card says "😱 SO CLOSE! N rises left".
 - Cheers: anyone not climbing (knocked out or sitting a round out) gets a bar of six preset emoji. A tap floats
   the emoji with your name up everyone's screen. No typing; the server allows one every 1.2 s (CFG.CheerCooldown).
+- Strawberry gift: while you're following a player who's still climbing (◀ ▶ on the spectate bar), a 🍓 Gift button
+  joins the cheer bar. Once a round it sends them a strawberry, which counts like one picked off the floor (banked
+  only if they survive), and floats "🍓 You → Them" up everyone's screen. Never to yourself or a bot.
+  `GiftBerries` in CFG.
 - Accessibility: the tile under you cracks out loud when it's half worn and again (with a gamepad buzz) just before
   it breaks, since your own character often hides it from the camera. Red warning plates also carry a ⚠ symbol (not colour alone), and Roblox's Reduce Motion setting turns
   off camera shake, the FOV kick, speed streaks, tile wobble and blinking (warnings stay on, steady).

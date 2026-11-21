@@ -407,6 +407,26 @@ for i, emoji in CHEERS do
 		end
 	end)
 end
+-- 🍓 Gift: once a round, send a strawberry to the climber you're following (◀ ▶ on the spectate bar). Shown only
+-- while following a player who is still climbing; the server checks everything again.
+local giftButton: TextButton = make("TextButton", { Name = "Gift", LayoutOrder = #CHEERS + 1, Size = UDim2.fromOffset(88, 42), Font = FONT, TextScaled = true, Text = "🍓 Gift", Visible = false, ZIndex = 5 }, cheerBar)
+make("UICorner", { CornerRadius = UDim.new(0, 12) }, giftButton)
+UI.button(giftButton, UI.LavaDeep)
+local giftSent = false
+local giftTarget: number? = nil
+local function setGiftTarget(userId: number?)
+	giftTarget = userId
+	local show = userId ~= nil and not giftSent
+	giftButton.Visible = show
+	cheerBar.Size = UDim2.fromOffset(#CHEERS * 50 + 6 + (if show then 94 else 0), 52)
+end
+giftButton.Activated:Connect(function()
+	if giftTarget and not giftSent then
+		giftSent = true
+		event:FireServer("LavaGift", giftTarget)
+		setGiftTarget(nil)
+	end
+end)
 local cheerFeed: Frame = make("Frame", { Name = "CheerFeed", BackgroundTransparency = 1, AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -56, 0.92, 0), Size = UDim2.fromOffset(150, 260), ZIndex = 4 }, gui)
 local liveCheers = 0
 local function showCheer(name: string, emoji: string)
@@ -436,6 +456,7 @@ local function refreshPredict()
 	cheerBar.Visible = state.Phase == "Round" and not me.Running
 	if state.Phase ~= "Round" then
 		myPrediction = nil
+		giftSent = false
 	end
 	local names = {}
 	for _, n in (if type((state :: any).Contenders) == "table" then (state :: any).Contenders else {}) do
@@ -1565,6 +1586,7 @@ local function stopSpectate(byPlayer: boolean?)
 		spectateAutoEnded = os.clock()
 	end
 	spectateLabel.Visible = false
+	setGiftTarget(nil)
 	Run:UnbindFromRenderStep("LavaSpectate")
 	workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
 end
@@ -1605,6 +1627,8 @@ local function cycleFollow(step: number)
 	index = (index + step) % (#list + 1)
 	followKey = if index == 0 then nil else list[index].key
 	spectateLabel.Text = if index == 0 then OVERHEAD_TEXT else "👀 Watching " .. list[index].name
+	local key = followKey
+	setGiftTarget(if key and string.sub(key, 1, 1) == "P" then tonumber(string.sub(key, 2)) else nil)
 end
 spectateButtons[1].Activated:Connect(function()
 	cycleFollow(-1)
@@ -1620,6 +1644,7 @@ local function startSpectate()
 	spectating = true
 	followKey = nil
 	spectateLabel.Text = OVERHEAD_TEXT
+	setGiftTarget(nil)
 	spectateLabel.Visible = true
 	local started = os.clock()
 	Run:BindToRenderStep("LavaSpectate", Enum.RenderPriority.Camera.Value + 1, function()
@@ -1653,6 +1678,7 @@ local function startSpectate()
 			-- They're out of the round: back to the overhead view.
 			followKey = nil
 			spectateLabel.Text = OVERHEAD_TEXT
+			setGiftTarget(nil)
 		end
 		local a = (os.clock() - started) * 0.08
 		local ease = math.min(1, (os.clock() - started) / 1.2) -- swoop up into the overhead view

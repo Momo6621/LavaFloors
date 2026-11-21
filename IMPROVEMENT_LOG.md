@@ -3,6 +3,36 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 33. 🍓 Strawberry gift from the sidelines
+
+**Research.** The developer of Spleef Battles, a disappearing-floor elimination game, planned a "Sabotage Machine"
+that lets players who are out of a round affect the climbers
+([DevForum](https://devforum.roblox.com/t/woah-is-the-floor-disappearing-looking-for-feedback-on-spleef-battles/324273)).
+Floor-is-lava listings lean on playing with friends and on social play. Knocked-out players in LAVA Floors could
+already watch, follow a climber, cheer and predict the winner, but nothing they did reached the round. Sabotage isn't
+kid-fair, so this is the friendly version.
+
+**Change.**
+- While you follow a real player who's still climbing, a 🍓 Gift button joins the end of the cheer bar.
+- Once a round it sends that player one strawberry (`GiftBerries`). It counts like one picked off the floor: banked
+  only if they survive, and it doesn't count toward the Berry Picker award.
+- The receiver gets the pickup effect and a notice. Everyone sees a "🍓 Giver → Receiver" bubble.
+- The server checks everything: the round is running, the giver is out, the gift is unused this round, and the target
+  is a different real player who is still climbing. No new remote; it goes through ArenaEvent's rate limit.
+- The button hides after sending, when you go back to the overhead view, or when the climber leaves the round. It
+  resets when the round ends.
+- With the gift button the cheer bar is 400 px wide, which fits a 705 px phone screen.
+
+**Verified.** 2-player Studio test; Player1 was kept alive with the survival driver:
+- When Player2 fell in phase 2, the spectate bar showed and the gift button was hidden.
+- A real click on ▶ changed the bar to "👀 Watching Player1". A real click on 🍓 Gift then floated
+  "🍓 Player2 → Player1" and hid the button.
+- A second `LavaGift` sent straight to the server was refused (no bubble).
+- Player1's HUD showed 🍓 1, and their result card said "2 embers banked". The driver can also pick up berries, so
+  this doesn't isolate the gift's share.
+- The server console was clean. Studio matches the repo by chunk hash for the service and client; place saved as
+  version 57.
+
 ## 32. Fix: bots finally wear their eyes and fruit hats
 
 **Why.** Testing entry 31 showed that every bot's glowing ember eyes and fruit hat were about 380 studs away from the

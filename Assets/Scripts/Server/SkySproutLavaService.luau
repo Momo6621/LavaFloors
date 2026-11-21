@@ -97,6 +97,7 @@ local CFG = {
 	-- Cheers: knocked-out players tap a preset emoji (no typing) that floats up on everyone's screen.
 	Cheers = { "🔥", "👏", "😂", "😱", "💪", "🎉" },
 	CheerCooldown = 1.2,
+	GiftBerries = 1, -- strawberries a knocked-out player can send the climber they're watching, once a round
 	-- Lava Chest: every round fills a bar (a bit for playing, more for climbing, surviving or winning). A full bar opens
 	-- a chest of coins; every 5th chest is a big one. Fixed rewards, nothing random, nothing to buy.
 	ChestGoal = 215, -- about one chest every 6 short rounds (~4.5 min) for an average player, the same pace as before 3-phase rounds
@@ -311,6 +312,7 @@ local L = {
 	ShowdownAt = 0, -- 0 = no showdown this round
 	RoundId = 0, -- counts rounds on this server (analytics funnel sessions)
 	Predictions = {} :: { [Player]: string }, -- knocked-out players' free "pick the winner" guesses this round
+	Gifted = {} :: { [Player]: boolean }, -- players who already sent their strawberry gift this round
 	LastCheer = setmetatable({}, { __mode = "k" }) :: any, -- [Player] = time of their last cheer (rate limit)
 	LossStreak = setmetatable({}, { __mode = "k" }) :: any, -- [Player] = rounds in a row knocked out (this server)
 	BotEase = 0, -- extra bot mistake chance after bot wins in a row (see CFG.BotEase)
@@ -3689,6 +3691,7 @@ end
 local function runRound()
 	L.RoundId += 1
 	table.clear(L.Predictions)
+	table.clear(L.Gifted)
 	clearTower()
 	buildTower()
 	applyTheme(tower)
@@ -4297,6 +4300,29 @@ function L.HandleAction(p: Player, action: unknown, _value: unknown): boolean
 			L.LastCheer[p] = now()
 			for _, other in Players:GetPlayers() do
 				event:FireClient(other, "LavaCheer", { Name = p.DisplayName, Emoji = emoji })
+			end
+		end
+		return true
+	end
+	if action == "LavaGift" then
+		-- Strawberry gift: once a round, someone who is out can send a strawberry to a climber they're watching.
+		-- It counts like one picked off the floor (banked only if that climber survives). Never to yourself or a bot.
+		local r = L.Runners[p]
+		local stillIn = r ~= nil and r.alive and not r.crowned and p:GetAttribute("ArenaMode") == "LavaRush"
+		local target = if type(_value) == "number" and _value % 1 == 0 then Players:GetPlayerByUserId(_value) else nil
+		local tr = if target then L.Runners[target] else nil
+		if L.Phase == "Round" and not stillIn and not L.Gifted[p] and target and target ~= p and tr and tr.alive and not tr.crowned and target:GetAttribute("ArenaMode") == "LavaRush" then
+			L.Gifted[p] = true
+			tr.embers += CFG.GiftBerries
+			local at = root(target)
+			if at then
+				event:FireClient(target, "LavaFX", { Kind = "Ember", Position = at.Position })
+			end
+			tell(target, "🍓 " .. p.DisplayName .. " sent you a strawberry! Survive to bank it.")
+			tell(p, "🍓 Sent to " .. target.DisplayName .. "! One gift a round.")
+			personal(target)
+			for _, other in Players:GetPlayers() do
+				event:FireClient(other, "LavaCheer", { Name = p.DisplayName .. " → " .. target.DisplayName, Emoji = "🍓" })
 			end
 		end
 		return true
