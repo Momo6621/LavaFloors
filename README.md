@@ -16,7 +16,7 @@ Each round is 3 phases of 10 seconds. Every phase the floor:
    steps, so it shrinks back down like a pyramid (9x9 → 5x5 → a 3x3 finale).
 
 A basalt pillar stands on the centre tile and rides it, blocking the view across the grid, so you can't always
-see who's coming round the other side. The centre tile never drops and nobody is placed on it. Three light ledges
+see who's coming round the other side. The centre tile never drops and nobody is placed on it. Four light ledges
 spiral up the pillar to a strawberry on the cap (King of the Pillar); standing up there wears the centre tile like
 anywhere else, so nobody can camp it.
 

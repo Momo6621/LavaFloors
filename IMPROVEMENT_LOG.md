@@ -3,6 +3,24 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 23. Pillar climb tuned with real jump physics
+
+**Why.** Entry 19 placed the pillar ledges by teleporting a player onto them; nobody had jumped up them. The store
+thumbnail promises a climber on top.
+
+**Tested.** A physics-driven climb between rounds, with the round's jump power 48, walk speed 24 and character scale
+0.62. For each hop: stand on a ledge, `MoveTo` the next, jump, and check where the character lands.
+- **Original (3 ledges, 4.5 studs apart, 2.6 wide, 4.6 from the axis):** 3 of 9 hops landed. The physics agree: a
+  4.5-stud rise clears the next ledge's edge by only about 0.3 studs while moving, and from the top ledge the cap
+  rim is reached before the character has risen 3.3 studs.
+- **Wider and further out (3.4 wide, 5.0 from the axis):** still 3 of 9.
+- **Final (4 ledges, 3.65 studs apart):** tops at 3.65, 7.3, 10.95 and 14.6, with the cap 2.2 above the last.
+  10 of 12 hops landed, including a clean bottom-to-cap climb. That's with a script that has no timing skill, so
+  real players should do at least as well.
+
+**Verified.** The climb results above, and a screenshot of the test character standing on the cap with the ledges
+spiralling up. Studio matches the repo by chunk hash.
+
 ## 22. Leak check over many rounds (no change needed)
 
 **Why.** DevForum threads on round-based games describe memory that climbs every round from leftover connections or

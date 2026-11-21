@@ -41,8 +41,9 @@ local CFG = {
 	GridShrink = { 0, 2, 1 }, -- back to 5x5 in phase 2, a 3x3 finale in phase 3
 	GridDrops = { 4, 3, 2 },
 	PillarHeight = 16, -- the basalt pillar on the centre tile that blocks the view across the grid
-	PillarLedges = 3, -- stepping ledges spiralling up the pillar to a strawberry on top
-	PillarLedgeStep = 4.5, -- height between ledges (a round jump reaches ~5.8)
+	PillarLedges = 4, -- stepping ledges spiralling up the pillar to a strawberry on top
+	PillarLedgeStep = 3.65, -- height between ledges: a round jump reaches ~5.8, and this leaves ~1 stud to spare
+	-- clearing the next ledge's edge while moving (4.5 was tested and left too little); the cap is 2.2 above the last
 	RoundJumpPower = 48,
 	CharacterScale = 0.62,
 	RoundWalkSpeed = 24,
@@ -2296,7 +2297,7 @@ local function buildTower()
 		-- King of the Pillar: three ledges spiral up the side (60 degrees apart, so each hop clears the column) to
 		-- a strawberry on the cap. Standing up there wears the centre tile like anywhere else, so nobody can camp it.
 		for k = 1, CFG.PillarLedges do
-			local ledge = part(pillar, "PillarLedge", Vector3.new(2.6, 1, 2.6), base * CFrame.Angles(0, math.rad(60 * (k - 1)), 0) * CFrame.new(4.6, k * CFG.PillarLedgeStep - 0.5, 0), Color3.fromRGB(160, 116, 84), Enum.Material.Slate) -- lighter than the column so the way up reads at a glance
+			local ledge = part(pillar, "PillarLedge", Vector3.new(3.4, 1, 3.4), base * CFrame.Angles(0, math.rad(60 * (k - 1)), 0) * CFrame.new(5, k * CFG.PillarLedgeStep - 0.5, 0), Color3.fromRGB(160, 116, 84), Enum.Material.Slate) -- lighter than the column so the way up reads at a glance
 			ledge.CanQuery = false
 			ledge.CanTouch = false
 		end
