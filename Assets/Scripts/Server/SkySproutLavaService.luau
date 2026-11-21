@@ -940,6 +940,7 @@ local function buildArena()
 				-- The same ⚠ the round's warning tiles carry, so the hint isn't colour alone.
 				local mark = Instance.new("SurfaceGui")
 				mark.Face = Enum.NormalId.Top
+				mark.CanvasSize = Vector2.new(200, 200) -- square canvas, like the round's warning tiles, so the ⚠ fills the stone
 				mark.LightInfluence = 0
 				mark.Parent = p
 				local warn = Instance.new("TextLabel")
@@ -947,9 +948,13 @@ local function buildArena()
 				warn.Size = UDim2.fromScale(1, 1)
 				warn.Font = Enum.Font.FredokaOne
 				warn.TextScaled = true
-				warn.TextColor3 = Color3.fromRGB(255, 200, 60)
+				warn.TextColor3 = Color3.fromRGB(30, 8, 8)
 				warn.Text = "⚠"
 				warn.Parent = mark
+				local outline = Instance.new("UIStroke")
+				outline.Thickness = 6
+				outline.Color = Color3.new(1, 1, 1)
+				outline.Parent = warn
 				table.insert(cracked, p)
 			end
 		end
@@ -1090,17 +1095,20 @@ local function buildArena()
 				end
 				dropping = true
 				task.delay(CFG.HopCrackDelay, function()
+					-- Fade the ⚠ text rather than toggling SurfaceGui.Enabled: the client's perception module resets
+					-- Enabled on every floor-1 SurfaceGui to its original value, so a server-side toggle never shows.
 					local mark = stoneCracked:FindFirstChildOfClass("SurfaceGui")
+					local warn = mark and mark:FindFirstChildOfClass("TextLabel")
 					stoneCracked.Transparency = 0.8
 					stoneCracked.CanCollide = false
-					if mark then
-						mark.Enabled = false
+					if warn then
+						warn.TextTransparency = 1
 					end
 					task.wait(CFG.HopCrackBack)
 					stoneCracked.Transparency = 0
 					stoneCracked.CanCollide = true
-					if mark then
-						mark.Enabled = true
+					if warn then
+						warn.TextTransparency = 0
 					end
 					dropping = false
 				end)

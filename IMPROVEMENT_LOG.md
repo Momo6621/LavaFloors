@@ -3,6 +3,24 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 17. Fix: the hop's cracked-stone ⚠
+
+**Found** while checking the cracked stones by hand.
+- **The mark didn't hide.** It stayed visible while its stone dropped. The server set `SurfaceGui.Enabled = false`,
+  but the client's `SkySproutPerception` resets `Enabled` on every floor-1 SurfaceGui to its original value every
+  0.25 s, so the change never showed.
+- **The mark was too small.** With the default canvas it read as a tiny yellow dot.
+
+**Fix.**
+- The drop now fades the ⚠ label's `TextTransparency`, which the perception module doesn't touch.
+- The mark now copies the round's warning tiles: a square 200×200 canvas, dark text and a 6 px white outline.
+
+**Verified.** In a Studio play test, on the client:
+- Before landing: stone 0, ⚠ 0. At 1.1 s: stone 0.8 and not solid, ⚠ 1, and the player had fallen and was back
+  on the start pad. At 4.3 s: stone 0 and solid, ⚠ 0.
+- A screenshot shows a clear outlined ⚠ on the cracked stone.
+- Studio matches the repo by chunk hash.
+
 ## 16. Hands-on pass: 3-phase rounds, centre pillar, puzzle hop, top bar fixes
 
 Done with Studio in front, following the owner's notes while watching.
