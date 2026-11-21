@@ -86,6 +86,8 @@ local CFG = {
 	-- and one who isn't over the grid for OffGridLimit seconds (hovering/flying) is scorched.
 	TeleportJump = 12,
 	OffGridLimit = 4,
+	-- "Why you fell": a shove, blast or tile change counts as the cause if it happened this many seconds before the fall.
+	ReasonWindow = 3,
 
 	-- Pick the winner: knocked-out players guess who wins (free, no stake) for a small coin reward.
 	PredictCoins = 15,
@@ -285,6 +287,13 @@ type Runner = {
 	lastPos: Vector3?,
 	blinkUntil: number?,
 	offGridSince: number?,
+	-- What last happened to this climber, for the "why you fell" line (knockoutReason).
+	shovedBy: string?,
+	shovedAt: number?,
+	blastAt: number?,
+	lastRow: number?,
+	lastCol: number?,
+	lastTileAt: number?,
 }
 
 type Phase = "Idle" | "Countdown" | "Round" | "Results"
@@ -2560,12 +2569,42 @@ local function enter(p: Player): boolean
 	return true
 end
 
+-- Why you fell, with a tip you can use next round: a knockout you understand teaches; an unexplained one just stings.
+-- Checked from the most specific cause to the least: a blast, a shove, the tile you were last on, then the lava.
+local function knockoutReason(r: Runner): string
+	local t = now()
+	if r.blastAt and t - r.blastAt < CFG.ReasonWindow + 1 then
+		return "💣 The hot potato blew up on you. Pass it on quickly!"
+	end
+	if r.shovedAt and t - r.shovedAt < CFG.ReasonWindow then
+		return "💥 " .. (r.shovedBy or "Someone") .. " shoved you off. Keep away from the edges!"
+	end
+	local grid = tower
+	if grid and r.lastRow and r.lastCol and r.lastTileAt and t - r.lastTileAt < CFG.ReasonWindow then
+		local index = (r.lastRow - 1) * CFG.GridSize + r.lastCol
+		local tile = platforms[index]
+		local campFall = tile and tile:GetAttribute("CampFall")
+		if type(campFall) == "number" and t - campFall < CFG.ReasonWindow then
+			return "🪨 Your tile crumbled from standing still. Keep moving!"
+		end
+		local state = Grid.TileState(grid, r.lastRow, r.lastCol, t)
+		if state == "Falling" or state == "Gone" or state == "Left" then
+			if Grid.Plan(grid).drop[index] ~= nil and state ~= "Left" then
+				return "🕳️ That tile dropped away. Step off red tiles in time!"
+			end
+			return "🧱 The edge was left behind. Move inward when the floor shrinks!"
+		end
+	end
+	return "🌋 You slipped into the lava. Watch your step near the edges!"
+end
+
 local function scorch(p: Player, r: Runner)
 	r.alive = false
 	local lost = r.embers
 	r.embers = 0
 	event:FireClient(p, "LavaFX", { Kind = "Scorched" })
 	tell(p, if lost > 0 then string.format("🔥 SCORCHED! You dropped %d ember%s.", lost, if lost == 1 then "" else "s") else "🔥 SCORCHED! Watch the lava…")
+	tell(p, knockoutReason(r))
 	if p:GetAttribute("ArenaMode") == "LavaRush" then
 		p:SetAttribute("ArenaMode", "Lobby")
 		placeAtBeacon(p)
@@ -2664,6 +2703,9 @@ local function shove(p: Player)
 		dir = if dir.Magnitude > 0.1 then dir.Unit else me.CFrame.LookVector
 		local power = if L.ShowdownAt > 0 then CFG.ShowdownShove else 1
 		event:FireClient(best, "LavaShove", dir * CFG.ShoveSpeed * power + Vector3.new(0, CFG.ShoveLift, 0))
+		if target then
+			target.shovedBy, target.shovedAt = p.DisplayName, now()
+		end
 		event:FireClient(p, "LavaFX", { Kind = "Hit", Position = them.Position })
 		tell(best, "💥 " .. p.DisplayName .. " shoved you!")
 		challenge(p, "Shoves", 1)
@@ -2851,6 +2893,7 @@ local function bombTick(active: number)
 	local out = Vector3.new(at.X - centre.X, 0, at.Z - centre.Z)
 	out = if out.Magnitude > 0.5 then out.Unit else Vector3.new(math.random() - 0.5, 0, math.random() - 0.5).Unit
 	event:FireClient(holderPlayer, "LavaShove", out * CFG.BombBlast + Vector3.new(0, CFG.BombLift, 0))
+	hr.blastAt = now()
 	for p in L.Runners do
 		if p.Parent then
 			tell(p, if p == holderPlayer then "💥 BOOM! The bomb went off in your hands!" else "💥 BOOM! " .. holderPlayer.DisplayName .. " got blasted!")
@@ -3710,6 +3753,7 @@ local function runRound()
 					if row and col then
 						occupied[(row - 1) * CFG.GridSize + col] = true
 						r.offGridSince = nil
+						r.lastRow, r.lastCol, r.lastTileAt = row, col, now()
 					elseif not lateOpen() then
 						-- Not over the grid: a real fall reaches the lava in a second or two, so a long stay means hovering.
 						r.offGridSince = r.offGridSince or now()

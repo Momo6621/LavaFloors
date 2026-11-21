@@ -3,6 +3,37 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 24. Why you fell
+
+**Research.** Writing on failure in game design agrees that a loss should be attributable and explained, with a
+lesson the player can use on the very next try. An unclear death frustrates, especially when the game's systems
+are abstract ([Game Developer](https://www.gamedeveloper.com/design/figuring-out-failure-in-game-design),
+[My Game Design](https://mygamedesign-frontend.pages.dev/how-can-failure-states-teach-without-frustrating)).
+In LAVA Floors every knockout just said "🔥 SCORCHED!", whether you'd camped, missed a hole warning, been shoved or
+stepped off the edge.
+
+**Built.** The server records what last happened to each climber: who shoved them and when, a hot-potato blast,
+and the last tile they stood on. On a knockout it sends a one-line reason with a tip, checking the most specific
+cause first. Each counts if it happened within `CFG.ReasonWindow` (3 s) of the fall.
+- 💣 The hot potato blew up on you. Pass it on quickly!
+- 💥 *Name* shoved you off. Keep away from the edges!
+- 🪨 Your tile crumbled from standing still. Keep moving!
+- 🕳️ That tile dropped away. Step off red tiles in time!
+- 🧱 The edge was left behind. Move inward when the floor shrinks!
+- 🌋 You slipped into the lava. Watch your step near the edges! (the fallback)
+
+**Verified.** In Studio play tests:
+- Standing still: 🪨.
+- Stepping onto a planned drop tile 4 s into the phase: 🕳️. (The first try, from the phase start, crumbled from
+  camping first, and the message correctly said 🪨.)
+- Stepping off a safe tile into the lava: 🌋.
+- In the 2-player test, an idle player on the outer ring when it was left behind got 🧱.
+- The console showed no errors, and Studio matches the repo by chunk hash.
+
+Not verified: the 💥 shove message. Three tries at lining up two scripted clients for a shove at the edge didn't put
+the target in range; the one hit landed on a bot. The reason is recorded on the same line that sends the shove.
+💣 is untested as well (needs the Hot Potato twist).
+
 ## 23. Pillar climb tuned with real jump physics
 
 **Why.** Entry 19 placed the pillar ledges by teleporting a player onto them; nobody had jumped up them. The store

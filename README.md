@@ -24,7 +24,8 @@ Don't camp: any tile you stand on starts wearing out, and after about 6 seconds 
 spend 40 coins (earned in rounds) to **raise** your tile for 10 seconds (E, Y on a controller, or the RAISE
 button). A raised tile doesn't wear.
 
-If you fall while others are still going, the camera swings out to spectate the floor until the round ends.
+When you fall, a short line says why and how to avoid it next time (shoved, your tile crumbled from standing still,
+a tile dropped away, the edge was left behind, the hot potato, or you slipped). If you fall while others are still going, the camera swings out to spectate the floor until the round ends.
 When it does, everyone sees a winner banner with confetti over the winners.
 
 Whoever is still standing after phase 3 gets crowned. With two or more players, the last one standing wins
