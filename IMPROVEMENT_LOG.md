@@ -3,6 +3,28 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 63. Measure the edge-strawberry gamble (EdgeBerries analytics)
+
+**Why.** #58 and #62 made strawberries a risk: 2 a round on the outer ring that drops away in phase 2. #58 left open
+whether kids find that window fair. Playtests by one tester can't answer that, but the live game's analytics can.
+
+**Built.** Each edge strawberry is now marked as such. Climbers count the ones they grab (`r.edgePicked`, kept across a
+phase-1 re-drop like the other counters). At the end of each round every climber logs a custom event `EdgeBerries`,
+with the value set to the number grabbed and CustomField01 set to how the round ended (Crowned, Survived or
+Scorched). In the Creator Dashboard (Analytics → Custom events) the owner can see:
+- how often kids go for the edge strawberries;
+- whether the ones who do still survive.
+
+If most grabbers end up scorched, the strawberries can move one ring in. If nobody tries, they can be worth more. It's
+server-only, so players see nothing new.
+
+**Verified.** Studio solo playtest (VALORANT open, so no extra windows), with a temporary Studio-only print added to the
+Studio copy. That print was removed afterwards and the hash rechecked. The event fired once per round with the right
+outcome: 0 Scorched, 0 Crowned, 0 Crowned and 0 Scorched in rounds where the strawberry wasn't reached. A driver that
+walked onto an edge strawberry while its tile was Still then logged "1 Crowned" (the result card showed 1 berry
+banked). The console was clean, and repo and Studio hashes matched. Studio doesn't send analytics, so the dashboard view
+itself only fills in once the game is live.
+
 ## 62. Edge strawberries: 2 a round (owner's call); twist emoji stay
 
 **Why.** Follow-up to #58. Asked whether to keep 4 edge strawberries or make them scarcer, the owner picked "Make it 2".

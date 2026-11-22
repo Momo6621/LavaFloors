@@ -1450,7 +1450,7 @@ local function fruit(name: string, scale: number, cf: CFrame, parent: Instance):
 	return model
 end
 
-local function makeEmber(parent: Instance, position: Vector3, stepIndex: number)
+local function makeEmber(parent: Instance, position: Vector3, stepIndex: number, edge: boolean?)
 	local ember = part(parent, "Ember", Vector3.new(1.6, 1.6, 1.6), CFrame.new(position), Color3.fromRGB(255, 160, 40), Enum.Material.SmoothPlastic)
 	ember.Transparency = 1
 	ember.CanCollide = false
@@ -1465,6 +1465,9 @@ local function makeEmber(parent: Instance, position: Vector3, stepIndex: number)
 		take = function(p: Player, r: any)
 			r.embers += 1
 			r.picked += 1
+			if edge then
+				r.edgePicked = (r.edgePicked or 0) + 1 -- risk/reward tuning: see the EdgeBerries analytics event
+			end
 			challenge(p, "Berries", 1)
 			event:FireClient(p, "LavaFX", { Kind = "Ember", Position = pickupPosition(ember) })
 			ember:Destroy()
@@ -2361,7 +2364,7 @@ local function buildTower()
 	for _ = 1, CFG.Berries do
 		local pick = rng:NextInteger(1, #berryTiles)
 		local index = table.remove(berryTiles, pick) :: number
-		makeEmber(model, platforms[index].Position + Vector3.new(0, 2.6, 0), index)
+		makeEmber(model, platforms[index].Position + Vector3.new(0, 2.6, 0), index, #edgeTiles > 0)
 		if #berryTiles == 0 then
 			break
 		end
@@ -2613,6 +2616,7 @@ local function enter(p: Player): boolean
 		shoves = if existing then existing.shoves else 0,
 		drops = if existing then existing.drops else 0,
 		picked = if existing then existing.picked else 0,
+		edgePicked = if existing then existing.edgePicked else 0,
 		enteredAt = now(),
 		nextShove = 0,
 		shieldUntil = if existing then existing.shieldUntil else 0,
@@ -3134,6 +3138,13 @@ local function payout()
 			if askFun then
 				L.FunAsked[p] = L.Mutator.Id -- the twist this answer is about
 			end
+			-- Edge strawberries (risk/reward, CFG.Berries): how many this climber grabbed, split by how their round
+			-- ended, so the owner can see in Analytics whether going for them is a fair gamble for kids.
+			local outcome = if r.crowned then "Crowned" elseif r.alive then "Survived" else "Scorched"
+			local edgePicked = r.edgePicked or 0
+			track(function()
+				AnalyticsService:LogCustomEvent(p, "EdgeBerries", edgePicked, { [Enum.AnalyticsCustomFieldKeys.CustomField01.Name] = outcome })
+			end)
 			event:FireClient(p, "LavaResult", {
 				AskFun = askFun,
 				Streak = L.Streak[p],
