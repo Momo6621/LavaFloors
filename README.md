@@ -35,7 +35,9 @@ Whoever is still standing after phase 3 gets crowned. With two or more players, 
 straight away, so nobody waits out a long round after falling. You can shove other players off, and every so often
 one supply drop pops in far from everyone, floating out of reach under a beam of light: jump to grab it before its
 ring shrinks away. Drops are fruit: banana (speed), pineapple (super jump), blueberry (shield), coconut (rescue) and
-watermelon (berry bag). Strawberries on the tiles are bonus points if you survive. Fruit hats are in the shop, and so are 🐾 fruit
+watermelon (berry bag). Strawberries are a risk: only 4 a round (`Berries`), all on the outer ring that grows in during
+phase 1 and drops away in phase 2, plus one on top of the pillar. Each is 4 coins (`EmberCoins`) if you survive.
+Supply drops come every 20 s (`DropEvery`). Fruit hats are in the shop, and so are 🐾 fruit
 buddies: little fruit pets with googly eyes that float by your shoulder and bob along (Strawberry 600 to Coconut 3000
 coins, all earnable; tap again to send it to rest; Reduce Motion keeps it still). `Pets` in SkySproutConfig,
 `PetSize`/`PetOffset` in CFG, saved as `Pet`/`OwnedPets`.

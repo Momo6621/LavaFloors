@@ -3,6 +3,35 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 58. Strawberries become a risk: fewer, on the edge, worth more (and the word pills are gone)
+
+**Why.** Owner feedback on #57: the word pills over the pickups were ugly. Asked what should go there instead, the owner
+said to make the fruit scarce and expand the area so there's a risk/reward. Before this change, 6 strawberries sat on
+the starting 5 × 5 tiles every round, worth 2 coins each, so picking them up was a free side errand.
+
+**Built.**
+- **Pills removed.** `pickupTag()` and the boost `Tag` field are gone, so pickups are just the 3D fruit, glow and
+  light beam again (no emoji either).
+- **Strawberries.** There are now `Berries = 4` a round, placed only on tiles outside `StartRings`. Those are the outer
+  ring of the 9 × 9 grid, which grows in during phase 1 and drops away in phase 2. The pillar-top strawberry stays.
+  They're placed on distinct tiles. A grid that never grows falls back to the inner tiles.
+- **Value.** `EmberCoins` goes from 2 to 4 per banked strawberry. The maximum is about the same as before (16 vs 12, doubled
+  when crowned), but it now has to be earned.
+- **Drops.** Supply drops come every 20 s instead of 14, about two a round instead of three.
+
+**Verified.** Studio solo playtest (VALORANT open, so no extra windows), with the survival driver kept on the inner
+tiles. The server log, reading each strawberry's tile through LavaGrid, showed 4 strawberries on rings 3 and 4 plus
+the pillar top:
+- Hidden at the start.
+- Growing in at about 6 s.
+- Still from 8 s to 18 s.
+- Warning at 18 s.
+- Left (dropped away) at 20 s.
+
+That gives roughly a 10–12 s window at the edge. There were 0 PickupTag billboards left, the console was clean, and
+repo and Studio hashes matched. Not yet tested: grabbing an edge strawberry by hand, and whether kids find the window
+fair. That's a quick thing to watch in a real playtest.
+
 ## 57. Clean word tags over the shield and fruit pickups (icon refresh, part 1)
 
 **Why.** Owner feedback (2026-11-22): the shield and fruit look ugly, and so do the icons in general. The shield orbs and
