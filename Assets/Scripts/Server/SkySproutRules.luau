@@ -1,7 +1,7 @@
 local C=require(game.ReplicatedStorage.SkySproutConfig)
 local R={}
 function R.floor(points)return math.clamp(1+math.floor(points/C.PointsPerFloor),1,C.MaxFloor)end
-function R.new()return {Version=8,Waystones={},Contracts={},XP=0,Style="Vanguard",Relic="Ember",BossClears={},Hunts={},Stories={},Coins=0,Points=0,BestFloor=1,Wins=0,Losses=0,Knockouts=0,Skin="Mint",Owned={Mint=true},FloorQuests={},Receipts={},LastDaily=0,DailyStreak=0,Crowns=0,Hat="",OwnedHats={},PassSeason=0,PassXP=0,PassFree={},PassPrem={},Tipped=0,WelcomeClaimed=false,Invited={},InviteDay=0,InviteToday=0,Daily={Day=0,P={},C={}},Redeemed={},TutorialDone=false,WeekNo=0,WeekCrowns=0,BestHeight=0,Chest=0,ChestsOpened=0,Gems={},Title="",GiftsSent=0,WinEmote="Cheer"}end
+function R.new()return {Version=8,Waystones={},Contracts={},XP=0,Style="Vanguard",Relic="Ember",BossClears={},Hunts={},Stories={},Coins=0,Points=0,BestFloor=1,Wins=0,Losses=0,Knockouts=0,Skin="Mint",Owned={Mint=true},FloorQuests={},Receipts={},LastDaily=0,DailyStreak=0,Crowns=0,Hat="",OwnedHats={},Pet="",OwnedPets={},PassSeason=0,PassXP=0,PassFree={},PassPrem={},Tipped=0,WelcomeClaimed=false,Invited={},InviteDay=0,InviteToday=0,Daily={Day=0,P={},C={}},Redeemed={},TutorialDone=false,WeekNo=0,WeekCrowns=0,BestHeight=0,Chest=0,ChestsOpened=0,Gems={},Title="",GiftsSent=0,WinEmote="Cheer"}end
 function R.clean(raw)
  local p=R.new();if type(raw)~="table"then return p end
  for _,k in ipairs({"Coins","Points","Wins","Losses","Knockouts","BestFloor","XP","Crowns"})do
@@ -11,6 +11,8 @@ function R.clean(raw)
  for _,s in ipairs(C.Skins)do if not s.Premium and type(raw.Owned)=="table"and raw.Owned[s.Id]==true then p.Owned[s.Id]=true end end
  if type(raw.Skin)=="string"and(p.Owned[raw.Skin]or raw.Skin=="Aurora")then p.Skin=raw.Skin end
  for _,h in ipairs(C.Hats)do if type(raw.OwnedHats)=="table"and raw.OwnedHats[h.Id]==true then p.OwnedHats[h.Id]=true end end
+ for _,h in ipairs(C.Pets or{})do if type(raw.OwnedPets)=="table"and raw.OwnedPets[h.Id]==true then p.OwnedPets[h.Id]=true end end
+ if type(raw.Pet)=="string"and p.OwnedPets[raw.Pet]then p.Pet=raw.Pet end
  if type(raw.Hat)=="string"and(p.OwnedHats[raw.Hat]or raw.Hat==(C.Vip and C.Vip.Hat))then p.Hat=raw.Hat end
  local season=C.LavaPass and C.LavaPass.Season or 0
  if raw.PassSeason==season then
@@ -130,5 +132,13 @@ function R.hat(p,id,vip)
   p.Hat=id;return true,h.Name.." on!"
  end end
  return false,"Unknown hat."
+end
+function R.pet(p,id)
+ for _,h in ipairs(C.Pets or{})do if h.Id==id then
+  if p.Pet==id then p.Pet="";return true,h.Name.." is resting."end
+  if not p.OwnedPets[id]then if p.Coins<h.Cost then return false,h.Cost.." coins needed."end;p.Coins-=h.Cost;p.OwnedPets[id]=true end
+  p.Pet=id;return true,h.Name.." is following you!"
+ end end
+ return false,"Unknown buddy."
 end
 return R

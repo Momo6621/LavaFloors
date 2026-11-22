@@ -14,6 +14,7 @@ local function setMode(p,mode)p:SetAttribute("ArenaMode",mode)end
 local function stats(p)
  local d=data(p);if not d then return end
  p:SetAttribute("UnlockedFloor",d.BestFloor);p:SetAttribute("GloveStyle",d.Skin);for _,skin in ipairs(C.Skins)do p:SetAttribute("Owns"..skin.Id,d.Owned[skin.Id]==true)end
+ p:SetAttribute("PetStyle",d.Pet or "");for _,h in ipairs(C.Pets or{})do p:SetAttribute("OwnsPet"..h.Id,d.OwnedPets and d.OwnedPets[h.Id]==true)end
  p:SetAttribute("HatStyle",d.Hat or "");for _,h in ipairs(C.Hats)do p:SetAttribute("OwnsHat"..h.Id,d.OwnedHats and d.OwnedHats[h.Id]==true)end
  p:SetAttribute("Crowns",d.Crowns or 0);p:SetAttribute("Floor",Rules.floor(d.Points));p:SetAttribute("Points",d.Points);p:SetAttribute("Coins",d.Coins)
  local ls=p:FindFirstChild("leaderstats")
@@ -224,6 +225,11 @@ function A.HandleAction(p,action,value)
   local before=data(p).Coins
   local ok,msg=Rules.hat(data(p),value,A.Pass~=nil and A.Pass.Has(p,"VIP"));if ok then stats(p);if A.OnHat then A.OnHat(p)end end;tell(p,msg)
   local spent=before-data(p).Coins;if spent>0 then local bal=data(p).Coins;task.spawn(pcall,function()game:GetService("AnalyticsService"):LogEconomyEvent(p,Enum.AnalyticsEconomyFlowType.Sink,"Coins",spent,bal,Enum.AnalyticsEconomyTransactionType.Shop.Name,"Hat_"..value)end)end
+ elseif action=="Pet"then
+  if type(value)~="string"then return end
+  local before=data(p).Coins
+  local ok,msg=Rules.pet(data(p),value);if ok then stats(p);if A.OnPet then A.OnPet(p)end end;tell(p,msg)
+  local spent=before-data(p).Coins;if spent>0 then local bal=data(p).Coins;task.spawn(pcall,function()game:GetService("AnalyticsService"):LogEconomyEvent(p,Enum.AnalyticsEconomyFlowType.Sink,"Coins",spent,bal,Enum.AnalyticsEconomyTransactionType.Shop.Name,"Pet_"..value)end)end
  elseif action=="PassClaim"then
   if A.Season then A.Season.Claim(p,value)end
  elseif action=="WatchAd"then

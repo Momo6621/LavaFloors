@@ -3,6 +3,28 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 51. 🐾 Fruit buddies (pets bought with earned coins)
+
+**Why.** Guides to Epic Minigames, one of Roblox's best-known party games, list collecting pets, titles and effects
+with coins won in rounds among its main draws (the game's own page; VideoGamer; Sportskeeda's Epic Minigames guide).
+LAVA Floors had gloves, hats and titles, but no pets.
+
+**Built.** Five fruit buddies in the shop (Strawberry 600, Blueberry 1000, Pineapple 1500, Watermelon 2200, Coconut
+3000 coins). They are made from the game's existing fruit models plus two googly eyes, so there's no new art. The
+buddy floats by your right shoulder on a Weld to the root and scales with the character. Each client bobs and sways it
+gently, and Reduce Motion keeps it still. It is cosmetic only: no collision, touch or queries, and no gameplay effect.
+Buying and equipping follow the hat pattern: a `Pet` action in SkySproutArenaService, `Rules.pet` (tap again to send it
+to rest), `Pet`/`OwnedPets` in the profile (cleaned), `PetStyle`/`OwnsPet*` attributes, and a `Pet_*` economy sink
+event. There is no Robux path.
+
+**Verified.** Studio solo playtest. The owner-only coin grant doesn't work for the test account, so I temporarily set
+the Strawberry price to 20 in Studio, then restored it and rechecked the hash. Asking for the 3000-coin Coconut with 25
+coins was refused ("3000 coins needed."). Buying Strawberry took 20 coins, set `PetStyle` and `OwnsPetStrawberry`, and
+put a 14-part buddy 1.24 studs to the side of the root, bobbing (height 0.86 → 0.99). The shop cards read
+"✓ WITH YOU", "💰 1000" and so on. Tapping again took it off. Tapping once more brought it back without charging again,
+and it was still there after a respawn. A screenshot (Media/fruit-buddy.jpg) shows the strawberry with googly eyes
+beside the player. The console was clean. Repo and Studio hashes matched for all five scripts.
+
 ## 50. 🔥 Survival streak on the result card
 
 **Why.** Write-ups of Roblox's floor-is-lava games say that you're back in the lobby within seconds, so you can play

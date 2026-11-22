@@ -11,6 +11,7 @@ local Themes = require(game.ReplicatedStorage:WaitForChild("LavaThemes")) :: any
 local Grid = require(game.ReplicatedStorage:WaitForChild("LavaGrid")) :: any
 local FruitModels = game.ReplicatedStorage:WaitForChild("FruitModels")
 local applyHat: (Player) -> ()
+local applyPet: (Player) -> ()
 local applyTitle: (Player) -> ()
 local wear: { [number]: number } = {}
 local tileColour: (any, number, boolean) -> Color3
@@ -47,6 +48,9 @@ local CFG = {
 	-- clearing the next ledge's edge while moving (4.5 was tested and left too little); the cap is 2.2 above the last
 	RoundJumpPower = 48,
 	CharacterScale = 0.62,
+	-- Fruit buddy (pet): size and place beside the shoulder, in studs for a full-size character (scaled with it).
+	PetSize = 1.5,
+	PetOffset = Vector3.new(2, 1.5, 0.8),
 	RoundWalkSpeed = 24,
 	SpeedRushWalkSpeed = 30,
 	BigHeadScale = 1.75, -- Big Heads twist: head size multiplier (just a look; bodies, speed and jumps stay the same)
@@ -4288,6 +4292,83 @@ applyHat = function(p: Player)
 	hat.Parent = character
 end
 
+-- Fruit buddies (cosmetic pets, bought with coins in the shop): a small fruit with eyes that floats by your
+-- shoulder. Welded to the root with a Weld named BuddyWeld so each client can bob it gently (LavaFloorsUI).
+applyPet = function(p: Player)
+	local character = p.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart")
+	if not character or not root or not root:IsA("BasePart") then
+		return
+	end
+	local old = character:FindFirstChild("FruitBuddy")
+	if old then
+		old:Destroy()
+	end
+	local d = data(p)
+	local id = d and d.Pet
+	if type(id) ~= "string" or id == "" or not FruitModels:FindFirstChild(id) then
+		return
+	end
+	local s = root.Size.Y / 2 -- 1 for a full-size character
+	local pet = (FruitModels:FindFirstChild(id) :: Model):Clone()
+	pet.Name = "FruitBuddy"
+	local _, size = pet:GetBoundingBox()
+	pet:ScaleTo(CFG.PetSize * s / math.max(size.X, size.Y, size.Z))
+	local box, scaled = pet:GetBoundingBox()
+	local core = Instance.new("Part")
+	core.Name = "BuddyCore"
+	core.Size = Vector3.one * 0.2
+	core.Transparency = 1
+	core.CFrame = box
+	core.Parent = pet
+	pet.PrimaryPart = core
+	local eyeSize = math.min(scaled.X, scaled.Y) * 0.3
+	for _, side in { -1, 1 } do
+		local eye = Instance.new("Part")
+		eye.Name = "Eye"
+		eye.Shape = Enum.PartType.Ball
+		eye.Size = Vector3.one * eyeSize
+		eye.Color = Color3.new(1, 1, 1)
+		eye.Material = Enum.Material.SmoothPlastic
+		eye.CFrame = box * CFrame.new(side * scaled.X * 0.17, scaled.Y * 0.1, -scaled.Z * 0.42)
+		eye.Parent = pet
+		local pupil = Instance.new("Part")
+		pupil.Name = "Pupil"
+		pupil.Shape = Enum.PartType.Ball
+		pupil.Size = Vector3.one * eyeSize * 0.55
+		pupil.Color = Color3.fromRGB(30, 20, 20)
+		pupil.Material = Enum.Material.SmoothPlastic
+		pupil.CFrame = eye.CFrame * CFrame.new(0, 0, -eyeSize * 0.3)
+		pupil.Parent = pet
+	end
+	for _, part in pet:GetDescendants() do
+		if part:IsA("BasePart") then
+			part.Anchored = false
+			part.CanCollide = false
+			part.CanQuery = false
+			part.CanTouch = false
+			part.Massless = true
+			part.CastShadow = false
+			if part ~= core then
+				local weld = Instance.new("WeldConstraint")
+				weld.Part0 = core
+				weld.Part1 = part
+				weld.Parent = part
+			end
+		end
+	end
+	local offset = CFrame.new(CFG.PetOffset * s)
+	pet:PivotTo(root.CFrame * offset)
+	local weld = Instance.new("Weld")
+	weld.Name = "BuddyWeld"
+	weld.Part0 = root
+	weld.Part1 = core
+	weld.C0 = offset
+	weld:SetAttribute("Base", offset)
+	weld.Parent = core
+	pet.Parent = character
+end
+
 -- Island: the old flat floor is hidden so the arena sits on the terrain island, and anything low that would
 -- end up out in the sea is removed.
 local function islandMode()
@@ -4687,11 +4768,13 @@ function L.Start(arena: any, remote: RemoteEvent, stats: (Player) -> (), notice:
 					local p = Players:GetPlayerFromCharacter(character)
 					if p then
 						applyHat(p)
+						applyPet(p)
 					end
 				end
 			end)
 		end
 		A.OnHat = applyHat
+		A.OnPet = applyPet
 		local function watch(p: Player)
 			p.CharacterAdded:Connect(scale)
 			if p.Character then

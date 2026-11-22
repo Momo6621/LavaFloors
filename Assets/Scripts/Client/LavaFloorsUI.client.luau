@@ -155,7 +155,7 @@ close.Position = UDim2.new(1, -10, 0.5, 0)
 local list = make("ScrollingFrame", { Position = UDim2.fromOffset(12, 66), Size = UDim2.new(1, -24, 1, -110), BackgroundTransparency = 1, BorderSizePixel = 0, ScrollBarThickness = 6, ScrollBarImageColor3 = INK, CanvasSize = UDim2.new(), AutomaticCanvasSize = Enum.AutomaticSize.Y }, shop)
 make("UIGridLayout", { CellSize = UDim2.new(0.5, -8, 0, 150), CellPadding = UDim2.fromOffset(10, 10), SortOrder = Enum.SortOrder.LayoutOrder, HorizontalAlignment = Enum.HorizontalAlignment.Center }, list)
 make("UIPadding", { PaddingTop = UDim.new(0, 4), PaddingBottom = UDim.new(0, 8) }, list)
-local foot = label(shop, "Gloves and hats are just for looks. Robux items are optional.", 14, INK:Lerp(CREAM, 0.35))
+local foot = label(shop, "Gloves, hats and buddies are just for looks. Robux items are optional.", 14, INK:Lerp(CREAM, 0.35))
 foot.AnchorPoint = Vector2.new(0.5, 1)
 foot.Position = UDim2.new(0.5, 0, 1, -10)
 foot.Size = UDim2.new(1, -24, 0, 26)
@@ -246,6 +246,38 @@ for i, h in C.Hats do
 				setButton(b, "⭐ VIP", GOLD)
 			elseif h.PassOnly then
 				setButton(b, "🎟️ PASS", Color3.fromRGB(150, 90, 255))
+			else
+				local afford = (player:GetAttribute("Coins") or 0) >= h.Cost
+				setButton(b, "💰 " .. h.Cost, if afford then ORANGE else Color3.fromRGB(170, 150, 140))
+			end
+		end,
+	})
+end
+
+-- Fruit buddies: little fruit pets that float by your shoulder (coins only).
+for i, h in C.Pets or {} do
+	local f, b = card(80 + i, h.Color, "🐾 " .. h.Name)
+	local model = FruitModels:FindFirstChild(h.Id)
+	if model then
+		local view: ViewportFrame = make("ViewportFrame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 4), Size = UDim2.fromOffset(64, 64), BackgroundTransparency = 1, ZIndex = 3 }, f)
+		local copy = model:Clone()
+		copy:PivotTo(CFrame.new())
+		copy.Parent = view
+		local _, size = copy:GetBoundingBox()
+		local cam: Camera = make("Camera", { FieldOfView = 30 }, view)
+		cam.CFrame = CFrame.lookAt(Vector3.new(0, size.Y * 0.3, size.Magnitude * 2.1), Vector3.zero)
+		view.CurrentCamera = cam
+	end
+	local id = h.Id
+	b.Activated:Connect(function()
+		event:FireServer("Pet", id)
+	end)
+	table.insert(cards, {
+		refresh = function()
+			if player:GetAttribute("PetStyle") == id then
+				setButton(b, "✓ WITH YOU", GREEN)
+			elseif player:GetAttribute("OwnsPet" .. id) then
+				setButton(b, "BRING", ORANGE)
 			else
 				local afford = (player:GetAttribute("Coins") or 0) >= h.Cost
 				setButton(b, "💰 " .. h.Cost, if afford then ORANGE else Color3.fromRGB(170, 150, 140))
@@ -371,7 +403,7 @@ local function refreshShop()
 		c.refresh()
 	end
 end
-for _, attr in { "Coins", "GloveStyle", "HatStyle", "AuroraPass", "DoubleLavaPass", "VIP", "LavaPassPremium", "TrailPass" } do
+for _, attr in { "Coins", "GloveStyle", "HatStyle", "PetStyle", "AuroraPass", "DoubleLavaPass", "VIP", "LavaPassPremium", "TrailPass" } do
 	player:GetAttributeChangedSignal(attr):Connect(refreshShop)
 end
 for _, s in C.Skins do
@@ -380,6 +412,27 @@ end
 for _, h in C.Hats do
 	player:GetAttributeChangedSignal("OwnsHat" .. h.Id):Connect(refreshShop)
 end
+for _, h in C.Pets or {} do
+	player:GetAttributeChangedSignal("OwnsPet" .. h.Id):Connect(refreshShop)
+end
+-- Fruit buddies bob and sway a little (on this screen only; the server keeps them still). Reduce Motion stops it.
+game:GetService("RunService").Heartbeat:Connect(function()
+	local calm = false
+	pcall(function()
+		calm = (game:GetService("GuiService") :: any).ReducedMotionEnabled == true
+	end)
+	local t = os.clock()
+	for i, other in Players:GetPlayers() do
+		local buddy = other.Character and other.Character:FindFirstChild("FruitBuddy")
+		local core = buddy and buddy:FindFirstChild("BuddyCore")
+		local weld = core and core:FindFirstChild("BuddyWeld")
+		local base = weld and weld:GetAttribute("Base")
+		if weld and weld:IsA("Weld") and typeof(base) == "CFrame" then
+			local s = base.Position.Y / 1.5 -- follows the character's scale
+			weld.C0 = if calm then base else base * CFrame.new(0, math.sin(t * 2.4 + i) * 0.22 * s, 0) * CFrame.Angles(0, math.sin(t * 1.3 + i) * 0.35, 0)
+		end
+	end
+end)
 refreshShop()
 
 local shopScale = make("UIScale", {}, shop)

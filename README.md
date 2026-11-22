@@ -35,7 +35,12 @@ Whoever is still standing after phase 3 gets crowned. With two or more players, 
 straight away, so nobody waits out a long round after falling. You can shove other players off, and every so often
 one supply drop pops in far from everyone, floating out of reach under a beam of light: jump to grab it before its
 ring shrinks away. Drops are fruit: banana (speed), pineapple (super jump), blueberry (shield), coconut (rescue) and
-watermelon (berry bag). Strawberries on the tiles are bonus points if you survive. Fruit hats are in the shop.
+watermelon (berry bag). Strawberries on the tiles are bonus points if you survive. Fruit hats are in the shop, and so are 🐾 fruit
+buddies: little fruit pets with googly eyes that float by your shoulder and bob along (Strawberry 600 to Coconut 3000
+coins, all earnable; tap again to send it to rest; Reduce Motion keeps it still). `Pets` in SkySproutConfig,
+`PetSize`/`PetOffset` in CFG, saved as `Pet`/`OwnedPets`.
+
+![A Strawberry Buddy floating by a player's shoulder in the lobby](Media/fruit-buddy.jpg)
 
 Every round also rolls a twist (Low Gravity, Turbo Spin, Hole Party, Speed Rush, Shield Party, Drop Party, Hot Potato,
 Duos, Big Heads) and a world theme (Sunset, Blue Inferno, Purple Moon, Starry Night, and the bright daytime Candy Crater: mint tiles
