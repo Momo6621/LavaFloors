@@ -3,6 +3,48 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 59. Top bar icons: Flibpook images instead of emoji (icon refresh, part 2)
+
+**Why.** The owner called the emoji icons ugly. A side-by-side preview of today's top bar and the free Flibpook pack
+(Media/topbar-preview.jpg) got a "Yes, switch".
+
+**Built.**
+- **Icon module.** New `Shared/LavaIcons.luau` (ReplicatedStorage.LavaIcons) holds the pack's image IDs and a `Scale`
+  of 0.75. TopbarPlus draws images at 0.5 (17 px in a 44 px button), which looked tiny.
+- **Swaps.**
+
+| Button | Icon |
+|---|---|
+| Gloves | shop stall |
+| Pass | purple gem |
+| VIP | crown |
+| Challenges | checkmark |
+| Server goal | trophy (and "3/40") |
+| Invite | heart (and "+150") |
+| Lava Rush | lightning bolt ("Lava Rush" / "Jump in!") |
+| Lava Rush, queued | checkmark ("Queued") |
+| Music | speaker on / red speaker off |
+| ☰ phone menu | gear |
+
+- **Labels.** The labels lost their emoji. The ⚙ dropdown items say "Lava Pass", "VIP", "Invite +150💰" and
+  "Music on/off".
+- **No match in the pack.** Emotes (😀), 👀 Watch and the event pill keep their emoji.
+- **Credit.** The pack is credited in the README.
+
+**Verified.** Studio solo playtest at 1130 × 753:
+- Every left/right button showed its Flibpook image at 26 × 26 px.
+- Lava Rush cycled lightning "Lava Rush" → checkmark "Queued" → lightning "Jump in!".
+- The screenshot is Media/topbar-desktop.jpg.
+
+Device Simulator, iPhone 7:
+- No overflow menus.
+- A real tap on ⚙ opened the dropdown with gem, crown, heart and speaker next to their names
+  (Media/topbar-phone.jpg).
+
+The console was clean, and repo and Studio hashes matched for LavaIcons, LavaFloorsUI and SkySproutLavaClient. Studio was
+reset to the default viewport, and the temporary copy of the pack (ServerStorage.IconPreview) was removed, since the
+game uses the image IDs directly. VALORANT was open, so no multiplayer windows were opened.
+
 ## 58. Strawberries become a risk: fewer, on the edge, worth more (and the word pills are gone)
 
 **Why.** Owner feedback on #57: the word pills over the pickups were ugly. Asked what should go there instead, the owner

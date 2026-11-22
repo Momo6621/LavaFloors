@@ -65,6 +65,7 @@ local gui = make("ScreenGui", { Name = "LavaRushHUD", ResetOnSpawn = false, Igno
 local tint: Frame = make("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromRGB(255, 40, 0), BackgroundTransparency = 1, BorderSizePixel = 0, Active = false }, gui)
 
 local Icon = require(RS:WaitForChild("Icon"))
+local Icons = require(RS:WaitForChild("LavaIcons")) :: any -- Flibpook top bar images
 
 local Config = require(RS:WaitForChild("SkySproutConfig")) :: any
 local Perception = require(RS:WaitForChild("SkySproutPerception")) :: any
@@ -109,7 +110,9 @@ end
 
 local rushIcon = Icon.new()
 	:setName("LavaRush")
-	:setLabel("🔥 Lava Rush")
+	:setImage(Icons.Power)
+	:setImageScale(Icons.Scale)
+	:setLabel("Lava Rush")
 	:align("Right")
 	:oneClick()
 	:setCaption("Floor-is-lava rounds • Attack = shove")
@@ -1166,7 +1169,7 @@ Run.RenderStepped:Connect(function(dt)
 
 	local joinable = state.Phase == "Round" and state.LavaY < state.BaseY + 40
 	-- Short labels on phones: the long "✅ Queued" pushed the right-hand top bar group over the server-goal pill.
-	local label = if me.Queued then UI.short("✅ Queued", "✅") elseif joinable then UI.short("🔥 Jump in!", "🔥 Go!") else UI.short("🔥 Lava Rush", "🔥")
+	local label = if me.Queued then UI.short("Queued", "") elseif joinable then UI.short("Jump in!", "Go!") else UI.short("Lava Rush", "")
 	local enabled = onFloor1 and not inRush and (mode == "Lobby" or me.Queued)
 	if enabled ~= lastEnabled then
 		lastEnabled = enabled
@@ -1174,6 +1177,7 @@ Run.RenderStepped:Connect(function(dt)
 	end
 	if label ~= lastLabel then
 		lastLabel = label
+		rushIcon:setImage(if me.Queued then Icons.Checkmark else Icons.Power)
 		rushIcon:setLabel(label)
 	end
 	local opportunity = (state.Phase == "Countdown" or joinable) and not me.Queued and not inRush

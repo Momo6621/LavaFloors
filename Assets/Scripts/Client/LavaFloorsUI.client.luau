@@ -11,6 +11,7 @@ local player = Players.LocalPlayer
 local event = RS:WaitForChild("ArenaEvent") :: RemoteEvent
 local C = require(RS:WaitForChild("SkySproutConfig")) :: any
 local Icon = require(RS:WaitForChild("Icon")) :: any
+local Icons = require(RS:WaitForChild("LavaIcons")) :: any -- Flibpook top bar images
 
 require(RS:WaitForChild("SkySproutWaterClient")).Start()
 require(RS:WaitForChild("SkySproutPerception")).Start()
@@ -452,7 +453,8 @@ end)
 
 Icon.new()
 	:setName("Gloves")
-	:setLabel(UI.tight("🧤 Gloves", "🧤"))
+	:setImage(Icons.Shop)
+	:setLabel(UI.tight("Gloves", ""))
 	:align("Left")
 	:oneClick()
 	:modifyTheme(UI.pill(Color3.fromRGB(255, 160, 40)))
@@ -653,7 +655,8 @@ end
 
 Icon.new()
 	:setName("LavaPass")
-	:setLabel(UI.tight("🎟️ Pass", "🎟️"))
+	:setImage(Icons.GemPurple)
+	:setLabel(UI.tight("Pass", ""))
 	:align("Left")
 	:oneClick()
 	:modifyTheme(pill(PURPLE))
@@ -666,7 +669,8 @@ Icon.new()
 	end)
 Icon.new()
 	:setName("Vip")
-	:setLabel(UI.tight("⭐ VIP", "⭐"))
+	:setImage(Icons.Crown)
+	:setLabel(UI.tight("VIP", ""))
 	:align("Left")
 	:oneClick()
 	:modifyTheme(pill(Color3.fromRGB(240, 170, 20)))
@@ -797,7 +801,8 @@ player:GetAttributeChangedSignal("Challenges"):Connect(refreshChallenges)
 refreshChallenges()
 Icon.new()
 	:setName("Challenges")
-	:setLabel(UI.tight("📋 Challenges", "📋"))
+	:setImage(Icons.Checkmark)
+	:setLabel(UI.tight("Challenges", ""))
 	:align("Left")
 	:oneClick()
 	:modifyTheme(pill(UI.Lava))
@@ -843,7 +848,7 @@ end)
 
 -- Server goal pill: the shared bar every climber in this server fills together (rises reached).
 -- Always the short label: the left side of the top bar is already full on laptop-sized windows.
-local goalIcon = Icon.new():setName("ServerGoal"):setLabel(""):align("Left"):lock():modifyTheme(pill(Color3.fromRGB(235, 90, 20)))
+local goalIcon = Icon.new():setName("ServerGoal"):setImage(Icons.Trophy):setLabel(""):align("Left"):lock():modifyTheme(pill(Color3.fromRGB(235, 90, 20)))
 goalIcon:setCaption("Server goal: every rise anyone climbs fills it. Full = coins for all who helped!")
 local function refreshGoal()
 	local have, size = tonumber(workspace:GetAttribute("LavaGoal")), tonumber(workspace:GetAttribute("LavaGoalSize"))
@@ -851,7 +856,7 @@ local function refreshGoal()
 		goalIcon:setEnabled(false)
 		return
 	end
-	goalIcon:setLabel(string.format("🌋 %d/%d", have, size))
+	goalIcon:setLabel(string.format("%d/%d", have, size))
 	goalIcon:setEnabled(true)
 end
 workspace:GetAttributeChangedSignal("LavaGoal"):Connect(refreshGoal)
@@ -875,7 +880,8 @@ local FRIEND_DEAL = (require(game.ReplicatedStorage:WaitForChild("SkySproutConfi
 	or { InviteCoins = 150, Bonus = 0.25 }
 Icon.new()
 	:setName("Invite")
-	:setLabel(UI.tight("👥 Invite +" .. tostring(FRIEND_DEAL.InviteCoins) .. "💰", UI.short("👥 +" .. tostring(FRIEND_DEAL.InviteCoins), "👥")))
+	:setImage(Icons.Heart)
+	:setLabel(UI.tight("Invite +" .. tostring(FRIEND_DEAL.InviteCoins) .. "💰", UI.short("+" .. tostring(FRIEND_DEAL.InviteCoins), "")))
 	:align("Right")
 	:oneClick()
 	:setCaption(string.format("Invite a friend: you BOTH get %d coins • Play together: +%d%% coins", FRIEND_DEAL.InviteCoins, math.floor(FRIEND_DEAL.Bonus * 100)))
@@ -1033,7 +1039,7 @@ Icon.new()
 		emotePanel.Visible = not emotePanel.Visible
 	end)
 
-local musicIcon = Icon.new():setName("Music"):setLabel("🎵"):align("Right"):oneClick():modifyTheme(pill(Color3.fromRGB(150, 90, 255)))
+local musicIcon = Icon.new():setName("Music"):setImage(Icons.SoundOn):setLabel(""):align("Right"):oneClick():modifyTheme(pill(Color3.fromRGB(150, 90, 255)))
 -- Your choice is saved with your profile (the "MusicOff" attribute), so 🔇 stays off the next time you join.
 local musicWords = false -- true inside the ☰ dropdown on narrow screens, where there's room for words
 local function setMusic(on: boolean)
@@ -1042,7 +1048,8 @@ local function setMusic(on: boolean)
 	elseif not on and music.Playing then
 		music:Pause()
 	end
-	musicIcon:setLabel(if on then (if musicWords then "🎵 Music on" else "🎵") else (if musicWords then "🔇 Music off" else "🔇"))
+	musicIcon:setImage(if on then Icons.SoundOn else Icons.SoundOff)
+	musicIcon:setLabel(if musicWords then (if on then "Music on" else "Music off") else "")
 end
 musicIcon:bindEvent("selected", function()
 	local on = not music.Playing
@@ -1071,9 +1078,9 @@ if workspace.CurrentCamera.ViewportSize.X < MORE_WIDTH then
 			table.insert(extras, icon)
 		end
 	end
-	Icon.new():setName("More"):setLabel("☰"):align("Left"):setCaption("Pass, VIP, invite and music"):modifyTheme(pill(Color3.fromRGB(120, 110, 140))):setDropdown(extras)
+	Icon.new():setName("More"):setImage(Icons.Gear):setLabel(""):align("Left"):setCaption("Pass, VIP, invite and music"):modifyTheme(pill(Color3.fromRGB(120, 110, 140))):setDropdown(extras)
 	-- The dropdown has room for words, so its items say what they are.
-	local words = { LavaPass = "🎟️ Lava Pass", Vip = "⭐ VIP", Invite = "👥 Invite +" .. tostring(FRIEND_DEAL.InviteCoins) .. "💰" }
+	local words = { LavaPass = "Lava Pass", Vip = "VIP", Invite = "Invite +" .. tostring(FRIEND_DEAL.InviteCoins) .. "💰" }
 	for name, text in words do
 		local icon = Icon.getIcon(name)
 		if icon then
@@ -1082,6 +1089,12 @@ if workspace.CurrentCamera.ViewportSize.X < MORE_WIDTH then
 	end
 	musicWords = true
 	setMusic(music.Playing)
+end
+for _, name in { "Gloves", "LavaPass", "Vip", "Challenges", "ServerGoal", "Invite", "Music", "More" } do
+	local icon = Icon.getIcon(name)
+	if icon then
+		icon:setImageScale(Icons.Scale)
+	end
 end
 
 local function shove()
