@@ -3,6 +3,25 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 49. Music that builds with the round
+
+**Why.** Fans single out how Fall Guys' final-round music shifts into a more intense section as the pressure mounts
+(TV Tropes, Fall Guys YMMV page), and reviewers point to the "delicious tension" of the finals (PC Gamer review). A
+Kotaku piece says the peppy music is what keeps the writer coming back. LAVA Floors played one track at the same pace
+in the lobby and in every phase.
+
+**Built.** In LavaFloorsUI, a small loop reads the round phase from the tower (`LavaGrid.Phase`) every half second.
+The music eases (1.5 s tween) to 5% faster per lava phase (1.00, 1.05, 1.10) and from volume 0.22 to 0.30 in the
+final phase. It eases back to normal when the round is over. Because the tower stays up after an early ending
+(everyone out, or a winner before the last phase), it also listens to `LavaState` and treats any phase other than
+"Round" as over. No new sounds or assets. The 🎵 mute button still pauses it.
+
+**Verified.** Studio solo playtest over three rounds, sampling the music every 0.25 s with the survival driver on.
+Rounds 1 and 2 ended early in phase 1: the music went 1.00 → 1.05 and then eased back to 1.00 / 0.22 within a
+second of the round ending. In round 3 the player was crowned: the music went 1.00 → 1.05 → 1.10, with volume rising
+to 0.30 in the final phase, and eased back to 1.00 / 0.22 after the crown. The console was clean apart from Studio's
+usual DataStore notice. Repo and Studio script hashes matched (43,022 bytes).
+
 ## 48. Pick your victory emote
 
 **Why.** In party games, players love choosing how they celebrate a win (Fall Guys celebrations, Stumble Guys

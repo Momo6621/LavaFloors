@@ -845,8 +845,45 @@ Icon.new()
 
 local music = make("Sound", { Name = "LavaFloorsMusic", SoundId = "rbxassetid://1837768107", Looped = true, Volume = 0.22 }, game:GetService("SoundService"))
 music:Play()
+-- The music builds with the round: a little faster each lava phase and a bit louder in the last one, then back to
+-- normal in the lobby. Everyone hears it, climbers and watchers alike.
+do
+	local Grid = require(RS:WaitForChild("LavaGrid")) :: any
+	local TweenService = game:GetService("TweenService")
+	local BASE_VOLUME, FINAL_VOLUME, SPEED_STEP = 0.22, 0.3, 0.05
+	local lastPhase = -2
+	local roundPhase: string? = nil -- from LavaState; a round can end early (everyone out) while the tower stays up
+	event.OnClientEvent:Connect(function(kind: string, v: any)
+		if kind == "LavaState" and type(v) == "table" and type(v.Phase) == "string" then
+			roundPhase = v.Phase
+		end
+	end)
+	task.spawn(function()
+		while true do
+			local floors = workspace:FindFirstChild("SkySprout") and workspace.SkySprout:FindFirstChild("Floors")
+			local arena = floors and floors:FindFirstChild("Floor_1") and floors.Floor_1:FindFirstChild("LavaRush")
+			local tower = arena and arena:FindFirstChild("LavaRushTower")
+			local phase = if tower then Grid.Phase(tower, workspace:GetServerTimeNow()) else -1
+			local phases = tower and tonumber(tower:GetAttribute("Phases")) or 0
+			if phase >= phases or (roundPhase ~= nil and roundPhase ~= "Round") then
+				phase = -1 -- the round is over
+			end
+			if phase ~= lastPhase then
+				lastPhase = phase
+				local final = phase >= 0 and phase == phases - 1
+				local goal = {
+					PlaybackSpeed = if phase >= 0 then 1 + SPEED_STEP * phase else 1,
+					Volume = if final then FINAL_VOLUME else BASE_VOLUME,
+				}
+				TweenService:Create(music, TweenInfo.new(1.5), goal):Play()
+				music:SetAttribute("Phase", phase)
+			end
+			task.wait(0.5)
+		end
+	end)
+end
 -- Emotes: six free emotes (Roblox's own default animations) from a top bar button, so kids can wave, cheer and
--- dance without typing. Dances loop until you move; winning the crown plays a cheer automatically.
+-- dance without typing. Dances loop until you move; winning the crown plays your victory emote.
 local EMOTES = {
 	{ Icon = "👋", Name = "Wave", Id = "rbxassetid://507770239", Loop = false },
 	{ Icon = "🙌", Name = "Cheer", Id = "rbxassetid://507770677", Loop = false },
