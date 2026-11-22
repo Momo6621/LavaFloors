@@ -1035,13 +1035,14 @@ Icon.new()
 
 local musicIcon = Icon.new():setName("Music"):setLabel("🎵"):align("Right"):oneClick():modifyTheme(pill(Color3.fromRGB(150, 90, 255)))
 -- Your choice is saved with your profile (the "MusicOff" attribute), so 🔇 stays off the next time you join.
+local musicWords = false -- true inside the ☰ dropdown on narrow screens, where there's room for words
 local function setMusic(on: boolean)
 	if on and not music.Playing then
 		music:Resume()
 	elseif not on and music.Playing then
 		music:Pause()
 	end
-	musicIcon:setLabel(if on then "🎵" else "🔇")
+	musicIcon:setLabel(if on then (if musicWords then "🎵 Music on" else "🎵") else (if musicWords then "🔇 Music off" else "🔇"))
 end
 musicIcon:bindEvent("selected", function()
 	local on = not music.Playing
@@ -1056,6 +1057,32 @@ local function applySavedMusic()
 end
 applySavedMusic()
 player:GetAttributeChangedSignal("MusicOff"):Connect(applySavedMusic)
+
+-- Phones and small tablets: Roblox's own buttons take the first ~216 px, so not every button fits. Below MORE_WIDTH the
+-- extras (Pass, VIP, the event pill, Invite, Music) go into one ☰ dropdown; the play buttons (Lava Rush, 👀 Watch),
+-- Gloves, Challenges, Emotes and the server goal stay on the bar. Measured to fit a 666 px iPhone 7.
+local MORE_WIDTH = 900
+UI.isCompact() -- waits for the real viewport size
+if workspace.CurrentCamera.ViewportSize.X < MORE_WIDTH then
+	local extras = {}
+	for _, name in { "LavaPass", "Vip", "Event", "Invite", "Music" } do
+		local icon = Icon.getIcon(name)
+		if icon then
+			table.insert(extras, icon)
+		end
+	end
+	Icon.new():setName("More"):setLabel("☰"):align("Left"):setCaption("Pass, VIP, invite and music"):modifyTheme(pill(Color3.fromRGB(120, 110, 140))):setDropdown(extras)
+	-- The dropdown has room for words, so its items say what they are.
+	local words = { LavaPass = "🎟️ Lava Pass", Vip = "⭐ VIP", Invite = "👥 Invite +" .. tostring(FRIEND_DEAL.InviteCoins) .. "💰" }
+	for name, text in words do
+		local icon = Icon.getIcon(name)
+		if icon then
+			icon:setLabel(text)
+		end
+	end
+	musicWords = true
+	setMusic(music.Playing)
+end
 
 local function shove()
 	event:FireServer("Punch")

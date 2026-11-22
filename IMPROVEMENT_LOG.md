@@ -3,6 +3,31 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 55. Phones: a ☰ menu instead of two overflow menus
+
+**Why.** The follow-up to #54. Device Simulator on an iPhone 7 (666 × 374) showed both halves of the top bar folded
+into TopbarPlus overflow menus: Gloves, Pass, VIP, Challenges and the server goal on the left, and Music, Emotes,
+Invite and 👀 Watch on the right. Kids on hand-me-down phones had to hunt through two "…" menus for the Lava Rush and
+Watch buttons. Roblox's own buttons take the first 216 px, which leaves room for about 8 of our icons, but up to 10 can
+show at once.
+
+**Built.** Below 900 px wide, a grey ☰ button joins the left of the bar with a TopbarPlus dropdown holding the extras:
+🎟️ Lava Pass, ⭐ VIP, the event pill (only during an event), 👥 Invite +150💰 and 🎵 Music on/off. The dropdown has room,
+so its items get full words. Gloves, Challenges, the server goal, Lava Rush, 👀 Watch and Emotes stay on the bar.
+Wider screens are unchanged.
+
+**Verified.** Studio Device Simulator, solo play only (VALORANT was open on the main screen, so no multiplayer test
+windows were opened):
+- **iPhone 7:** 370 samples over 100 s and several rounds, with no overflow menu on either side. The busiest moment
+  (🔥 Go!, 👀 and 😀 on the right) left an 11 px gap.
+- **Dropdown:** a real tap on ☰ opened it with "🎟️ Lava Pass, ⭐ VIP, 👥 Invite +150💰, 🎵 Music on"
+  (Media/phone-more-menu.jpg). A real tap on Music inside it paused the music, saved `MusicOff=true` and changed the
+  label to "🔇 Music off".
+- **Fire HD 10 (959 × 599), no menu:** 369 samples with no overflow, and at least 140 px spare.
+- **Wrap-up:** consoles clean, repo and Studio hashes matched, and Studio was reset to the default viewport.
+- **Not tested:** the event pill inside the dropdown (no event was running), and portrait (the game is
+  landscape-only).
+
 ## 54. Top bar fits on mid-size screens (no more overflow menus)
 
 **Why.** Iteration 53 showed that at 1130 px wide, the right-hand top bar folded into TopbarPlus's overflow menu
