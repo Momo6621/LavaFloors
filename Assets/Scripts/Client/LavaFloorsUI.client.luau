@@ -109,6 +109,8 @@ end
 -- the panel. Spending (or Roblox's Reduce Motion setting) just sets the number.
 local shownCoins: number? = nil
 local coinCount = 0 -- the latest count-up; an older one stops when a newer gain arrives
+-- A short, quiet ping with each gain (a sound that ships with Roblox, pitched up a little).
+local coinSound: Sound = make("Sound", { Name = "CoinPing", SoundId = "rbxasset://sounds/electronicpingshort.wav", Volume = 0.3, PlaybackSpeed = 1.3 }, script)
 local function calmMotion(): boolean
 	local ok, on = pcall(function()
 		return (game:GetService("GuiService") :: any).ReducedMotionEnabled
@@ -120,6 +122,9 @@ local function showCoins()
 	local from = shownCoins
 	shownCoins = target
 	coinCount += 1
+	if from ~= nil and target > from then
+		coinSound:Play()
+	end
 	if from == nil or target <= from or calmMotion() then
 		coinsText.Text = tostring(target)
 		return

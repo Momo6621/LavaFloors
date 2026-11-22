@@ -3,6 +3,19 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 69. A coin ping with each gain
+
+**Why.** It completes #68: kids' Roblox games pair the count-up and bounce with a sound, so a gain registers even
+when you aren't looking at the corner of the screen.
+
+**Built.** A short, quiet ping plays once with each coin gain (not when spending). It's Roblox's own
+`rbxasset://sounds/electronicpingshort.wav` (0.7 s), so nothing is uploaded, at volume 0.3 and pitch 1.3. It plays
+whether or not Reduce Motion is on, since that setting is about movement. Client only.
+
+**Verified.** Studio solo playtest (VALORANT open, so no extra windows): the sound loaded, and when the +14 payout
+arrived (25 → 39) its Played event fired exactly once. The console was clean, and repo and Studio hashes matched (52,907
+bytes). The loudness hasn't been heard by a person yet; it's `Volume = 0.3` in LavaFloorsUI if it needs a nudge.
+
 ## 68. Juicy coin counter
 
 **Why.** Continuing the owner's "make it pop for kids". Simulator-style Roblox games celebrate every coin gain
