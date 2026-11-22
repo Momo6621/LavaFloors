@@ -201,6 +201,9 @@ local CFG = {
 	JumpTime = 7,
 	EmberBag = 3,
 
+	-- The emote your avatar plays when you win a round (picked in the 😀 Emotes panel, saved with your profile).
+	WinEmotes = { "Wave", "Cheer", "Laugh", "Point", "Dance", "Groove" },
+
 	-- Titles shown over your head. Crown titles unlock with total crowns; the others with another achievement (Need).
 	-- Players pick which unlocked title to show (the 🏷️ button in the Challenges panel); "Auto" shows the best crown
 	-- title, as before.
@@ -4416,6 +4419,15 @@ function L.HandleAction(p: Player, action: unknown, _value: unknown): boolean
 		end
 		return true
 	end
+	if action == "LavaWinEmote" then
+		-- Pick the emote played when you win: one of CFG.WinEmotes (all free).
+		local d = data(p)
+		if d and type(_value) == "string" and table.find(CFG.WinEmotes, _value) then
+			d.WinEmote = _value
+			p:SetAttribute("WinEmote", _value)
+		end
+		return true
+	end
 	if action == "LavaTitle" then
 		-- Pick which title to show: "Auto", "None" or the Id of a title this player has unlocked.
 		local d = data(p)
@@ -5002,6 +5014,7 @@ function L.Start(arena: any, remote: RemoteEvent, stats: (Player) -> (), notice:
 				pushChallenges(p)
 				p:SetAttribute("Tutorial", d.TutorialDone ~= true) -- first-round coach cards for new players
 				p:SetAttribute("BestHeight", tonumber(d.BestHeight) or 0) -- the 🏅 marker on the climb meter
+				p:SetAttribute("WinEmote", table.find(CFG.WinEmotes, d.WinEmote) and d.WinEmote or "Cheer")
 				logOnboarding(p, 1, "Joined")
 			end
 		end)
@@ -5013,6 +5026,7 @@ function L.Start(arena: any, remote: RemoteEvent, stats: (Player) -> (), notice:
 				pushChallenges(p)
 				p:SetAttribute("Tutorial", d.TutorialDone ~= true)
 				p:SetAttribute("BestHeight", tonumber(d.BestHeight) or 0)
+				p:SetAttribute("WinEmote", table.find(CFG.WinEmotes, d.WinEmote) and d.WinEmote or "Cheer")
 			end
 		end)
 	end

@@ -78,6 +78,8 @@ Progression and live-ops:
   total crowns; 🔶 Gem Hunter (every lava gem), 🎁 Chest Cracker (5 Lava Chests) and 🍓 Kind Climber (5 strawberry
   gifts) unlock with other achievements. The 🏷️ button in the Challenges panel picks which unlocked title to show
   (or Auto for the best crown title, or none). Saved as `Title` in the profile.
+- Victory emote: the 🏆 "When I win" button in the 😀 Emotes panel cycles through the six free emotes and previews
+  each one; your pick plays when you're crowned (Cheer by default). Saved as `WinEmote` (CFG.WinEmotes).
 - Lava Chest: every round fills a bar on the result card (12 for playing, up to 30 for height, +15 survive, +30 crown).
   At 215 it opens for 100 coins; every 5th chest gives 300. The card always says how close the next chest is
   ("one more round to the chest!"). Fixed coins, nothing random or paid. Numbers are `Chest*` in CFG.

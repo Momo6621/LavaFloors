@@ -3,6 +3,21 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 48. Pick your victory emote
+
+**Why.** In party games, players love choosing how they celebrate a win (Fall Guys celebrations, Stumble Guys
+emotes), and it costs nothing to make that choice free. LAVA Floors always played the same Cheer when you were crowned.
+
+**Built.** A gold 🏆 "When I win: 🙌 Cheer" button at the bottom of the 😀 Emotes panel. Each tap moves to the next of
+the six free emotes and plays a quick preview. The server checks the name against `CFG.WinEmotes`, saves it as
+`WinEmote` in the profile (cleaned in SkySproutRules) and mirrors it in the `WinEmote` player attribute. When you're
+crowned, your pick plays (looped dances keep going until you move). The panel is now named `EmotePanel`.
+
+**Verified.** Studio solo playtest: the attribute started at Cheer; three instance-path taps on the button cycled it
+to Dance (Laugh → Point → Dance) and the label followed. The survival driver kept the player alive until crowned (22 s),
+and the playing Action track was the looped Dance (507771019). The server ignored "Hacker" and a number, then took
+"Wave". The console was clean, apart from Studio's usual DataStore notice. Repo and Studio script hashes matched.
+
 ## 47. Smoke test: every twist for a full round (no change needed)
 
 **Why.** Before launch, every round twist should run cleanly at least once with the current code. Several only get

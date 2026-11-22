@@ -887,13 +887,43 @@ game:GetService("RunService").Heartbeat:Connect(function()
 		emoteTrack = nil
 	end
 end)
-local emotePanel = make("Frame", { AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -96), Size = UDim2.fromOffset(312, 132), BackgroundColor3 = CREAM, Visible = false }, gui)
+local emotePanel = make("Frame", { Name = "EmotePanel", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -96), Size = UDim2.fromOffset(312, 178), BackgroundColor3 = CREAM, Visible = false }, gui)
 corner(emotePanel, 18)
 outline(emotePanel, 2)
 make("UIPadding", { PaddingTop = UDim.new(0, 10), PaddingBottom = UDim.new(0, 10), PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10) }, emotePanel)
-make("UIGridLayout", { CellSize = UDim2.new(1 / 3, -8, 0.5, -5), CellPadding = UDim2.fromOffset(8, 8), SortOrder = Enum.SortOrder.LayoutOrder }, emotePanel)
+local emoteGrid = make("Frame", { Name = "Grid", Size = UDim2.new(1, 0, 1, -46), BackgroundTransparency = 1 }, emotePanel)
+make("UIGridLayout", { CellSize = UDim2.new(1 / 3, -8, 0.5, -5), CellPadding = UDim2.fromOffset(8, 8), SortOrder = Enum.SortOrder.LayoutOrder }, emoteGrid)
+-- Victory emote: the server saves your pick (the "WinEmote" attribute); a tap cycles to the next one and previews it.
+local function winEmote()
+	local name = player:GetAttribute("WinEmote")
+	for _, e in EMOTES do
+		if e.Name == name then
+			return e
+		end
+	end
+	return EMOTES[2] -- Cheer, the default
+end
+local winButton = button(emotePanel, "", GOLD, UDim2.new(1, 0, 0, 38))
+winButton.Name = "WinEmote"
+winButton.AnchorPoint = Vector2.new(0, 1)
+winButton.Position = UDim2.fromScale(0, 1)
+winButton.TextScaled = true
+make("UITextSizeConstraint", { MaxTextSize = 18 }, winButton)
+local function refreshWin()
+	local e = winEmote()
+	winButton.Text = "🏆 When I win: " .. e.Icon .. " " .. e.Name
+end
+refreshWin()
+player:GetAttributeChangedSignal("WinEmote"):Connect(refreshWin)
+winButton.Activated:Connect(function()
+	local index = table.find(EMOTES, winEmote()) or 2
+	local nextOne = EMOTES[index % #EMOTES + 1]
+	event:FireServer("LavaWinEmote", nextOne.Name)
+	winButton.Text = "🏆 When I win: " .. nextOne.Icon .. " " .. nextOne.Name
+	playEmote(nextOne.Id, false) -- a quick preview
+end)
 for i, e in EMOTES do
-	local b = button(emotePanel, e.Icon .. " " .. e.Name, ORANGE, UDim2.new())
+	local b = button(emoteGrid, e.Icon .. " " .. e.Name, ORANGE, UDim2.new())
 	b.LayoutOrder = i
 	b.TextScaled = true
 	make("UITextSizeConstraint", { MaxTextSize = 18 }, b)
@@ -1007,7 +1037,8 @@ event.OnClientEvent:Connect(function(kind: string, v: any)
 	if kind == "Notice" and type(v) == "string" then
 		notify(v)
 	elseif kind == "LavaFX" and type(v) == "table" and v.Kind == "Crown" and v.Mine then
-		task.delay(0.3, playEmote, EMOTES[2].Id, false) -- you won: cheer!
+		local e = winEmote()
+		task.delay(0.3, playEmote, e.Id, e.Loop) -- you won: your victory emote
 	end
 end)
 event:FireServer("Sync")
