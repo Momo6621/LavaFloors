@@ -3,6 +3,19 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 74. Lint: the 200-local limit (tools/check_locals.py)
+
+**Why.** The one fix for the mistake in #73: Luau gives a script's main body at most 200 registers, and going over
+makes the whole script fail to compile, which `check_luau.py` can't see.
+
+**Built.** `python -I tools/check_locals.py` counts the top-level locals (plus the biggest top-level `do` block)
+alive at each point of every script and fails at 163. It undercounts real registers (temporaries, loop variables),
+so the limit is calibrated on the lava client: it compiled at 162 and failed at 163. Run it with `check_luau.py`
+before every sync.
+
+**Verified.** Passes on the repo (0 files). On a copy of the lava client rebuilt the way it broke in #73 it reports
+167 and exits 1. The lava client is at 162, one local from breaking: freeing headroom there is a separate change.
+
 ## 73. Forgiving jumps (coyote time and a jump buffer)
 
 **Why.** Floor-is-lava listings and DevForum/itch.io feedback on similar games keep coming back to movement: players
