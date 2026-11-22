@@ -155,6 +155,9 @@ edit the script.)
 The island itself (terrain, palms, flower bushes, tiki torches and clouds) is regular scenery saved in the place:
 `Floor_1.IslandDecor`, with the source models in `ServerStorage.IslandAssets`.
 
+Before syncing scripts, `python tools/check_luau.py` flags lines that start with `(` right after a callable
+expression. Luau refuses to load those ("Ambiguous syntax"), which once stopped the whole lava service.
+
 To work on the scripts from the repo, serve them with [Rojo](https://rojo.space):
 
 ```
