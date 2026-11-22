@@ -28,8 +28,10 @@ Not changed: TopbarPlus labels (they use TopbarPlus's own font) and the older sh
 SkySproutClient.
 
 **Privacy.** The winner banner shows the tester's Roblox username, so the name is now blurred in
-Media/font-luckiest.jpg, Media/result-card-icons.jpg and Media/phone-result-card.jpg (the last two were committed
-unblurred earlier and are still in git history).
+Media/font-luckiest.jpg, Media/result-card-icons.jpg and Media/phone-result-card.jpg. The last two had been committed
+unblurred, so, with the owner's OK, git history was rewritten (filter-branch over the six affected commits, so every
+version is the blurred one) and force-pushed. The final files are identical, and the commit hashes from "Result card
+readable on phones" onward changed.
 
 ## 60. HUD and result card icons, bigger text (icon refresh, part 3)
 
