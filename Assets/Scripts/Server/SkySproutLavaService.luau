@@ -1922,6 +1922,54 @@ local function setJump(hum: Humanoid, power: number)
 	end
 end
 
+-- Pickup tag: a bold word in a coloured pill floating over a pickup (the 3D fruit under it is the picture). Replaces
+-- the emoji billboards, which rendered small and muddy in the arena.
+local function pickupTag(parent: BasePart, text: string, color: Color3, maxDistance: number)
+	local tag = Instance.new("BillboardGui")
+	tag.Name = "PickupTag"
+	tag.Size = UDim2.fromOffset(112, 34)
+	tag.StudsOffset = Vector3.new(0, 2.8, 0)
+	tag.MaxDistance = maxDistance
+	tag.LightInfluence = 0
+	tag.AlwaysOnTop = false
+	tag.Parent = parent
+	local pill = Instance.new("Frame")
+	pill.Name = "Pill"
+	pill.AnchorPoint = Vector2.new(0.5, 0.5)
+	pill.Position = UDim2.fromScale(0.5, 0.5)
+	pill.Size = UDim2.new(0, 0, 1, -6)
+	pill.AutomaticSize = Enum.AutomaticSize.X
+	pill.BackgroundColor3 = color
+	pill.Parent = tag
+	local word = Instance.new("TextLabel")
+	word.Name = "Word"
+	word.BackgroundTransparency = 1
+	word.Size = UDim2.fromScale(0, 1)
+	word.AutomaticSize = Enum.AutomaticSize.X
+	word.Font = Enum.Font.FredokaOne
+	word.Text = text
+	word.TextSize = 20
+	word.TextColor3 = Color3.new(1, 1, 1)
+	word.Parent = pill
+	local pad = Instance.new("UIPadding")
+	pad.PaddingLeft = UDim.new(0, 10)
+	pad.PaddingRight = UDim.new(0, 10)
+	pad.Parent = pill
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(1, 0)
+	corner.Parent = pill
+	local rim = Instance.new("UIStroke")
+	rim.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	rim.Color = Color3.new(1, 1, 1)
+	rim.Thickness = 2.5
+	rim.Parent = pill
+	local ink = Instance.new("UIStroke")
+	ink.Color = color:Lerp(Color3.new(0, 0, 0), 0.6)
+	ink.Thickness = 2
+	ink.Parent = word
+	return tag
+end
+
 local function makeShield(parent: Instance, position: Vector3, stepIndex: number)
 	local orb = part(parent, "ShieldOrb", Vector3.new(3.4, 3.4, 3.4), CFrame.new(position), Color3.fromRGB(90, 190, 255), Enum.Material.SmoothPlastic)
 	orb.Shape = Enum.PartType.Ball
@@ -1941,17 +1989,7 @@ local function makeShield(parent: Instance, position: Vector3, stepIndex: number
 	ring.CanCollide = false
 	ring.CanQuery = false
 	ring.CanTouch = false
-	local icon = Instance.new("BillboardGui")
-	icon.Size = UDim2.fromOffset(44, 44)
-	icon.StudsOffset = Vector3.new(0, 2.6, 0)
-	icon.MaxDistance = 90
-	icon.Parent = orb
-	local emoji = Instance.new("TextLabel")
-	emoji.BackgroundTransparency = 1
-	emoji.Size = UDim2.fromScale(1, 1)
-	emoji.TextScaled = true
-	emoji.Text = "🛡️"
-	emoji.Parent = icon
+	pickupTag(orb, "SHIELD", Color3.fromRGB(40, 140, 255), 90)
 	local glow = Instance.new("PointLight")
 	glow.Color = orb.Color
 	glow.Range = 12
@@ -1972,13 +2010,13 @@ local function makeShield(parent: Instance, position: Vector3, stepIndex: number
 	})
 end
 
-type Boost = { Id: string, Name: string, Icon: string, Color: Color3, Weight: number, Fruit: string }
+type Boost = { Id: string, Name: string, Icon: string, Tag: string, Color: Color3, Weight: number, Fruit: string }
 local BOOSTS: { Boost } = {
-	{ Id = "Speed", Name = "⚡ Speed Boost", Icon = "⚡", Color = Color3.fromRGB(255, 225, 60), Weight = 3, Fruit = "Banana" },
-	{ Id = "Jump", Name = "🦘 Super Jump", Icon = "🦘", Color = Color3.fromRGB(255, 120, 210), Weight = 3, Fruit = "Pineapple" },
-	{ Id = "Shield", Name = "🛡️ Shield", Icon = "🛡️", Color = Color3.fromRGB(90, 190, 255), Weight = 2, Fruit = "Blueberry" },
-	{ Id = "Rescue", Name = "🪂 Rescue", Icon = "🪂", Color = Color3.fromRGB(150, 230, 255), Weight = 2, Fruit = "Coconut" },
-	{ Id = "Embers", Name = "🔥 Ember Bag", Icon = "🔥", Color = Color3.fromRGB(255, 170, 60), Weight = 2, Fruit = "Watermelon" },
+	{ Id = "Speed", Name = "⚡ Speed Boost", Icon = "⚡", Tag = "SPEED", Color = Color3.fromRGB(255, 225, 60), Weight = 3, Fruit = "Banana" },
+	{ Id = "Jump", Name = "🦘 Super Jump", Icon = "🦘", Tag = "JUMP", Color = Color3.fromRGB(255, 120, 210), Weight = 3, Fruit = "Pineapple" },
+	{ Id = "Shield", Name = "🛡️ Shield", Icon = "🛡️", Tag = "SHIELD", Color = Color3.fromRGB(90, 190, 255), Weight = 2, Fruit = "Blueberry" },
+	{ Id = "Rescue", Name = "🪂 Rescue", Icon = "🪂", Tag = "RESCUE", Color = Color3.fromRGB(150, 230, 255), Weight = 2, Fruit = "Coconut" },
+	{ Id = "Embers", Name = "🔥 Ember Bag", Icon = "🔥", Tag = "BERRIES", Color = Color3.fromRGB(255, 170, 60), Weight = 2, Fruit = "Watermelon" },
 }
 local drops: { Model } = {}
 
@@ -2132,17 +2170,7 @@ local function spawnDrop()
 	-- Clients pop it in with a bright flash (no parachute).
 	crate:SetAttribute("SpawnFlash", true)
 	crate:SetAttribute("FlashColor", boost.Color)
-	local icon = Instance.new("BillboardGui")
-	icon.Size = UDim2.fromOffset(52, 52)
-	icon.StudsOffset = Vector3.new(0, 2.6, 0)
-	icon.MaxDistance = 140
-	icon.Parent = crate
-	local emoji = Instance.new("TextLabel")
-	emoji.BackgroundTransparency = 1
-	emoji.Size = UDim2.fromScale(1, 1)
-	emoji.TextScaled = true
-	emoji.Text = boost.Icon
-	emoji.Parent = icon
+	pickupTag(crate, boost.Tag, boost.Color:Lerp(Color3.new(0, 0, 0), 0.25), 140)
 	local glow = Instance.new("PointLight")
 	glow.Color = boost.Color
 	glow.Range = 14

@@ -231,3 +231,5 @@ One (SIL Open Font License, shipped with Roblox Studio). `tools/compose_store_ar
 - Volcano and peak models from the Roblox Creator Store.
 - Fruit models were made with Roblox Studio's built-in mesh generator. They live in the place file under
   `ReplicatedStorage.FruitModels`.
+- Icons from the free "Flibpook Icons Pack" by Digital Gaming Studio (MadeByTheBacon) on the Roblox Creator Store
+  (free to use, credit appreciated, not for resale).

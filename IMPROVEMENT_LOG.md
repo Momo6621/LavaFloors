@@ -3,6 +3,30 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 57. Clean word tags over the shield and fruit pickups (icon refresh, part 1)
+
+**Why.** Owner feedback (2026-11-22): the shield and fruit look ugly, and so do the icons in general. The shield orbs and
+supply drops are already the game's own 3D fruit (a blueberry inside the shield bubble; banana, pineapple, blueberry,
+coconut or watermelon in a drop). What looked bad was the emoji floating over them (🛡️ ⚡ 🦘 🪂 🔥): small, flat and
+muddy against the arena's neon. A comparison board (Media/icon-options.jpg) put today's emoji next to a free icon pack
+(Flibpook, by Digital Gaming Studio: free to use, credit appreciated, no reselling) and the game's 3D fruit. The owner
+said to go ahead with it.
+
+**Built.** `pickupTag()` in SkySproutLavaService: a bold Fredoka word in a rounded pill of the pickup's colour, with a white
+rim and a dark text outline. The shield orb says SHIELD and drops say SPEED, JUMP, SHIELD, RESCUE or BERRIES (new `Tag`
+field on each boost). The fruit underneath stays the picture. The emoji billboards are gone.
+
+Also during this step: a second free pack from the Creator Store ("Simulator Icon Pack") hid a script inside a
+UIStroke (`PoseTexture` / `TextureConfiguration`), a common Toolbox backdoor pattern. It was only ever inserted
+sandboxed into ServerStorage, where scripts don't run. It was deleted at once and nothing of it is left in the place.
+
+**Verified.** Studio solo playtest (VALORANT open, so no extra windows): during a Shield Party round the server found
+the PickupTag billboards (SHIELD on orbs, JUMP on a drop). The screenshot (Media/pickup-tags.jpg) shows crisp blue
+SHIELD pills over the 3D blueberries. The console was clean, and repo and Studio hashes matched.
+
+**Next.** Part 2 is the top bar (Flibpook images: shop, crown, checkmark, heart, sound on/off, gear). Part 3 is the
+HUD, result card and floating texts.
+
 ## 56. Result card readable on phones
 
 **Why.** #50 left one check open: a four-line result card (height, berries, best, streak) shrinks its TextScaled text.
