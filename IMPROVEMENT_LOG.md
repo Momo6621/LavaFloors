@@ -3,7 +3,7 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
-## 44. "Having fun?" check (in progress)
+## 44. "Having fun?" check
 
 **Why.** Every iteration so far has been steered by outside research. Once the game is live, players' own answers
 should steer it. Roblox analytics custom events are server-only and record nothing in Studio
@@ -16,11 +16,14 @@ should steer it. Roblox analytics custom events are server-only and record nothi
 - The server accepts one answer (1–3), only after it asked, and logs `FunRating` with CustomField01 "Twist - <id>",
   so the dashboard can show which twists kids enjoy. The player gets a 💛 thank-you notice.
 
-**Verified so far.** Solo Studio play test: the strip appeared on the 3rd result (screenshot), under the result card
-with no overlap. Studio matches the repo by chunk hash; place saved as version 74.
-
-**Not verified yet (paused here).** The click and the server's `[fun]` log line: the card closed before the test's
-click arrived. Next step: restart play, then click the moment the strip appears.
+**Verified.** Solo Studio play tests:
+- The strip appeared on the 3rd result (screenshot), under the result card with no overlap.
+- In a fresh session, a real click on 😀 turned the strip into "💛 Thanks!". The server printed "[fun] … rated 3 after
+  a Duos round", and a `LogCustomEvent` fired just before it.
+- A second answer sent straight to the server was ignored (no new line).
+- Studio matches the repo by chunk hash; place saved as version 74.
+- The first test's click arrived after the 8 s card had closed; the test was redone with an immediate click. Real
+  dashboard data only appears once the game is published.
 
 ## 43. 📸 Share your escape
 
