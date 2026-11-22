@@ -345,6 +345,7 @@ local L = {
 	Predictions = {} :: { [Player]: string }, -- knocked-out players' free "pick the winner" guesses this round
 	Gifted = {} :: { [Player]: boolean }, -- players who already sent their strawberry gift this round
 	SessionRounds = setmetatable({}, { __mode = "k" }) :: any, -- [Player] = rounds finished this session
+	Streak = setmetatable({}, { __mode = "k" }) :: any, -- [Player] = rounds survived in a row this session
 	FunAsked = setmetatable({}, { __mode = "k" }) :: any, -- [Player] = twist Id while "Having fun?" is open, true once answered
 	LastCheer = setmetatable({}, { __mode = "k" }) :: any, -- [Player] = time of their last cheer (rate limit)
 	LossStreak = setmetatable({}, { __mode = "k" }) :: any, -- [Player] = rounds in a row knocked out (this server)
@@ -3128,12 +3129,17 @@ local function payout()
 			end
 			pushStats(p)
 			L.SessionRounds[p] = (L.SessionRounds[p] or 0) + 1
+			-- Survival streak: rounds in a row you survived or escaped (this visit only; just for show, no coins).
+			local streakWas = L.Streak[p] or 0
+			L.Streak[p] = if r.crowned or r.alive then streakWas + 1 else 0
 			local askFun = L.SessionRounds[p] == CFG.FunAskAfter and L.FunAsked[p] == nil
 			if askFun then
 				L.FunAsked[p] = L.Mutator.Id -- the twist this answer is about
 			end
 			event:FireClient(p, "LavaResult", {
 				AskFun = askFun,
+				Streak = L.Streak[p],
+				StreakWas = streakWas,
 				Outcome = if r.crowned then "CROWNED" elseif r.alive then "SURVIVED" else "SCORCHED",
 				Height = height,
 				Best = tonumber(d.BestHeight) or height,

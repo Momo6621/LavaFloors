@@ -1103,7 +1103,11 @@ event.OnClientEvent:Connect(function(kind: string, v: any)
 			elseif v.NewBest then "\n🏅 First best: " .. tostring(v.Height) .. ". Beat it next round!"
 			elseif type(v.Best) == "number" then string.format("\nYour best: %d", v.Best)
 			else ""
-		resultBody.Text = string.format("Height %d  •  +%d coins%s%s%s%s", v.Height, v.Coins, if v.Boosted then " (2x)" else "", if v.Friends then " 👥+25%" else "", emberLine, bestLine)
+		local streak, streakWas = tonumber(v.Streak) or 0, tonumber(v.StreakWas) or 0
+		local streakLine = if streak >= 2 then string.format("\n🔥 %d rounds in a row!", streak)
+			elseif streak == 0 and streakWas >= 2 then string.format("\nYour streak: %d in a row. Start a new one!", streakWas)
+			else ""
+		resultBody.Text = string.format("Height %d  •  +%d coins%s%s%s%s%s", v.Height, v.Coins, if v.Boosted then " (2x)" else "", if v.Friends then " 👥+25%" else "", emberLine, bestLine, streakLine)
 		if v.NewBest and (tonumber(v.PrevBest) or 0) > 0 then
 			play("Crown", 1.2)
 		end

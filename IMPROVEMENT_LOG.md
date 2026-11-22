@@ -3,6 +3,24 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 50. 🔥 Survival streak on the result card
+
+**Why.** Write-ups of Roblox's floor-is-lava games say that you're back in the lobby within seconds, so you can play
+20 or 30 rounds in one sitting. They credit survival counters, leaderboards and "see who made it the farthest" with
+the replay value (earnaldo.com, The Floor Is Lava vs Natural Disaster Survival, 2026; Sportskeeda beginner's guide).
+LAVA Floors tracks your best height and crowns, but nothing rewards stringing good rounds together.
+
+**Built.** The server counts rounds you survived or escaped in a row (`L.Streak`, this visit only) and sends `Streak` and
+`StreakWas` with `LavaResult`. From 2 in a row, the result card adds "🔥 N rounds in a row!". When a streak of 2+
+ends, it says "Your streak: N in a row. Start a new one!", an encouraging line rather than a loss. It's just for show:
+no coins and nothing saved, so it adds no pressure to keep playing.
+
+**Verified.** Studio solo playtest with the survival driver: round 1 crowned (streak 1, no line), round 2 crowned
+("🔥 2 rounds in a row!"), then the driver stopped, and round 3 scorched ("Your streak: 2 in a row. Start a new one!").
+I read the card text from the live ResultCard. The console was clean apart from Studio's usual DataStore notice. Repo
+and Studio hashes matched for both scripts. Not checked by eye: a card with four lines (height, embers, best, streak) shrinks its
+TextScaled text a little.
+
 ## 49. Music that builds with the round
 
 **Why.** Fans single out how Fall Guys' final-round music shifts into a more intense section as the pressure mounts
