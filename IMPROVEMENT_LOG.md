@@ -3,6 +3,24 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 68. Juicy coin counter
+
+**Why.** Continuing the owner's "make it pop for kids". Simulator-style Roblox games celebrate every coin gain
+(count-up numbers, bouncing icons, floating "+N"), and kids notice it. LAVA Floors' coins panel just swapped the
+number.
+
+**Built.** When coins go up (round payout, daily reward, chest, challenge or gift):
+- the number on the coins panel counts up over 0.6 s;
+- the coin picture bounces (1.35 → 1, Back easing);
+- a gold "+N" with the dark outline appears beside the panel, then drifts up and fades over 1 s.
+
+Spending coins, or Roblox's Reduce Motion setting, just sets the number. A newer gain takes over from a count-up
+that's still running. Client only.
+
+**Verified.** Studio solo playtest (VALORANT open, so no extra windows), sampling the coins label every frame around a
++14 round payout. The label went 25 → 26 → … → 38 → 39, the coin's UIScale peaked at 1.35, and a "+14" float was
+created and had faded to transparent by the end. The console was clean, and repo and Studio hashes matched (52,591 bytes).
+
 ## 67. Coin icon on the daily reward card and the Lava Pass
 
 **Why.** These were the last two panels with 💰 emoji. A preview (Media/daily-pass-coin-preview.jpg) got "Yes, both".

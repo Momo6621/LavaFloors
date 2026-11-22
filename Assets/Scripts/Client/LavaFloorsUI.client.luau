@@ -91,7 +91,8 @@ local chip = make("Frame", { Position = UDim2.fromOffset(12, 8), Size = UDim2.fr
 corner(chip, 16)
 outline(chip, 3)
 -- Coin and crown pictures from the Flibpook pack (LavaIcons), numbers a size up from the old emoji chip.
-make("ImageLabel", { Name = "CoinIcon", BackgroundTransparency = 1, Image = Icons.Coin, AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 10, 0.5, 0), Size = UDim2.fromOffset(32, 32) }, chip)
+local coinIcon: ImageLabel = make("ImageLabel", { Name = "CoinIcon", BackgroundTransparency = 1, Image = Icons.Coin, AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 10, 0.5, 0), Size = UDim2.fromOffset(32, 32) }, chip)
+local coinBounce: UIScale = make("UIScale", {}, coinIcon)
 local coinsText = label(chip, "0", 30, UI.Gold)
 coinsText.Position = UDim2.fromOffset(46, 0)
 coinsText.Size = UDim2.new(0.6, -46, 1, 0)
@@ -102,12 +103,63 @@ crownsText.Position = UDim2.new(0.6, 34, 0, 0)
 crownsText.Size = UDim2.new(0.4, -44, 1, 0)
 crownsText.TextXAlignment = Enum.TextXAlignment.Left
 local function stats()
-	coinsText.Text = tostring(player:GetAttribute("Coins") or 0)
 	crownsText.Text = tostring(player:GetAttribute("Crowns") or 0)
 end
-player:GetAttributeChangedSignal("Coins"):Connect(stats)
+-- Juicy coins: when coins go up the number counts up, the coin gives a little bounce and a gold "+N" floats up beside
+-- the panel. Spending (or Roblox's Reduce Motion setting) just sets the number.
+local shownCoins: number? = nil
+local coinCount = 0 -- the latest count-up; an older one stops when a newer gain arrives
+local function calmMotion(): boolean
+	local ok, on = pcall(function()
+		return (game:GetService("GuiService") :: any).ReducedMotionEnabled
+	end)
+	return ok and on == true
+end
+local function showCoins()
+	local target = tonumber(player:GetAttribute("Coins")) or 0
+	local from = shownCoins
+	shownCoins = target
+	coinCount += 1
+	if from == nil or target <= from or calmMotion() then
+		coinsText.Text = tostring(target)
+		return
+	end
+	local mine = coinCount
+	local gained = target - from
+	coinBounce.Scale = 1.35
+	TweenService:Create(coinBounce, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = 1 }):Play()
+	local float = label(gui, "+" .. tostring(gained), 26, UI.Gold)
+	float.AnchorPoint = Vector2.new(0, 0.5)
+	float.Position = UDim2.fromOffset(220, 32)
+	float.Size = UDim2.fromOffset(140, 32)
+	float.TextXAlignment = Enum.TextXAlignment.Left
+	UI.text(float, "body")
+	float.TextColor3 = UI.Gold
+	local fade = TweenInfo.new(1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	TweenService:Create(float, fade, { Position = UDim2.fromOffset(220, 12), TextTransparency = 1 }):Play()
+	local outline = float:FindFirstChildWhichIsA("UIStroke")
+	if outline then
+		TweenService:Create(outline, fade, { Transparency = 1 }):Play()
+	end
+	task.delay(1.05, function()
+		float:Destroy()
+	end)
+	task.spawn(function()
+		local started = os.clock()
+		while mine == coinCount do
+			local a = math.min(1, (os.clock() - started) / 0.6)
+			coinsText.Text = tostring(math.floor(from + gained * (1 - (1 - a) ^ 2) + 0.5))
+			if a >= 1 then
+				break
+			end
+			task.wait()
+		end
+	end)
+end
+player:GetAttributeChangedSignal("Coins"):Connect(showCoins)
 player:GetAttributeChangedSignal("Crowns"):Connect(stats)
 stats()
+showCoins()
 
 local boostChip = make("Frame", { Position = UDim2.fromOffset(12, 62), Size = UDim2.fromOffset(200, 28), BackgroundColor3 = CREAM, Visible = false }, gui)
 corner(boostChip, 14)
