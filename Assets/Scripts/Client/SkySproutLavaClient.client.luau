@@ -2067,6 +2067,42 @@ UIS.InputBegan:Connect(function(input, processed)
 	end
 end)
 
+-- 👀 Watch: anyone in the lobby while a round is on can watch it (overhead view, ◀ ▶ to follow a climber), even after
+-- walking off or joining mid-round. Tap again (or move) to go back to your character.
+do
+	local watchIcon = Icon.new()
+		:setName("LavaWatch")
+		:setLabel(UI.short("👀 Watch", "👀"))
+		:align("Right")
+		:oneClick()
+		:setCaption("Watch the round from above")
+		:modifyTheme(fieryPill(Color3.fromRGB(70, 130, 220)))
+	watchIcon:setEnabled(false)
+	watchIcon:bindEvent("selected", function()
+		if spectating then
+			stopSpectate(true)
+		elseif state.Phase == "Round" and player:GetAttribute("ArenaMode") == "Lobby" then
+			startSpectate()
+		end
+	end)
+	local shown: boolean? = nil
+	local watchingLabel: boolean? = nil
+	task.spawn(function()
+		while true do
+			local show = state.Phase == "Round" and player:GetAttribute("ArenaMode") == "Lobby" and (player:GetAttribute("VisitFloor") or 1) == 1
+			if show ~= shown then
+				shown = show
+				watchIcon:setEnabled(show)
+			end
+			if spectating ~= watchingLabel then
+				watchingLabel = spectating
+				watchIcon:setLabel(if spectating then UI.short("🚶 Back", "🚶") else UI.short("👀 Watch", "👀"))
+			end
+			task.wait(0.25)
+		end
+	end)
+end
+
 -- Away: after the server's LavaAwayAfter seconds with no input at all, ask to sit out the automatic rounds (so you
 -- aren't dropped in to fall off while you're gone). The first input afterwards puts you back in the queue.
 do

@@ -100,6 +100,9 @@ Progression and live-ops:
   about 3 seconds (any move key hands it back; Reduce Motion makes it a still shot).
 - Round awards: with 2+ players the winner banner also names a Top Climber (best non-winner), Shove Champ, Berry
   Picker and Fruit Grabber. One award per player, only for something they did, no coins.
+- 👀 Watch: while a round is on, anyone in the lobby gets a 👀 Watch button in the top bar (sitting out, joined
+  mid-round, or walked off after being knocked out). It opens the overhead spectate view with ◀ ▶ to follow a
+  climber; 🚶 Back (or any move key) returns to your character, and it hides when the round ends.
 - Warm-up Hop: a timed little puzzle run over practice lava beside the lobby plaza, for anyone waiting on a round:
   a round pillar, a fork where one stone is cracked (⚠, it drops a moment after you land), a narrow beam, a step
   up and a second fork. Falling in sends you back to the start; the finish sign shows the server's fastest run. No coins.

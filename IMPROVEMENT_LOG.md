@@ -3,6 +3,29 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 52. 👀 Watch the round from the lobby
+
+**Why.** DevForum threads on round-based games keep coming back to the wait in the lobby. Players with nothing to do
+while a round runs leave, eliminated players stuck walking around a small lobby get bored, and one asks directly for
+lobby players to be able to see the round ("How can I make this round-based game less boring?"; "Feedback on my first
+round-based game"; "How can I keep players in my game for longer?"). In LAVA Floors, spectating only started right after
+a knockout or when joining a friend. Anyone who moved (which hands the camera back), sat out, or joined mid-round alone
+had no way to watch.
+
+**Built.** A blue 👀 Watch top bar button (just 👀 on phones) that is shown only while a round is on and you're in the
+lobby on floor 1. Tapping it starts the existing overhead spectate (◀ ▶ follow, 🍓 gift, controller L1/R1/X). The button
+then reads 🚶 Back, and tapping again or any move key returns your camera. It hides when the round ends. Client only:
+no server changes.
+
+**Verified.** Studio 2-player test: Player1 climbing with the survival driver, Player2 opted out in the lobby. The icon
+showed during the round. Synthetic clicks don't reach TopbarPlus icons inside the overflow menu in the small test
+window: the right-hand icons all overflow at 774 px wide, which isn't new. So for the test only, I bound the same
+handler to an attribute in Studio's copy, removed it afterwards and re-checked the hash. First tap: Scriptable camera
+80 studs up with "👀 Spectating from above", and the icon became 🚶. Second tap: Custom camera, label gone, 👀 again.
+Third tap: watching again. At the round's end the icon hid and the spectate label went away, while the existing winner
+cam was still running. The server and client consoles were clean. Repo and Studio hashes matched. Not tested: a real
+tap at desktop width.
+
 ## 51. 🐾 Fruit buddies (pets bought with earned coins)
 
 **Why.** Guides to Epic Minigames, one of Roblox's best-known party games, list collecting pets, titles and effects
