@@ -3,6 +3,23 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 65. Pre-launch hygiene sweep (no change needed)
+
+**Why.** After 64 iterations of syncing, temporary preview boards, Studio-only test hooks and test attributes, check that
+nothing from testing could ship with a publish.
+
+**Checked.**
+- **Studio place.** The workspace has only the server-set `LavaTheme` attribute; no `LavaAwayAfter` or `Studio*` test
+  attributes are left. StarterGui is empty (no TEMP preview boards). ServerStorage holds only the game's asset
+  folders and a plugin's saves (the IconPreview copy of the icon pack is gone). No instance or script source contains
+  "TEMP".
+- **Repo scripts.** The only `print` calls are the start-up line and two traces, `[friends]` and `[fun]`, which are
+  both gated by `Run:IsStudio()`. The one `warn` is the round-crash handler.
+- **Sync.** All 48 repo scripts (Server, Client, Shared) match Studio by size and chunk hash. Studio has no scripts that
+  aren't in the repo, apart from the TopbarPlus package.
+
+**Result.** Clean; nothing to fix. (VALORANT was open, so all checks were read-only in the Edit datamodel.)
+
 ## 64. Result card readable on phones again (after the font change)
 
 **Why.** Checked the #60/#61 changes on a small phone (Device Simulator, iPhone 7, 666 × 374). Everything fit, but
