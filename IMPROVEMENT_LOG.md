@@ -3,6 +3,30 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 43. 📸 Share your escape
+
+**Research.** Roblox's Captures API lets a game take a screenshot and open the device's share sheet with it, plus an
+invite link to the experience where supported. Players who aren't eligible get a download prompt instead
+([CaptureService docs](https://create.roblox.com/docs/en-us/reference/engine/classes/CaptureService),
+[DevForum announcement](https://devforum.roblox.com/t/captures-apis-are-now-available/2838188)). Sharing a win with
+friends is the natural growth moment for a party game, and it fits next to the existing 👥 Invite.
+
+**Change.**
+- After you escape or survive, a "📸 Share" pill sits on the result card's top-right corner.
+- Tapping it hides the pill, takes a screenshot (`CaptureScreenshot`), restores the pill, and opens
+  `PromptShareCapture` with the capture and launch data "lava-escape". It tries the newer `Content` form first, then
+  the plain id, all inside `pcall`.
+- The pill is hidden when `PolicyService` says content sharing isn't allowed for that player.
+- With the pill showing, the result card stays up 8 s instead of 5.5 s. The first test showed the card was gone
+  before there was time to tap.
+- The result card is now named "ResultCard" so tests can reach it by path.
+
+**Verified.** Solo Studio play test, with the survival driver until the bots fell:
+- The result card read "👑 ESCAPED!" with the Share pill.
+- A real click hid the pill and brought it back 0.42 s later, when the capture callback ran.
+- The console showed no errors. Studio matches the repo by chunk hash; place saved as version 73.
+- Not testable in Studio: the share sheet itself, and the invite link it carries. Both need a real device.
+
 ## 42. Joined mid-round? Watch your friend climb
 
 **Why.** Entry 34's research named waiting after joining mid-round as a top onboarding problem

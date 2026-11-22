@@ -159,6 +159,7 @@ local endScale: UIScale = make("UIScale", {}, endStack)
 local endBottomReserve = 0 -- screen kept free at the bottom (the twist vote card while it shows); set further down
 
 local result: Frame = make("Frame", {
+	Name = "ResultCard",
 	LayoutOrder = 2,
 	Size = UDim2.new(1, 0, 0, 210),
 	BackgroundColor3 = Color3.new(1, 1, 1),
@@ -175,6 +176,58 @@ stroked(resultBody)
 UI.glass(result, 20)
 UI.text(resultTitle, "title")
 UI.text(resultBody, "body")
+
+-- 📸 Share: after you escape or survive, share a screenshot of your result with an invite link to the game, through
+-- Roblox's own share sheet. Players whose settings don't allow sharing never see the button, and where sharing isn't
+-- supported Roblox offers a download instead. The button hides itself so it isn't in the picture.
+local canShare = false
+task.spawn(function()
+	local ok, info = pcall(function()
+		return game:GetService("PolicyService"):GetPolicyInfoForPlayerAsync(player)
+	end)
+	canShare = ok and type(info) == "table" and info.IsContentSharingAllowed ~= false
+end)
+local shareButton: TextButton = make("TextButton", {
+	Name = "ShareButton",
+	AnchorPoint = Vector2.new(0.5, 0.5),
+	Position = UDim2.new(1, -16, 0, 6),
+	Size = UDim2.fromOffset(96, 34),
+	Font = FONT,
+	TextScaled = true,
+	Text = "📸 Share",
+	Visible = false,
+	ZIndex = 4,
+}, result)
+make("UICorner", { CornerRadius = UDim.new(1, 0) }, shareButton)
+UI.button(shareButton, UI.LavaDeep)
+local sharing = false
+shareButton.Activated:Connect(function()
+	if sharing then
+		return
+	end
+	sharing = true
+	shareButton.Visible = false
+	local CaptureService = game:GetService("CaptureService")
+	local started = pcall(function()
+		CaptureService:CaptureScreenshot(function(contentId: string)
+			shareButton.Visible = result.Visible
+			sharing = false
+			-- PromptShareCapture takes the capture's Content; older engines took the id string.
+			local shared = pcall(function()
+				(CaptureService :: any):PromptShareCapture((Content :: any).fromUri(contentId), "lava-escape")
+			end)
+			if not shared then
+				pcall(function()
+					(CaptureService :: any):PromptShareCapture(contentId, "lava-escape")
+				end)
+			end
+		end)
+	end)
+	if not started then
+		shareButton.Visible = result.Visible
+		sharing = false
+	end
+end)
 
 -- Lava Chest bar: fills a little every round and pops a chest of coins when full. It always says how close the next
 -- chest is, which is where "one more round" comes from.
@@ -937,9 +990,14 @@ event.OnClientEvent:Connect(function(kind: string, v: any)
 		end
 		showChest(v.Chest)
 		result.Visible = true
+		shareButton.Visible = canShare and v.Outcome ~= "SCORCHED" -- worth showing off: you escaped or survived
 		pop(result)
 		local shownFor = chestShown
-		task.delay(if type(v.Chest) == "table" and (tonumber(v.Chest.Opened) or 0) > 0 then 7 else 5.5, function()
+		local hold = if type(v.Chest) == "table" and (tonumber(v.Chest.Opened) or 0) > 0 then 7 else 5.5
+		if shareButton.Visible then
+			hold = math.max(hold, 8) -- time to notice and tap 📸 Share
+		end
+		task.delay(hold, function()
 			if shownFor == chestShown then
 				result.Visible = false
 			end
