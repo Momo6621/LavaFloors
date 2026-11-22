@@ -3,6 +3,24 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 67. Coin icon on the daily reward card and the Lava Pass
+
+**Why.** These were the last two panels with 💰 emoji. A preview (Media/daily-pass-coin-preview.jpg) got "Yes, both".
+
+**Built.**
+- **LavaFloorsUI.** The coin placement from #66 is now a shared `coinBeside(label)` helper, used by shop prices and by
+  Lava Pass coin rewards (free and premium tracks). `rewardText` returns just the number for coin rewards. Hat
+  rewards are unchanged.
+- **Daily card (SkySproutLavaClient).** Each day tile shows "Day N" (or ✅) over a coin-and-amount row. The title reads
+  "DAY N REWARD: +X" with the coin placed right after it, and the hint now says "Next time you play: 50 coins."
+
+**Verified.** Studio solo playtest (3D rendering, VALORANT closed):
+- On join the daily card read "DAY 1 REWARD: +25", followed by the coin, over seven coin tiles (25 to 300) and the
+  "50 coins" hint.
+- A real tap on the Pass button opened the Lava Pass, with coin rewards (50, 60, 80, 100, 120, 150…) beside the coin.
+  The strawberry hat tier was unchanged.
+- The console was clean, and repo and Studio hashes matched for both scripts.
+
 ## 66. Coin icon on shop prices, the Raise button and challenge rewards
 
 **Why.** The last 💰 emoji next to the new coins panel. A preview (Media/coin-icon-preview.jpg) of shop price buttons,

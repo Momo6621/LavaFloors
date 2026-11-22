@@ -282,8 +282,18 @@ end
 -- already collected, today's reward and tomorrow's. Missing a day only pauses the ladder, it never resets. Tap to close.
 local dailyCard: TextButton = make("TextButton", { Name = "DailyCard", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.45), Size = UDim2.fromOffset(500, 156), Text = "", AutoButtonColor = false, Visible = false, ZIndex = 8 }, gui)
 UI.glass(dailyCard, 20)
-local dailyTitle: TextLabel = make("TextLabel", { BackgroundTransparency = 1, Position = UDim2.fromOffset(12, 8), Size = UDim2.new(1, -24, 0, 30), Font = FONT, TextScaled = true, Text = "🎁 DAILY REWARD", ZIndex = 9 }, dailyCard)
+local dailyTitle: TextLabel = make("TextLabel", { BackgroundTransparency = 1, Position = UDim2.fromOffset(12, 8), Size = UDim2.new(1, -24, 0, 30), Font = FONT, TextScaled = true, Text = "DAILY REWARD", ZIndex = 9 }, dailyCard)
 UI.text(dailyTitle, "title")
+-- The Flibpook coin (as on the coins panel) right after the title's "+75", instead of 💰; placed from the text width.
+local dailyTitleCoin: ImageLabel = make("ImageLabel", { Name = "CoinIcon", BackgroundTransparency = 1, Image = Icons.Coin, AnchorPoint = Vector2.new(0, 0.5), Size = UDim2.fromScale(1, 1), SizeConstraint = Enum.SizeConstraint.RelativeYY, ZIndex = 10 }, dailyTitle)
+local function placeDailyCoin()
+	local width = dailyTitle.AbsoluteSize.X
+	if width > 0 then
+		dailyTitleCoin.Position = UDim2.new(0.5 + dailyTitle.TextBounds.X / width / 2, 4, 0.5, 0)
+	end
+end
+dailyTitle:GetPropertyChangedSignal("TextBounds"):Connect(placeDailyCoin)
+dailyTitle:GetPropertyChangedSignal("AbsoluteSize"):Connect(placeDailyCoin)
 local dailyRow: Frame = make("Frame", { Name = "Days", BackgroundTransparency = 1, Position = UDim2.fromOffset(12, 46), Size = UDim2.new(1, -24, 0, 74), ZIndex = 9 }, dailyCard)
 make("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Center, Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder }, dailyRow)
 local dailyHint: TextLabel = make("TextLabel", { BackgroundTransparency = 1, Position = UDim2.fromOffset(12, 126), Size = UDim2.new(1, -24, 0, 22), Font = FONT, TextScaled = true, Text = "", ZIndex = 9 }, dailyCard)
@@ -323,15 +333,22 @@ local function revealDaily(v: any)
 			Font = FONT,
 			TextScaled = true,
 			TextColor3 = if isToday then UI.Shadow else UI.Text,
-			Text = string.format("%s\n%s%d", if i < day then "✅" else "Day " .. i, "💰", (tonumber(coins) or 0) * mult),
+			Text = "",
 			ZIndex = 10,
 		}, dailyRow)
 		make("UICorner", { CornerRadius = UDim.new(0, 12) }, tile)
 		make("UIPadding", { PaddingTop = UDim.new(0, 6), PaddingBottom = UDim.new(0, 6), PaddingLeft = UDim.new(0, 4), PaddingRight = UDim.new(0, 4) }, tile)
+		-- "Day N" (or ✅) on top, then the coin picture and the amount.
+		make("TextLabel", { Name = "Day", BackgroundTransparency = 1, Size = UDim2.fromScale(1, 0.46), Font = FONT, TextScaled = true, TextColor3 = tile.TextColor3, Text = if i < day then "✅" else "Day " .. i, ZIndex = 11 }, tile)
+		local amount = make("Frame", { Name = "Amount", BackgroundTransparency = 1, Position = UDim2.fromScale(0, 0.52), Size = UDim2.fromScale(1, 0.48), ZIndex = 11 }, tile)
+		make("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Center, VerticalAlignment = Enum.VerticalAlignment.Center, Padding = UDim.new(0, 2), SortOrder = Enum.SortOrder.LayoutOrder }, amount)
+		make("ImageLabel", { Name = "CoinIcon", LayoutOrder = 1, BackgroundTransparency = 1, Image = Icons.Coin, Size = UDim2.fromScale(1, 0.9), SizeConstraint = Enum.SizeConstraint.RelativeYY, ZIndex = 12 }, amount)
+		make("TextLabel", { LayoutOrder = 2, BackgroundTransparency = 1, Size = UDim2.fromScale(0.6, 1), Font = FONT, TextScaled = true, TextColor3 = tile.TextColor3, TextXAlignment = Enum.TextXAlignment.Left, Text = tostring((tonumber(coins) or 0) * mult), ZIndex = 12 }, amount)
 	end
-	dailyTitle.Text = string.format("🎁 DAY %d REWARD: +%d 💰", day, (tonumber(rewards[day]) or 0) * mult)
+	dailyTitle.Text = string.format("DAY %d REWARD: +%d", day, (tonumber(rewards[day]) or 0) * mult)
+	task.defer(placeDailyCoin)
 	local nextCoins = tonumber(rewards[math.min(day + 1, #rewards)]) or 0
-	dailyHint.Text = if day < #rewards then string.format("Next time you play: 💰 %d. Missing a day won't reset it!", nextCoins * mult) else "Top reward every day you play!"
+	dailyHint.Text = if day < #rewards then string.format("Next time you play: %d coins. Missing a day won't reset it!", nextCoins * mult) else "Top reward every day you play!"
 	dailyCard.Visible = true
 	dailyOnScreen = true
 	dailyLast = v

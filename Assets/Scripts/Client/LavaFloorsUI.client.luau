@@ -198,24 +198,29 @@ local function setButton(b: TextButton, text: string, color: Color3)
 		coin.Visible = false -- a price button that now says WEAR / ✓ WORN
 	end
 end
--- Prices show the Flibpook coin (as on the coins panel) just left of the number, instead of 💰.
+-- The Flibpook coin (as on the coins panel) just left of a label's centred text, instead of 💰. Kept in place when
+-- the text or size changes; returns the (re-used) icon.
+local function coinBeside(target: TextLabel | TextButton): ImageLabel
+	local existing = target:FindFirstChild("CoinIcon")
+	if existing and existing:IsA("ImageLabel") then
+		existing.Visible = true
+		return existing
+	end
+	local icon: ImageLabel = make("ImageLabel", { Name = "CoinIcon", BackgroundTransparency = 1, Image = Icons.Coin, AnchorPoint = Vector2.new(1, 0.5), Size = UDim2.fromScale(0.62, 0.62), SizeConstraint = Enum.SizeConstraint.RelativeYY }, target)
+	local function place()
+		local width = target.AbsoluteSize.X
+		if width > 0 then
+			icon.Position = UDim2.new(0.5 - target.TextBounds.X / width / 2, -3, 0.5, 0)
+		end
+	end
+	target:GetPropertyChangedSignal("TextBounds"):Connect(place)
+	target:GetPropertyChangedSignal("AbsoluteSize"):Connect(place)
+	task.defer(place)
+	return icon
+end
 local function setPrice(b: TextButton, amount: number, color: Color3)
 	setButton(b, tostring(amount), color)
-	local coin = b:FindFirstChild("CoinIcon") :: ImageLabel?
-	if not coin then
-		local icon: ImageLabel = make("ImageLabel", { Name = "CoinIcon", BackgroundTransparency = 1, Image = Icons.Coin, AnchorPoint = Vector2.new(1, 0.5), Size = UDim2.fromScale(0.62, 0.62), SizeConstraint = Enum.SizeConstraint.RelativeYY }, b)
-		local function place()
-			local width = b.AbsoluteSize.X
-			if width > 0 then
-				icon.Position = UDim2.new(0.5 - b.TextBounds.X / width / 2, -3, 0.5, 0)
-			end
-		end
-		b:GetPropertyChangedSignal("TextBounds"):Connect(place)
-		b:GetPropertyChangedSignal("AbsoluteSize"):Connect(place)
-		task.defer(place)
-		coin = icon
-	end
-	(coin :: ImageLabel).Visible = true
+	coinBeside(b)
 end
 
 for i, s in C.Skins do
@@ -520,7 +525,7 @@ end
 
 local function rewardText(reward: any): string
 	if reward.Coins then
-		return "💰 " .. reward.Coins
+		return tostring(reward.Coins) -- the coin picture is added beside it (coinBeside)
 	elseif reward.Hat then
 		return (FRUIT_ICON[reward.Hat] or "🎩") .. " Hat"
 	end
@@ -569,6 +574,9 @@ for tier, row in (C.LavaPass and C.LavaPass.Tiers or {}) do
 	local freeText = label(f, rewardText(row.Free), 18)
 	freeText.Position = UDim2.fromOffset(0, 30)
 	freeText.Size = UDim2.new(1, 0, 0, 26)
+	if row.Free and row.Free.Coins then
+		coinBeside(freeText)
+	end
 	local freeButton = button(f, "", ORANGE, UDim2.new(1, -14, 0, 32))
 	freeButton.Position = UDim2.fromOffset(7, 58)
 	freeButton.TextSize = 15
@@ -579,6 +587,9 @@ for tier, row in (C.LavaPass and C.LavaPass.Tiers or {}) do
 	local premText = label(f, rewardText(row.Premium), 18)
 	premText.Position = UDim2.fromOffset(0, 122)
 	premText.Size = UDim2.new(1, 0, 0, 26)
+	if row.Premium and row.Premium.Coins then
+		coinBeside(premText)
+	end
 	local premButton = button(f, "", PURPLE, UDim2.new(1, -14, 0, 32))
 	premButton.Position = UDim2.fromOffset(7, 150)
 	premButton.TextSize = 15
