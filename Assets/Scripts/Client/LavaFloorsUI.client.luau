@@ -1034,15 +1034,28 @@ Icon.new()
 	end)
 
 local musicIcon = Icon.new():setName("Music"):setLabel("🎵"):align("Right"):oneClick():modifyTheme(pill(Color3.fromRGB(150, 90, 255)))
-musicIcon:bindEvent("selected", function()
-	if music.Playing then
-		music:Pause()
-		musicIcon:setLabel("🔇")
-	else
+-- Your choice is saved with your profile (the "MusicOff" attribute), so 🔇 stays off the next time you join.
+local function setMusic(on: boolean)
+	if on and not music.Playing then
 		music:Resume()
-		musicIcon:setLabel("🎵")
+	elseif not on and music.Playing then
+		music:Pause()
 	end
+	musicIcon:setLabel(if on then "🎵" else "🔇")
+end
+musicIcon:bindEvent("selected", function()
+	local on = not music.Playing
+	setMusic(on)
+	event:FireServer("LavaMusic", not on)
 end)
+local function applySavedMusic()
+	local off = player:GetAttribute("MusicOff")
+	if type(off) == "boolean" then
+		setMusic(not off)
+	end
+end
+applySavedMusic()
+player:GetAttributeChangedSignal("MusicOff"):Connect(applySavedMusic)
 
 local function shove()
 	event:FireServer("Punch")

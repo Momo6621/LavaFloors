@@ -3,6 +3,29 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 53. 🔇 Music stays off when you rejoin
+
+**Why.** Roblox players complain when audio choices don't stick between joins: DevForum threads report output-device
+settings resetting on every rejoin ("Roblox changes Audio Inputs/Outputs when rejoining") and argue that a mute should
+never switch itself back on ("Mute should never deactivate automatically"). I found no thread about this exact case. In
+LAVA Floors, the 🎵 button forgot your choice every time, so a kid (or a parent next to them) who muted the music had to
+do it again every visit. Researched "what kids praise" again too: the players-left counter, final showdown and music
+build-up the Hex-A-Gone write-ups praise are already in the game.
+
+**Built.** The 🎵 / 🔇 button now sends `LavaMusic` (a boolean) to the server, which saves `MusicOff` in the profile
+(cleaned: only a real `true` counts) and mirrors it in the `MusicOff` player attribute at join. The client applies the
+saved choice as soon as the attribute arrives, and the icon label follows.
+
+**Verified.** Rules: `new()` gives false; `clean` keeps `true` but drops "yes" and missing values. Studio solo
+playtest: at join, `MusicOff` was false and the music played. A real tap on 🎵 paused the music, showed 🔇 and the
+server echoed `MusicOff=true`. Setting the attribute from the server (what a rejoin with a saved choice does) turned the
+music on with false and off with true. The console was clean. Repo and Studio hashes matched for all three scripts. Not
+testable in Studio: an actual save and rejoin (Studio doesn't reach DataStores here).
+
+**Noticed.** At 1130 px wide, the right-hand top bar folds into an overflow menu whenever the Lava Rush button is
+shown in the lobby (Lava Rush, Music, Emotes and Invite are ~385 px). This happened before #52 too. The 👀 Watch button
+adds to it on mid-size screens. It's worth a pass: shorter labels at this width, or a smaller Invite label.
+
 ## 52. 👀 Watch the round from the lobby
 
 **Why.** DevForum threads on round-based games keep coming back to the wait in the lobby. Players with nothing to do

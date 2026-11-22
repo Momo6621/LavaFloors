@@ -4506,6 +4506,15 @@ function L.HandleAction(p: Player, action: unknown, _value: unknown): boolean
 		end
 		return true
 	end
+	if action == "LavaMusic" then
+		-- The 🎵 / 🔇 button: saved so the music stays the way you left it next time you join.
+		local d = data(p)
+		if d and type(_value) == "boolean" then
+			d.MusicOff = _value
+			p:SetAttribute("MusicOff", _value)
+		end
+		return true
+	end
 	if action == "LavaWinEmote" then
 		-- Pick the emote played when you win: one of CFG.WinEmotes (all free).
 		local d = data(p)
@@ -5104,6 +5113,7 @@ function L.Start(arena: any, remote: RemoteEvent, stats: (Player) -> (), notice:
 				p:SetAttribute("Tutorial", d.TutorialDone ~= true) -- first-round coach cards for new players
 				p:SetAttribute("BestHeight", tonumber(d.BestHeight) or 0) -- the 🏅 marker on the climb meter
 				p:SetAttribute("WinEmote", table.find(CFG.WinEmotes, d.WinEmote) and d.WinEmote or "Cheer")
+				p:SetAttribute("MusicOff", d.MusicOff == true)
 				logOnboarding(p, 1, "Joined")
 			end
 		end)
@@ -5116,6 +5126,7 @@ function L.Start(arena: any, remote: RemoteEvent, stats: (Player) -> (), notice:
 				p:SetAttribute("Tutorial", d.TutorialDone ~= true)
 				p:SetAttribute("BestHeight", tonumber(d.BestHeight) or 0)
 				p:SetAttribute("WinEmote", table.find(CFG.WinEmotes, d.WinEmote) and d.WinEmote or "Cheer")
+				p:SetAttribute("MusicOff", d.MusicOff == true)
 			end
 		end)
 	end

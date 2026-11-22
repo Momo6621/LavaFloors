@@ -84,7 +84,8 @@ Progression and live-ops:
   gifts) unlock with other achievements. The 🏷️ button in the Challenges panel picks which unlocked title to show
   (or Auto for the best crown title, or none). Saved as `Title` in the profile.
 - Music that builds: the background track plays 5% faster with each lava phase, a little louder in the last one, and
-  eases back in the lobby (also when a round ends early). Climbers and watchers hear the same build-up.
+  eases back in the lobby (also when a round ends early). Climbers and watchers hear the same build-up. The 🎵 / 🔇 button is saved with your profile (`MusicOff`),
+  so muted music stays muted the next time you join.
 - Victory emote: the 🏆 "When I win" button in the 😀 Emotes panel cycles through the six free emotes and previews
   each one; your pick plays when you're crowned (Cheer by default). Saved as `WinEmote` (CFG.WinEmotes).
 - Lava Chest: every round fills a bar on the result card (12 for playing, up to 30 for height, +15 survive, +30 crown).
