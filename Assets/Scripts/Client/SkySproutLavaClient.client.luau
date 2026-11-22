@@ -66,6 +66,31 @@ local tint: Frame = make("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColo
 
 local Icon = require(RS:WaitForChild("Icon"))
 local Icons = require(RS:WaitForChild("LavaIcons")) :: any -- Flibpook top bar images
+-- The game's own 3D strawberry as a little picture (round info line, result card), drawn in a ViewportFrame.
+local function berryIcon(parent: Instance): ViewportFrame
+	local view = Instance.new("ViewportFrame")
+	view.Name = "Berry"
+	view.BackgroundTransparency = 1
+	view.Size = UDim2.fromScale(1, 1)
+	view.Ambient = Color3.fromRGB(220, 220, 220)
+	view.LightColor = Color3.new(1, 1, 1)
+	view.LightDirection = Vector3.new(-1, -1, -1)
+	local models = RS:FindFirstChild("FruitModels")
+	local model = models and models:FindFirstChild("Strawberry")
+	if model then
+		local copy = (model :: Model):Clone()
+		copy:PivotTo(CFrame.new())
+		copy.Parent = view
+		local _, size = copy:GetBoundingBox()
+		local cam = Instance.new("Camera")
+		cam.FieldOfView = 30
+		cam.CFrame = CFrame.lookAt(Vector3.new(0, size.Y * 0.25, size.Magnitude * 1.9), Vector3.zero)
+		cam.Parent = view
+		view.CurrentCamera = cam
+	end
+	view.Parent = parent
+	return view
+end
 
 local Config = require(RS:WaitForChild("SkySproutConfig")) :: any
 local Perception = require(RS:WaitForChild("SkySproutPerception")) :: any
@@ -136,9 +161,13 @@ make("UISizeConstraint", { MaxSize = Vector2.new(460, 70) }, panel)
 make("UICorner", { CornerRadius = UDim.new(0, 16) }, panel)
 make("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(255, 150, 40), Color3.fromRGB(235, 60, 25)) }, panel)
 make("UIStroke", { Thickness = 4, Color = Color3.fromRGB(110, 25, 5), ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, panel)
-local title: TextLabel = make("TextLabel", { BackgroundTransparency = 1, Position = UDim2.fromOffset(12, 6), Size = UDim2.new(1, -24, 0, 32), Font = FONT, TextScaled = true, TextColor3 = TITLE, Text = "" }, panel)
+local title: TextLabel = make("TextLabel", { BackgroundTransparency = 1, Position = UDim2.fromOffset(12, 4), Size = UDim2.new(1, -24, 0, 32), Font = FONT, TextScaled = true, TextColor3 = TITLE, Text = "" }, panel)
 stroked(title)
-local info: TextLabel = make("TextLabel", { BackgroundTransparency = 1, Position = UDim2.fromOffset(12, 40), Size = UDim2.new(1, -24, 0, 24), Font = FONT, TextScaled = true, TextColor3 = Color3.new(1, 1, 1), Text = "" }, panel)
+local info: TextLabel = make("TextLabel", { BackgroundTransparency = 1, Position = UDim2.fromOffset(12, 37), Size = UDim2.new(1, -24, 0, 29), Font = FONT, TextScaled = true, TextColor3 = Color3.new(1, 1, 1), Text = "" }, panel)
+-- 3D strawberry after the berry count; placed from the text's width whenever the line changes (see the round HUD).
+local infoBerryBox: Frame = make("Frame", { Name = "BerryBox", BackgroundTransparency = 1, AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.fromScale(1, 0.5), Size = UDim2.fromScale(1, 1.1), SizeConstraint = Enum.SizeConstraint.RelativeYY, Visible = false }, info)
+berryIcon(infoBerryBox)
+local lastInfoText = ""
 stroked(info)
 UI.glass(panel, 16)
 UI.text(title, "title")
@@ -164,22 +193,59 @@ local endBottomReserve = 0 -- screen kept free at the bottom (the twist vote car
 local result: Frame = make("Frame", {
 	Name = "ResultCard",
 	LayoutOrder = 2,
-	Size = UDim2.new(1, 0, 0, 210),
+	Size = UDim2.new(1, 0, 0, 236),
 	BackgroundColor3 = Color3.new(1, 1, 1),
 	Visible = false,
 }, endStack)
-make("UISizeConstraint", { MaxSize = Vector2.new(380, 210) }, result)
+make("UISizeConstraint", { MaxSize = Vector2.new(380, 236) }, result)
 make("UICorner", { CornerRadius = UDim.new(0, 20) }, result)
 make("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(255, 150, 40), Color3.fromRGB(235, 60, 25)) }, result)
 make("UIStroke", { Thickness = 5, Color = Color3.fromRGB(110, 25, 5), ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, result)
--- Title 48 / body 100 (was 60 / 80): on an iPhone 7 the card is scaled to ~0.53 and four body lines came out ~10 px.
+-- Card 236 tall (was 210): title 48, then up to four picture rows in 132 (was one 100-tall text box), so each line's
+-- text is bigger; on an iPhone 7 the card is scaled to ~0.53 and four lines had come out ~10 px.
 local resultTitle: TextLabel = make("TextLabel", { BackgroundTransparency = 1, Position = UDim2.fromOffset(10, 10), Size = UDim2.new(1, -20, 0, 48), Font = FONT, TextScaled = true, TextColor3 = TITLE, Text = "" }, result)
 stroked(resultTitle, 3)
-local resultBody: TextLabel = make("TextLabel", { BackgroundTransparency = 1, Position = UDim2.fromOffset(10, 62), Size = UDim2.new(1, -20, 0, 100), Font = FONT, TextScaled = true, TextColor3 = Color3.new(1, 1, 1), Text = "" }, result)
-stroked(resultBody)
+-- Crown (escaped) or checkmark (survived) beside the title; placed from the title's text width when it's shown.
+local resultTitleIcon: ImageLabel = make("ImageLabel", { Name = "TitleIcon", BackgroundTransparency = 1, AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.fromScale(0, 0.5), Size = UDim2.fromScale(1, 1), SizeConstraint = Enum.SizeConstraint.RelativeYY, Visible = false }, resultTitle)
+local resultRows: Frame = make("Frame", { Name = "Rows", BackgroundTransparency = 1, Position = UDim2.fromOffset(10, 60), Size = UDim2.new(1, -20, 0, 132) }, result)
+make("UIListLayout", { FillDirection = Enum.FillDirection.Vertical, SortOrder = Enum.SortOrder.LayoutOrder, VerticalAlignment = Enum.VerticalAlignment.Center }, resultRows)
+type ResultLine = { row: Frame, image: ImageLabel, berry: Frame, text: TextLabel }
+local resultLines: { ResultLine } = {}
+for i = 1, 4 do
+	local row: Frame = make("Frame", { Name = "Line" .. i, LayoutOrder = i, BackgroundTransparency = 1, Size = UDim2.fromScale(1, 0.25), Visible = false }, resultRows)
+	local pic: Frame = make("Frame", { Name = "Pic", BackgroundTransparency = 1, AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0.06, 0, 0.5, 0), Size = UDim2.fromScale(0.86, 0.86), SizeConstraint = Enum.SizeConstraint.RelativeYY }, row)
+	local image: ImageLabel = make("ImageLabel", { BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1), Visible = false }, pic)
+	local berryBox: Frame = make("Frame", { Name = "BerryBox", BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1), Visible = false }, pic)
+	berryIcon(berryBox)
+	local text: TextLabel = make("TextLabel", { BackgroundTransparency = 1, Position = UDim2.new(0.06, 0, 0, 0), Size = UDim2.new(0.94, -6, 1, 0), Font = FONT, TextScaled = true, TextColor3 = Color3.new(1, 1, 1), TextXAlignment = Enum.TextXAlignment.Left, Text = "" }, row)
+	make("UITextSizeConstraint", { MaxTextSize = 30 }, text)
+	stroked(text)
+	UI.text(text, "body")
+	table.insert(resultLines, { row = row, image = image, berry = berryBox, text = text })
+end
+-- Fill the card: each line is { picture = image id or "berry", text }. Rows split the height, so fewer lines read bigger.
+local function setResultLines(lines: { { any } })
+	for i, line in resultLines do
+		local item = lines[i]
+		line.row.Visible = item ~= nil
+		if item then
+			line.row.Size = UDim2.fromScale(1, 1 / #lines)
+			local pic = item[1]
+			line.berry.Visible = pic == "berry"
+			line.image.Visible = pic ~= "berry"
+			if pic ~= "berry" then
+				line.image.Image = pic
+			end
+			line.text.Text = item[2]
+			-- The text starts right after the picture, which is 0.86 of the row's height (rows share 132 design px).
+			local picWidth = 132 / #lines * 0.86
+			line.text.Position = UDim2.new(0.06, picWidth + 8, 0, 0)
+			line.text.Size = UDim2.new(0.94, -picWidth - 14, 1, 0)
+		end
+	end
+end
 UI.glass(result, 20)
 UI.text(resultTitle, "title")
-UI.text(resultBody, "body")
 
 -- Fun check: once a session (after a few rounds) the server asks "Having fun?" under the result card. Three emoji, no
 -- typing; the answer goes to the game's analytics with the round's twist, so the owner can see what kids enjoy.
@@ -356,13 +422,14 @@ end)
 
 -- Lava Chest bar: fills a little every round and pops a chest of coins when full. It always says how close the next
 -- chest is, which is where "one more round" comes from.
-local chestTrack: Frame = make("Frame", { Name = "ChestBar", BackgroundColor3 = Color3.fromRGB(40, 15, 10), BackgroundTransparency = 0.2, Position = UDim2.fromOffset(14, 166), Size = UDim2.new(1, -28, 0, 32), Visible = false }, result)
+local chestTrack: Frame = make("Frame", { Name = "ChestBar", BackgroundColor3 = Color3.fromRGB(40, 15, 10), BackgroundTransparency = 0.2, Position = UDim2.fromOffset(14, 196), Size = UDim2.new(1, -28, 0, 32), Visible = false }, result)
 make("UICorner", { CornerRadius = UDim.new(1, 0) }, chestTrack)
 make("UIStroke", { Thickness = 2, Color = Color3.fromRGB(255, 200, 90), Transparency = 0.3 }, chestTrack)
 local chestFill: Frame = make("Frame", { Name = "Fill", BackgroundColor3 = Color3.new(1, 1, 1), Size = UDim2.fromScale(0, 1), BorderSizePixel = 0 }, chestTrack)
 make("UICorner", { CornerRadius = UDim.new(1, 0) }, chestFill)
 make("UIGradient", { Color = ColorSequence.new(Color3.fromRGB(255, 225, 90), Color3.fromRGB(255, 120, 30)) }, chestFill)
-local chestLabel: TextLabel = make("TextLabel", { Name = "Label", BackgroundTransparency = 1, Position = UDim2.fromOffset(10, 3), Size = UDim2.new(1, -20, 1, -6), Font = FONT, TextScaled = true, TextColor3 = Color3.new(1, 1, 1), Text = "", ZIndex = 2 }, chestTrack)
+make("ImageLabel", { Name = "ChestIcon", BackgroundTransparency = 1, Image = Icons.GemYellow, AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 6, 0.5, 0), Size = UDim2.fromOffset(28, 28), ZIndex = 3 }, chestTrack)
+local chestLabel: TextLabel = make("TextLabel", { Name = "Label", BackgroundTransparency = 1, Position = UDim2.fromOffset(38, 3), Size = UDim2.new(1, -48, 1, -6), Font = FONT, TextScaled = true, TextColor3 = Color3.new(1, 1, 1), Text = "", ZIndex = 2 }, chestTrack)
 stroked(chestLabel, 1.5)
 local chestBounce: UIScale = make("UIScale", {}, chestTrack)
 local chestShown = 0
@@ -372,7 +439,7 @@ local function chestRestText(chest: any): string
 	local perRound = math.max(1, tonumber(chest.Fill) or 25)
 	local rounds = math.max(1, math.ceil((goal - after) / perRound))
 	local big = if tonumber(chest.BigIn) == 1 then "BIG chest" else "chest"
-	return string.format("🎁 %d%% · %s", math.floor(after / goal * 100), if rounds == 1 then "one more round to the " .. big .. "!" else "about " .. rounds .. " rounds to the " .. big)
+	return string.format("%d%% · %s", math.floor(after / goal * 100), if rounds == 1 then "one more round to the " .. big .. "!" else "about " .. rounds .. " rounds to the " .. big)
 end
 local function showChest(chest: any)
 	chestTrack.Visible = type(chest) == "table"
@@ -385,7 +452,7 @@ local function showChest(chest: any)
 	local before, after = (tonumber(chest.Before) or 0) / goal, (tonumber(chest.After) or 0) / goal
 	local opened = tonumber(chest.Opened) or 0
 	chestFill.Size = UDim2.fromScale(before, 1)
-	chestLabel.Text = string.format("🎁 Lava Chest +%d", tonumber(chest.Fill) or 0)
+	chestLabel.Text = string.format("Lava Chest +%d", tonumber(chest.Fill) or 0)
 	task.delay(0.6, function()
 		if my ~= chestShown then
 			return
@@ -396,7 +463,7 @@ local function showChest(chest: any)
 			play("Crown", 1.1)
 			chestBounce.Scale = 1.25 -- pop() is declared further down, so bounce locally
 			TweenService:Create(chestBounce, TweenInfo.new(0.35, Enum.EasingStyle.Back), { Scale = 1 }):Play()
-			chestLabel.Text = string.format("🎁 CHEST OPEN! +%d coins%s", opened, if opened >= 300 then " (BIG!)" else "")
+			chestLabel.Text = string.format("CHEST OPEN! +%d coins%s", opened, if opened >= 300 then " (BIG!)" else "")
 			task.wait(1.6)
 			chestFill.Size = UDim2.fromScale(0, 1)
 		end
@@ -1096,34 +1163,54 @@ event.OnClientEvent:Connect(function(kind: string, v: any)
 			showCheer(v.Name, v.Emoji)
 		end
 	elseif kind == "LavaResult" then
-		resultTitle.Text = if v.Outcome == "CROWNED" then "👑 ESCAPED!" elseif v.Outcome == "SURVIVED" then "🔥 SURVIVED!" else "💀 SCORCHED"
+		resultTitle.Text = if v.Outcome == "CROWNED" then "ESCAPED!" elseif v.Outcome == "SURVIVED" then "SURVIVED!" else "SCORCHED"
+		local titleImage = if v.Outcome == "CROWNED" then Icons.Crown elseif v.Outcome == "SURVIVED" then Icons.Checkmark else nil
 		local titleGradient = resultTitle:FindFirstChild("TitleGradient")
 		if titleGradient and titleGradient:IsA("UIGradient") then
 			titleGradient.Enabled = v.Outcome ~= "SCORCHED"
 		end
 		resultTitle.TextColor3 = if v.Outcome == "SCORCHED" then Color3.fromRGB(255, 140, 120) else Color3.new(1, 1, 1)
-		local emberLine = if v.Embers > 0 then string.format("\n🍓 %d berries banked%s", v.Embers, if v.Doubled then " (x2!)" else "") else ""
-		local bestLine = if v.NewBest and (tonumber(v.PrevBest) or 0) > 0 then string.format("\n🏅 NEW BEST! %d (was %d)", v.Height, v.PrevBest)
-			elseif v.NewBest then "\n🏅 First best: " .. tostring(v.Height) .. ". Beat it next round!"
-			elseif type(v.Best) == "number" then string.format("\nYour best: %d", v.Best)
-			else ""
-		local streak, streakWas = tonumber(v.Streak) or 0, tonumber(v.StreakWas) or 0
-		local streakLine = if streak >= 2 then string.format("\n🔥 %d rounds in a row!", streak)
-			elseif streak == 0 and streakWas >= 2 then string.format("\n🔥 Streak ended at %d. Go again!", streakWas)
-			else ""
-		if streakLine ~= "" and not v.NewBest then
-			bestLine = "" -- keep the card to three lines so it stays readable on phones (the 🏅 meter marker shows your best)
+		resultTitleIcon.Visible = titleImage ~= nil
+		if titleImage then
+			resultTitleIcon.Image = titleImage
 		end
-		resultBody.Text = string.format("Height %d  •  +%d coins%s%s%s%s%s", v.Height, v.Coins, if v.Boosted then " (2x)" else "", if v.Friends then " 👥+25%" else "", emberLine, bestLine, streakLine)
+		local lines: { { any } } = {
+			{ Icons.Coin, string.format("+%d coins%s%s  •  height %d", v.Coins, if v.Boosted then " (2x)" else "", if v.Friends then " (friends +25%)" else "", v.Height) },
+		}
+		if v.Embers > 0 then
+			table.insert(lines, { "berry", string.format("%d %s banked%s", v.Embers, if v.Embers == 1 then "berry" else "berries", if v.Doubled then " (x2!)" else "") })
+		end
+		local streak, streakWas = tonumber(v.Streak) or 0, tonumber(v.StreakWas) or 0
+		local streakText = if streak >= 2 then string.format("%d rounds in a row!", streak)
+			elseif streak == 0 and streakWas >= 2 then string.format("Streak ended at %d. Go again!", streakWas)
+			else nil
+		local bestText = if v.NewBest and (tonumber(v.PrevBest) or 0) > 0 then string.format("NEW BEST! %d (was %d)", v.Height, v.PrevBest)
+			elseif v.NewBest then "First best: " .. tostring(v.Height) .. ". Beat it next round!"
+			elseif type(v.Best) == "number" and not streakText then string.format("Your best: %d", v.Best) -- dropped beside a streak (the 🏅 meter marker shows it)
+			else nil
+		if bestText then
+			table.insert(lines, { Icons.Trophy, bestText })
+		end
+		if streakText then
+			table.insert(lines, { Icons.Power, streakText })
+		end
+		setResultLines(lines)
 		if v.NewBest and (tonumber(v.PrevBest) or 0) > 0 then
 			play("Crown", 1.2)
 		end
 		local left = tonumber(v.RisesLeft)
 		if v.Outcome == "SCORCHED" and left and left >= 1 and left <= 2 then
-			resultTitle.Text = if left == 1 then "😱 SO CLOSE! 1 rise left" else "😱 SO CLOSE! 2 rises left"
+			resultTitle.Text = if left == 1 then "SO CLOSE! 1 rise left" else "SO CLOSE! 2 rises left"
 		end
 		showChest(v.Chest)
 		result.Visible = true
+		task.defer(function()
+			-- Sit the crown/checkmark just left of the centred title text.
+			local width = resultTitle.AbsoluteSize.X
+			if width > 0 then
+				resultTitleIcon.Position = UDim2.new(0.5 - resultTitle.TextBounds.X / width / 2, -6, 0.5, 0)
+			end
+		end)
 		shareButton.Visible = canShare and v.Outcome ~= "SCORCHED" -- worth showing off: you escaped or survived
 		if v.AskFun then
 			funLabel.Text = "Having fun?"
@@ -1222,7 +1309,7 @@ Run.RenderStepped:Connect(function(dt)
 				local phase, phases = state.GridPhase or 0, state.GridPhases or 0
 				local stage = if phase <= 0 then "Get ready!" else string.format("Phase %d/%d", phase, phases)
 				-- No lava-distance count: with 3 big rises it changed too fast to be useful (the red tint still warns you).
-				info.Text = string.format("%s  •  👥 %d left  •  🍓 %d", stage, state.Alive or 0, me.Embers)
+				info.Text = string.format("%s  •  %d left  •  %d", stage, state.Alive or 0, me.Embers)
 				local target = if gap < 10 then 0.6 + 0.4 * (gap / 10) else 1
 				tint.BackgroundTransparency += (target - tint.BackgroundTransparency) * math.min(1, dt * 8)
 			else
@@ -1235,6 +1322,20 @@ Run.RenderStepped:Connect(function(dt)
 	end
 	if not inRush then
 		tint.BackgroundTransparency += (1 - tint.BackgroundTransparency) * math.min(1, dt * 4)
+	end
+	if info.Text ~= lastInfoText then
+		-- The 3D strawberry follows the berry count at the end of the "Phase • left • berries" line.
+		lastInfoText = info.Text
+		local showBerry = string.find(info.Text, " left  •  ", 1, true) ~= nil
+		infoBerryBox.Visible = showBerry
+		if showBerry then
+			task.defer(function()
+				local width = info.AbsoluteSize.X
+				if width > 0 then
+					infoBerryBox.Position = UDim2.new(0.5 + info.TextBounds.X / width / 2, 4, 0.5, 0)
+				end
+			end)
+		end
 	end
 
 	local floors = workspace:FindFirstChild("SkySprout") and workspace.SkySprout:FindFirstChild("Floors")

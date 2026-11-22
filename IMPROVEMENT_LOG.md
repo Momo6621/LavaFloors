@@ -3,6 +3,34 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 60. HUD and result card icons, bigger text (icon refresh, part 3)
+
+**Why.** The owner approved the preview (Media/hud-preview.jpg): "Yes, switch". They also asked to "change the font size
+too".
+
+**Built.**
+- **Coins panel.** The Flibpook coin and crown pictures replace 💰 and 👑. Numbers are 30 px (was 26) and 28 px (was 22).
+- **Round info line.** It reads "Phase 1/3 • 4 left • 2", followed by the game's own 3D strawberry (ViewportFrame,
+  placed from the text width). The line is 29 px tall (was 24).
+- **Result card.** The card is now 236 tall (was 210).
+  - The title gets a crown (ESCAPED!) or checkmark (SURVIVED!) image; the emoji came out of all titles.
+  - The single body text box became up to four picture rows: coin for coins and height, 3D strawberry for berries,
+    trophy for best, lightning for streaks. The rows share 132 px, with text up to 30 px.
+  - The chest bar has a gold gem instead of 🎁, which sometimes drew as a broken box.
+  - "1 berry" is now singular.
+- **Icon module.** `Coin` and `GemYellow` were added to LavaIcons.
+
+**Verified.** Studio solo playtest at 1130 × 753:
+- The coins panel showed the coin and crown with the larger numbers.
+- The round line read "Phase 1/3 • 4 left • 0" with the strawberry box placed after it (29 × 32 px at x = 698).
+- A crowned result card showed the crown, "ESCAPED!", "+58 coins • height 81", "1 berries banked (x2!)" (since fixed to
+  singular), "2 rounds in a row!" with lightning, and the gem on the chest bar (Media/result-card-icons.jpg).
+- Each line measured 29–30 px.
+- Repo and Studio hashes matched, and lint was clean.
+
+Not seen: the 3D strawberry pictures themselves. This Studio session drew no 3D at all, so the arena was blank too,
+though ViewportFrames rendered fine in earlier sessions (shop, buddy board).
+
 ## 59. Top bar icons: Flibpook images instead of emoji (icon refresh, part 2)
 
 **Why.** The owner called the emoji icons ugly. A side-by-side preview of today's top bar and the free Flibpook pack

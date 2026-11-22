@@ -13,6 +13,8 @@ local Icons = {
 	SoundOn = "rbxassetid://17169990697", -- 🎵 music on
 	SoundOff = "rbxassetid://17169988900", -- 🔇 music off
 	Gear = "rbxassetid://17169982145", -- ☰ phone menu
+	Coin = "rbxassetid://17169868637", -- 💰 coins (HUD chip, result card)
+	GemYellow = "rbxassetid://17169985132", -- 🎁 Lava Chest bar
 	Scale = 0.75, -- image size inside a top bar button (TopbarPlus draws images at 0.5, which looked tiny)
 }
 return Icons
