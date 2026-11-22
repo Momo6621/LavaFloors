@@ -3,6 +3,20 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 76. Two-player check: the late-join shove grace (no change needed)
+
+**Why.** #71's 2 s `JoinGrace` (nobody can shove a climber who just landed) was only untested because it needs two
+real players, and multiplayer tests were off while VALORANT was running. It's off now.
+
+**Checked.** 2-player Studio test. Player2 sat out, then joined 0.5 s after the floor started (a late drop-in).
+Player1 stood 3 studs beside Player2, facing them, and punched twice from the same spot. Player2 happened to have
+the underdog shield, which made the test clearer: a shove that targets a shielded player prints "bubble shield
+blocked your shove".
+- Punch 0.47 s after the join: only the swing, no shield message, so Player2 was not a target.
+- Punch 2.68 s after the join: "Player2's bubble shield blocked your shove!", so Player2 was a target again.
+
+**Verified.** As above; server console clean. No code changed.
+
 ## 75. Headroom under the 200-local limit in the lava client
 
 **Why.** After #74 the lava client counted 162 with the limit at 163, so any new top-level local would stop the
