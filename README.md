@@ -95,6 +95,9 @@ Progression and live-ops:
 - 📸 Share: after you escape or survive, a Share pill on the result card takes a screenshot and opens Roblox's own
   share sheet with an invite link to the game (CaptureService). It's hidden for players whose settings don't allow
   content sharing, and the card stays up 8 s so there's time to tap it.
+- "Having fun?": once a session, after your 3rd round, three emoji under the result card. The answer is logged as the
+  analytics custom event `FunRating` (1–3) with the round's twist, so the Creator Dashboard shows which twists kids
+  enjoy. `FunAskAfter` in CFG.
 - Near miss: knocked out one or two rises from the crown, the result card says "😱 SO CLOSE! N rises left".
 - Cheers: anyone not climbing (knocked out or sitting a round out) gets a bar of six preset emoji. A tap floats
   the emoji with your name up everyone's screen. No typing; the server allows one every 1.2 s (CFG.CheerCooldown).
