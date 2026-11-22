@@ -3,6 +3,38 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 45. Daily reward: a gentle streak and a calendar you can see
+
+**Why.** Roblox's discovery now weights day-1 retention
+([Roblox newsroom](https://about.roblox.com/newsroom/2026/06/optimizing-discovery-great-games-reach-millions-players-roblox)).
+LAVA Floors already paid a daily login reward climbing 25 → 300 over 7 days, but kids only saw a one-line notice, so
+the ladder was invisible. Missing a single day also reset it to Day 1, which punishes kids whose parents limit screen
+time and goes against the README's "no fake urgency" rule.
+
+**Change.**
+- Gentle streak (SkySproutShopService): the ladder counts days you've collected, up to the top reward. Missing a day
+  only pauses it.
+- When the coins are granted, the server sends `LavaDaily`. The client shows a 7-day calendar card: collected days
+  ✅, today in gold, and the next reward with "Missing a day won't reset it!". Tap or 7 s closes it.
+- The card never covers the floor. It waits until you've been out of a round for 3 s and the result card has closed.
+  If a round starts while it's showing, it goes back in the queue, up to 3 times.
+
+**Debugging the re-show.** The first three attempts all seemed to "fail to re-show" after a round cut the card short.
+Temporary trace attributes showed why: the re-show did fire, but into the 2-second lobby gap of a phase-1 knockout
+drop-back, and was cut short again. The fix was about when to show it (3 s settled), plus 3 re-shows instead of 1. A
+second fix: the card tracks whether it's on screen itself instead of trusting `Visible`. The traces were removed
+before committing.
+
+**Verified.** Solo Studio play tests:
+- Day 1 card screenshot.
+- A Day 3 card sent mid-round waited, then showed 1 s after the result card closed.
+- A 60 s timeline in a fresh session: the card skipped the 2 s drop-back gap, showed at 17.9 s, went back in the
+  queue when a round started at 24.2 s, and showed again at 45.2 s. It was on screen for 11.5 s in total, with 0
+  frames during a round.
+- The console was clean. Studio matches the repo by chunk hash for the shop service and client; place saved as
+  version 80.
+- Not testable in Studio: a real multi-day streak (DataStores are off, so every session is Day 1).
+
 ## 44. "Having fun?" check
 
 **Why.** Every iteration so far has been steered by outside research. Once the game is live, players' own answers

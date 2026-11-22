@@ -202,6 +202,102 @@ for i, face in { "😀", "😐", "😞" } do
 	end)
 end
 
+-- Daily reward calendar: when the day's coins arrive (once a day, after joining) a card shows the 7-day ladder: days
+-- already collected, today's reward and tomorrow's. Missing a day only pauses the ladder, it never resets. Tap to close.
+local dailyCard: TextButton = make("TextButton", { Name = "DailyCard", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.45), Size = UDim2.fromOffset(500, 156), Text = "", AutoButtonColor = false, Visible = false, ZIndex = 8 }, gui)
+UI.glass(dailyCard, 20)
+local dailyTitle: TextLabel = make("TextLabel", { BackgroundTransparency = 1, Position = UDim2.fromOffset(12, 8), Size = UDim2.new(1, -24, 0, 30), Font = FONT, TextScaled = true, Text = "🎁 DAILY REWARD", ZIndex = 9 }, dailyCard)
+UI.text(dailyTitle, "title")
+local dailyRow: Frame = make("Frame", { Name = "Days", BackgroundTransparency = 1, Position = UDim2.fromOffset(12, 46), Size = UDim2.new(1, -24, 0, 74), ZIndex = 9 }, dailyCard)
+make("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Center, Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder }, dailyRow)
+local dailyHint: TextLabel = make("TextLabel", { BackgroundTransparency = 1, Position = UDim2.fromOffset(12, 126), Size = UDim2.new(1, -24, 0, 22), Font = FONT, TextScaled = true, Text = "", ZIndex = 9 }, dailyCard)
+UI.text(dailyHint, "body")
+local dailyShownAt = 0
+local dailyOnScreen = false -- tracked here, since other HUD code can hide the card when a round starts
+dailyCard.Activated:Connect(function()
+	dailyCard.Visible = false
+	dailyOnScreen = false
+end)
+-- Never over the floor: a card that arrives while you're climbing (new players are often dropped straight into a
+-- round) or while the result card is up waits in dailyPending, and one loop shows it once you've been out of the
+-- round for a few seconds (a phase-1 knockout drops you back in after 2 s, too soon to read it). If a round starts
+-- while it's showing, it goes back in the queue, up to DAILY_RESHOWS times.
+local DAILY_SETTLE = 3
+local DAILY_RESHOWS = 3
+local dailyPending: any = nil
+local dailyLast: any = nil
+local dailyReshows = 0
+local lobbySince: number? = if player:GetAttribute("ArenaMode") ~= "LavaRush" then os.clock() else nil
+local function revealDaily(v: any)
+	local day = tonumber(v.Day) :: number
+	local rewards = v.Rewards
+	local mult = tonumber(v.Multiplier) or 1
+	for _, c in dailyRow:GetChildren() do
+		if c:IsA("GuiObject") then
+			c:Destroy()
+		end
+	end
+	for i, coins in rewards do
+		local isToday = i == day
+		local tile: TextLabel = make("TextLabel", {
+			LayoutOrder = i,
+			Size = UDim2.fromOffset(isToday and 70 or 58, isToday and 74 or 64),
+			BackgroundColor3 = if isToday then UI.Gold elseif i < day then UI.GlassLight else UI.Glass,
+			BackgroundTransparency = if i < day then 0.35 else 0.1,
+			Font = FONT,
+			TextScaled = true,
+			TextColor3 = if isToday then UI.Shadow else UI.Text,
+			Text = string.format("%s\n%s%d", if i < day then "✅" else "Day " .. i, "💰", (tonumber(coins) or 0) * mult),
+			ZIndex = 10,
+		}, dailyRow)
+		make("UICorner", { CornerRadius = UDim.new(0, 12) }, tile)
+		make("UIPadding", { PaddingTop = UDim.new(0, 6), PaddingBottom = UDim.new(0, 6), PaddingLeft = UDim.new(0, 4), PaddingRight = UDim.new(0, 4) }, tile)
+	end
+	dailyTitle.Text = string.format("🎁 DAY %d REWARD: +%d 💰", day, (tonumber(rewards[day]) or 0) * mult)
+	local nextCoins = tonumber(rewards[math.min(day + 1, #rewards)]) or 0
+	dailyHint.Text = if day < #rewards then string.format("Next time you play: 💰 %d. Missing a day won't reset it!", nextCoins * mult) else "Top reward every day you play!"
+	dailyCard.Visible = true
+	dailyOnScreen = true
+	dailyLast = v
+	local shownAt = os.clock()
+	dailyShownAt = shownAt
+	task.delay(7, function()
+		if dailyShownAt == shownAt then
+			dailyCard.Visible = false
+			dailyOnScreen = false
+		end
+	end)
+end
+local function showDaily(v: any)
+	if type(v) == "table" and tonumber(v.Day) and type(v.Rewards) == "table" then
+		dailyPending = v
+	end
+end
+task.spawn(function()
+	while true do
+		task.wait(1)
+		local settled = lobbySince ~= nil and os.clock() - lobbySince >= DAILY_SETTLE
+		if dailyPending and settled and not result.Visible then
+			local v = dailyPending
+			dailyPending = nil
+			revealDaily(v)
+		end
+	end
+end)
+player:GetAttributeChangedSignal("ArenaMode"):Connect(function()
+	local climbing = player:GetAttribute("ArenaMode") == "LavaRush"
+	lobbySince = if climbing then nil else (lobbySince or os.clock())
+	if climbing and dailyOnScreen then
+		dailyCard.Visible = false
+		dailyOnScreen = false
+		dailyShownAt = 0
+		if dailyReshows < DAILY_RESHOWS and dailyLast then
+			dailyReshows += 1
+			dailyPending = dailyLast
+		end
+	end
+end)
+
 -- 📸 Share: after you escape or survive, share a screenshot of your result with an invite link to the game, through
 -- Roblox's own share sheet. Players whose settings don't allow sharing never see the button, and where sharing isn't
 -- supported Roblox offers a download instead. The button hides itself so it isn't in the picture.
@@ -989,6 +1085,8 @@ event.OnClientEvent:Connect(function(kind: string, v: any)
 		task.delay(5, function()
 			banner.Visible = false
 		end)
+	elseif kind == "LavaDaily" then
+		showDaily(v)
 	elseif kind == "LavaCheer" then
 		if type(v) == "table" and state.Phase == "Round" and type(v.Name) == "string" and type(v.Emoji) == "string" then
 			showCheer(v.Name, v.Emoji)

@@ -67,6 +67,10 @@ Round extras:
   shove each other, and the last team standing wins (both teammates are crowned).
 
 Progression and live-ops:
+- Daily reward: coins once a day on joining, climbing 25 → 300 over 7 days you play (`DAILY` in
+  SkySproutShopService). Missing a day pauses the ladder instead of resetting it, so there's no "come back or lose it"
+  pressure. A 7-day calendar card shows collected days, today and the next reward. It only appears once you've been
+  out of a round for 3 s, never over the floor, and comes back (up to 3 times) if a round cuts it short.
 - Daily challenges: three a day for everyone (CFG.Challenges), paid on completion; shown in the Challenges panel.
 - Codes: typed into the Challenges panel, once per account (CFG.Codes, server-only). Launch codes LAVA, VOLCANO, ESCAPE.
 - Titles over your head (CFG.Titles), and a gold pillar with fireworks over every winner. Crown titles unlock with

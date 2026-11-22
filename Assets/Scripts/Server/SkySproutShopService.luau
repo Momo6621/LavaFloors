@@ -144,7 +144,9 @@ local function daily(p: Player)
 	if d.LastDaily == today then
 		return
 	end
-	local streak = if d.LastDaily == today - 1 then math.min((d.DailyStreak or 0) + 1, #DAILY) else 1
+	-- Gentle streak: it counts the days you've collected, up to the top reward. Missing a day only pauses it (kids often
+	-- can't play every day), so there's no "come back or lose it" pressure.
+	local streak = math.min((tonumber(d.DailyStreak) or 0) + 1, #DAILY)
 	local vipWait = os.clock()
 	while p.Parent == Players and p:GetAttribute("VIP") == nil and os.clock() - vipWait < 10 do
 		task.wait(0.5)
@@ -161,7 +163,12 @@ local function daily(p: Player)
 	stats(p)
 	task.wait(4)
 	if p.Parent == Players then
-		tell(p, string.format("🎁 Day %d daily reward: +%d coins%s!%s", streak, reward, if isVip then " (⭐ VIP x2)" else "", if streak < #DAILY then " Come back tomorrow for more." else " Max streak!"))
+		tell(p, string.format("🎁 Day %d daily reward: +%d coins%s!%s", streak, reward, if isVip then " (⭐ VIP x2)" else "", if streak < #DAILY then " Come back tomorrow for more." else " Top reward every day now!"))
+		-- The 7-day calendar card on the client (SkySproutLavaClient, "LavaDaily").
+		local remote = game.ReplicatedStorage:FindFirstChild("ArenaEvent")
+		if remote and remote:IsA("RemoteEvent") then
+			remote:FireClient(p, "LavaDaily", { Day = streak, Rewards = DAILY, Multiplier = if isVip and C.Vip then C.Vip.DailyMultiplier else 1 })
+		end
 	end
 end
 
