@@ -3,6 +3,27 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 54. Top bar fits on mid-size screens (no more overflow menus)
+
+**Why.** Iteration 53 showed that at 1130 px wide, the right-hand top bar folded into TopbarPlus's overflow menu
+whenever Lava Rush was showing in the lobby. That hid the main "🔥 Jump in!" button behind an extra tap, and the
+👀 Watch button from #52 made it worse. In the multiplayer test window (774 px), both sides overflowed. DevForum
+feedback on the Roblox top bar keeps coming back to how little room there is, and to managing that room being the
+developer's job ("New In-Game Topbar", "The new CoreGui is a downgrade").
+
+**Built.** A `UI.tight(full, short)` helper in LavaUI that switches to the short label below 1300 px. Gloves, Pass, VIP,
+Challenges, Emotes, Invite and the seasonal event pill use it, so the play buttons (Lava Rush, 👀 Watch) keep their words.
+`NARROW_WIDTH` (where even those go short) went from 900 to 960, because the worst-case bar needs about 955 px. On
+narrow screens, Invite shows just 👥 instead of "👥 +150".
+
+**Verified.** Studio solo playtest at 1130 × 753, sampling the top bar every 0.25 s for 2 minutes over several rounds.
+The left group ended at 515 px (578 after the first pass, 706 before). The worst-case right group (👥 +150, 😀, 🎵,
+"🔥 Jump in!" or "🔥 Lava Rush", and 👀 Watch / 🚶 Back) was 373 px, and neither overflow menu showed up once. The
+console was clean, and repo and Studio hashes matched. Not tested: below 960 px. At 774 px, measured widths of 46 px
+per short icon and 8 px gaps put the whole bar at about 790 px with Watch showing, so a 774 px window would still fold one
+icon away, while phones in landscape (about 800 to 930 px) should fit. A Device Simulator pass is the next check. I
+didn't run a second multiplayer test because the user is gaming on the main screen (see tools/move-studio-test-windows.ps1).
+
 ## 53. 🔇 Music stays off when you rejoin
 
 **Why.** Roblox players complain when audio choices don't stick between joins: DevForum threads report output-device

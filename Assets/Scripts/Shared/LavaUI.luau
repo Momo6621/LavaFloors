@@ -196,9 +196,16 @@ end
 
 -- Top bar label: the full text on big screens, the short one on phones and on windows too narrow for the full
 -- labels side by side (a ~770 px wide window overflowed the top bar).
-local NARROW_WIDTH = 900
+local NARROW_WIDTH = 960 -- below this even Lava Rush / 👀 Watch go short; the worst-case top bar needs ~955 px
 function U.short(full: string, compact: string): string
 	return if U.isCompact() or workspace.CurrentCamera.ViewportSize.X < NARROW_WIDTH then compact else full
+end
+
+-- For the less important top bar buttons: short a bit earlier (below TIGHT_WIDTH), so on mid-size screens the right
+-- group (Lava Rush, 👀 Watch, Music, Emotes, Invite) fits without folding into TopbarPlus's overflow menu.
+local TIGHT_WIDTH = 1300
+function U.tight(full: string, compact: string): string
+	return if workspace.CurrentCamera.ViewportSize.X < TIGHT_WIDTH then compact else U.short(full, compact)
 end
 
 return U
