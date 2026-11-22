@@ -3,6 +3,27 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 75. Headroom under the 200-local limit in the lava client
+
+**Why.** After #74 the lava client counted 162 with the limit at 163, so any new top-level local would stop the
+whole lava HUD from compiling again.
+
+**Built.** Three self-contained sections of SkySproutLavaClient now sit in their own `do ... end` scope: climb
+parallax (12 locals), the active volcano (6) and the climb meter (12). Their locals are only used inside them, so
+nothing else changes; ignoring indentation the diff is six lines. The count is now 146, so there are 17 spare
+slots.
+
+**Mistake caught.** My first pick also wrapped the daily reward calendar. The scan I used to find unused locals
+missed every `local function` (its pattern needed `=` or `:` after the name), and `showDaily` is called later, so the
+playtest console showed "attempt to call a nil value" at the LavaDaily handler. With the scan fixed, the daily
+section was left alone. The scan was a scratch script, not a repo check: the guard that matters here is reading the
+console after every play start (already in the testing notes).
+
+**Verified.** Studio copy rebuilt by the same transform and matches the repo (126349 bytes, hash 347076022); it
+compiles (`loadstring`). Solo playtest over several rounds: the climb meter shows in rounds and moves (lava line
+0.84 to 0.58, best mark 1.00 to 0.57), the volcano air model exists, and the console has no errors.
+`check_locals.py` and `check_luau.py` pass.
+
 ## 74. Lint: the 200-local limit (tools/check_locals.py)
 
 **Why.** The one fix for the mistake in #73: Luau gives a script's main body at most 200 registers, and going over

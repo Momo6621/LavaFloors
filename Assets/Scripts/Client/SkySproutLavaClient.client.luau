@@ -1818,160 +1818,162 @@ end)
 
 -- Climb parallax: local-only rocks, clouds and light streaks drift down past the grid in three depth layers,
 -- faster up close and slower far away, so the floor feels like it is climbing. They rush while the grid rises.
+do -- own scope, so these locals don't count toward the 200-local limit
 
-type Layer = { Count: number, Radius: NumberRange, Span: number, Drift: number, Rush: number }
-type Floater = { part: BasePart, layer: Layer, angle: number, radius: number, y: number, spin: number }
+	type Layer = { Count: number, Radius: NumberRange, Span: number, Drift: number, Rush: number }
+	type Floater = { part: BasePart, layer: Layer, angle: number, radius: number, y: number, spin: number }
 
-local LAYERS: { [string]: Layer } = {
-	Streak = { Count = if REDUCED_MOTION then 0 else math.ceil(70 * EFFECTS), Radius = NumberRange.new(54, 95), Span = 70, Drift = 18, Rush = 13 },
-	Rock = { Count = math.ceil(28 * EFFECTS), Radius = NumberRange.new(66, 94), Span = 110, Drift = 8, Rush = 5.5 },
-	Cloud = { Count = math.ceil(18 * EFFECTS), Radius = NumberRange.new(150, 230), Span = 160, Drift = 3, Rush = 2.2 },
-}
-local FOV_KICK = 9 -- extra field of view at full rush, the classic "speeding up" cue
-local fovApplied = 0
+	local LAYERS: { [string]: Layer } = {
+		Streak = { Count = if REDUCED_MOTION then 0 else math.ceil(70 * EFFECTS), Radius = NumberRange.new(54, 95), Span = 70, Drift = 18, Rush = 13 },
+		Rock = { Count = math.ceil(28 * EFFECTS), Radius = NumberRange.new(66, 94), Span = 110, Drift = 8, Rush = 5.5 },
+		Cloud = { Count = math.ceil(18 * EFFECTS), Radius = NumberRange.new(150, 230), Span = 160, Drift = 3, Rush = 2.2 },
+	}
+	local FOV_KICK = 9 -- extra field of view at full rush, the classic "speeding up" cue
+	local fovApplied = 0
 
-local climbFolder: Folder? = nil
-local floaters: { Floater } = {}
-local climbTheme: string? = nil
-local lastGridY: number? = nil
-local rush = 0
+	local climbFolder: Folder? = nil
+	local floaters: { Floater } = {}
+	local climbTheme: string? = nil
+	local lastGridY: number? = nil
+	local rush = 0
 
-local function floaterColour(kind: string, hue: number): Color3
-	if kind == "Streak" then
-		return Color3.fromHSV(hue, 0.35, 1)
-	elseif kind == "Rock" then
-		return Color3.fromHSV(hue, 0.3 + math.random() * 0.15, 0.22 + math.random() * 0.12)
-	end
-	return Color3.fromHSV(hue, 0.12, 1)
-end
-
-local function makeFloater(kind: string, layer: Layer, hue: number, parent: Instance): BasePart
-	local p = Instance.new("Part")
-	p.Name = kind
-	p.Anchored = true
-	p.CanCollide = false
-	p.CanQuery = false
-	p.CanTouch = false
-	p.CastShadow = false
-	p.Color = floaterColour(kind, hue)
-	if kind == "Streak" then
-		p.Material = Enum.Material.Neon
-		p.Size = Vector3.new(0.35, 5 + math.random() * 6, 0.35)
-		p.Transparency = 0.45
-	elseif kind == "Rock" then
-		p.Material = Enum.Material.Basalt
-		local s = 4 + math.random() * 7
-		p.Size = Vector3.new(s, s * (0.6 + math.random() * 0.5), s * (0.7 + math.random() * 0.5))
-	else
-		p.Shape = Enum.PartType.Ball
-		p.Material = Enum.Material.SmoothPlastic
-		local s = 30 + math.random() * 30
-		p.Size = Vector3.new(s, s * 0.22, s * 0.7)
-		p.Transparency = 0.7
-	end
-	p.Parent = parent
-	return p
-end
-
-local function clearClimb()
-	if climbFolder then
-		climbFolder:Destroy()
-	end
-	climbFolder = nil
-	table.clear(floaters)
-	climbTheme = nil
-	lastGridY = nil
-	rush = 0
-	workspace.CurrentCamera.FieldOfView -= fovApplied
-	fovApplied = 0
-end
-
-local function buildClimb(gridY: number)
-	clearClimb()
-	local folder = Instance.new("Folder")
-	folder.Name = "ClimbParallax"
-	folder.Parent = workspace.CurrentCamera
-	climbFolder = folder
-	climbTheme = workspace:GetAttribute("LavaTheme")
-	local hue = LavaThemes.Get(climbTheme).TileHue or 0.05
-	for kind, layer in LAYERS do
-		for _ = 1, layer.Count do
-			table.insert(floaters, {
-				part = makeFloater(kind, layer, hue, folder),
-				layer = layer,
-				angle = math.random() * math.pi * 2,
-				radius = layer.Radius.Min + math.random() * (layer.Radius.Max - layer.Radius.Min),
-				y = gridY + (math.random() * 2 - 1) * layer.Span,
-				spin = (math.random() * 2 - 1) * 0.6,
-			})
+	local function floaterColour(kind: string, hue: number): Color3
+		if kind == "Streak" then
+			return Color3.fromHSV(hue, 0.35, 1)
+		elseif kind == "Rock" then
+			return Color3.fromHSV(hue, 0.3 + math.random() * 0.15, 0.22 + math.random() * 0.12)
 		end
+		return Color3.fromHSV(hue, 0.12, 1)
 	end
-end
 
-Run.RenderStepped:Connect(function(dt: number)
-	local floors = workspace:FindFirstChild("SkySprout") and workspace.SkySprout:FindFirstChild("Floors")
-	local arena = floors and floors:FindFirstChild("Floor_1") and floors.Floor_1:FindFirstChild("LavaRush")
-	local tower = arena and arena:FindFirstChild("LavaRushTower")
-	local t = workspace:GetServerTimeNow()
-	local phase = if tower then Grid.Phase(tower, t) else -1
-	local phases = if tower then tower:GetAttribute("Phases") else nil
-	if not tower or phase < 0 or type(phases) ~= "number" or phase >= phases then
-		if climbFolder then
-			clearClimb()
-		end
-		return
-	end
-	local _, gridY = Grid.Pose(tower, t)
-	if not climbFolder then
-		buildClimb(gridY)
-	end
-	local themeNow = workspace:GetAttribute("LavaTheme")
-	if themeNow ~= climbTheme then
-		climbTheme = themeNow
-		local hue = LavaThemes.Get(themeNow).TileHue or 0.05
-		for _, f in floaters do
-			f.part.Color = floaterColour(f.part.Name, hue)
-		end
-	end
-	-- How fast the grid is climbing right now (0 between rises), smoothed so the rush eases in and out.
-	local climbing = if lastGridY and dt > 0 then math.max(0, (gridY - lastGridY) / dt) else 0
-	lastGridY = gridY
-	rush += (climbing - rush) * math.min(1, dt * 5)
-	local camera = workspace.CurrentCamera
-	local kick = if REDUCED_MOTION then 0 else math.clamp(rush / 5, 0, 1) * FOV_KICK
-	camera.FieldOfView += kick - fovApplied
-	fovApplied = kick
-	local cx, cz = tower:GetAttribute("CenterX"), tower:GetAttribute("CenterZ")
-	if type(cx) ~= "number" or type(cz) ~= "number" then
-		return
-	end
-	local cameraPos = camera.CFrame.Position
-	local cameraY = cameraPos.Y
-	local centreY = math.max(gridY, cameraY - 10)
-	for _, f in floaters do
-		local layer = f.layer
-		f.y -= (layer.Drift + rush * layer.Rush) * dt
-		if f.y < centreY - layer.Span then
-			f.y += layer.Span * 2
-			f.angle = math.random() * math.pi * 2
-		elseif f.y > centreY + layer.Span then
-			f.y -= layer.Span * 2
-		end
-		local pos = Vector3.new(cx + math.cos(f.angle) * f.radius, f.y, cz + math.sin(f.angle) * f.radius)
-		if f.part.Name == "Streak" then
-			-- Streaks stretch with the rush, like speed lines.
-			f.part.Size = Vector3.new(0.4, math.clamp(8 + rush * 3, 8, 40), 0.4)
-			-- Fade streaks that pass close to the camera so they never cut across the view.
-			local close = math.clamp((40 - (pos - cameraPos).Magnitude) / 25, 0, 1)
-			f.part.Transparency = math.min(1, math.clamp(0.5 - rush * 0.06, 0.15, 0.5) + close * 0.85)
-			f.part.CFrame = CFrame.new(pos)
-		elseif f.part.Name == "Cloud" then
-			f.part.CFrame = CFrame.new(pos) * CFrame.Angles(0, f.angle, 0)
+	local function makeFloater(kind: string, layer: Layer, hue: number, parent: Instance): BasePart
+		local p = Instance.new("Part")
+		p.Name = kind
+		p.Anchored = true
+		p.CanCollide = false
+		p.CanQuery = false
+		p.CanTouch = false
+		p.CastShadow = false
+		p.Color = floaterColour(kind, hue)
+		if kind == "Streak" then
+			p.Material = Enum.Material.Neon
+			p.Size = Vector3.new(0.35, 5 + math.random() * 6, 0.35)
+			p.Transparency = 0.45
+		elseif kind == "Rock" then
+			p.Material = Enum.Material.Basalt
+			local s = 4 + math.random() * 7
+			p.Size = Vector3.new(s, s * (0.6 + math.random() * 0.5), s * (0.7 + math.random() * 0.5))
 		else
-			f.part.CFrame = CFrame.new(pos) * CFrame.Angles(t * f.spin, t * f.spin * 0.7, 0)
+			p.Shape = Enum.PartType.Ball
+			p.Material = Enum.Material.SmoothPlastic
+			local s = 30 + math.random() * 30
+			p.Size = Vector3.new(s, s * 0.22, s * 0.7)
+			p.Transparency = 0.7
+		end
+		p.Parent = parent
+		return p
+	end
+
+	local function clearClimb()
+		if climbFolder then
+			climbFolder:Destroy()
+		end
+		climbFolder = nil
+		table.clear(floaters)
+		climbTheme = nil
+		lastGridY = nil
+		rush = 0
+		workspace.CurrentCamera.FieldOfView -= fovApplied
+		fovApplied = 0
+	end
+
+	local function buildClimb(gridY: number)
+		clearClimb()
+		local folder = Instance.new("Folder")
+		folder.Name = "ClimbParallax"
+		folder.Parent = workspace.CurrentCamera
+		climbFolder = folder
+		climbTheme = workspace:GetAttribute("LavaTheme")
+		local hue = LavaThemes.Get(climbTheme).TileHue or 0.05
+		for kind, layer in LAYERS do
+			for _ = 1, layer.Count do
+				table.insert(floaters, {
+					part = makeFloater(kind, layer, hue, folder),
+					layer = layer,
+					angle = math.random() * math.pi * 2,
+					radius = layer.Radius.Min + math.random() * (layer.Radius.Max - layer.Radius.Min),
+					y = gridY + (math.random() * 2 - 1) * layer.Span,
+					spin = (math.random() * 2 - 1) * 0.6,
+				})
+			end
 		end
 	end
-end)
+
+	Run.RenderStepped:Connect(function(dt: number)
+		local floors = workspace:FindFirstChild("SkySprout") and workspace.SkySprout:FindFirstChild("Floors")
+		local arena = floors and floors:FindFirstChild("Floor_1") and floors.Floor_1:FindFirstChild("LavaRush")
+		local tower = arena and arena:FindFirstChild("LavaRushTower")
+		local t = workspace:GetServerTimeNow()
+		local phase = if tower then Grid.Phase(tower, t) else -1
+		local phases = if tower then tower:GetAttribute("Phases") else nil
+		if not tower or phase < 0 or type(phases) ~= "number" or phase >= phases then
+			if climbFolder then
+				clearClimb()
+			end
+			return
+		end
+		local _, gridY = Grid.Pose(tower, t)
+		if not climbFolder then
+			buildClimb(gridY)
+		end
+		local themeNow = workspace:GetAttribute("LavaTheme")
+		if themeNow ~= climbTheme then
+			climbTheme = themeNow
+			local hue = LavaThemes.Get(themeNow).TileHue or 0.05
+			for _, f in floaters do
+				f.part.Color = floaterColour(f.part.Name, hue)
+			end
+		end
+		-- How fast the grid is climbing right now (0 between rises), smoothed so the rush eases in and out.
+		local climbing = if lastGridY and dt > 0 then math.max(0, (gridY - lastGridY) / dt) else 0
+		lastGridY = gridY
+		rush += (climbing - rush) * math.min(1, dt * 5)
+		local camera = workspace.CurrentCamera
+		local kick = if REDUCED_MOTION then 0 else math.clamp(rush / 5, 0, 1) * FOV_KICK
+		camera.FieldOfView += kick - fovApplied
+		fovApplied = kick
+		local cx, cz = tower:GetAttribute("CenterX"), tower:GetAttribute("CenterZ")
+		if type(cx) ~= "number" or type(cz) ~= "number" then
+			return
+		end
+		local cameraPos = camera.CFrame.Position
+		local cameraY = cameraPos.Y
+		local centreY = math.max(gridY, cameraY - 10)
+		for _, f in floaters do
+			local layer = f.layer
+			f.y -= (layer.Drift + rush * layer.Rush) * dt
+			if f.y < centreY - layer.Span then
+				f.y += layer.Span * 2
+				f.angle = math.random() * math.pi * 2
+			elseif f.y > centreY + layer.Span then
+				f.y -= layer.Span * 2
+			end
+			local pos = Vector3.new(cx + math.cos(f.angle) * f.radius, f.y, cz + math.sin(f.angle) * f.radius)
+			if f.part.Name == "Streak" then
+				-- Streaks stretch with the rush, like speed lines.
+				f.part.Size = Vector3.new(0.4, math.clamp(8 + rush * 3, 8, 40), 0.4)
+				-- Fade streaks that pass close to the camera so they never cut across the view.
+				local close = math.clamp((40 - (pos - cameraPos).Magnitude) / 25, 0, 1)
+				f.part.Transparency = math.min(1, math.clamp(0.5 - rush * 0.06, 0.15, 0.5) + close * 0.85)
+				f.part.CFrame = CFrame.new(pos)
+			elseif f.part.Name == "Cloud" then
+				f.part.CFrame = CFrame.new(pos) * CFrame.Angles(0, f.angle, 0)
+			else
+				f.part.CFrame = CFrame.new(pos) * CFrame.Angles(t * f.spin, t * f.spin * 0.7, 0)
+			end
+		end
+	end)
+end
 
 -- Spectate
 
@@ -2267,174 +2269,176 @@ end
 
 -- Active volcano: ash drifts down from the rim, sparks float up through the crater, the lava falls on the walls
 -- stream downward, and during a round the lava throws up glowing fountains every few seconds. All local and visual.
-local volcanoAir: Model? = nil
-local fallTextures: { Texture } = {}
-local blobs: { { part: BasePart, vel: Vector3, floorY: number } } = {}
-local nextFountain = 0
+do -- own scope, so these locals don't count toward the 200-local limit
+	local volcanoAir: Model? = nil
+	local fallTextures: { Texture } = {}
+	local blobs: { { part: BasePart, vel: Vector3, floorY: number } } = {}
+	local nextFountain = 0
 
-local function buildVolcanoAir(crater: Instance, cx: number, cz: number)
-	local rimAttr = crater:GetAttribute("RimY")
-	local rimY = if type(rimAttr) == "number" then rimAttr else 80
-	local air = Instance.new("Model")
-	air.Name = "VolcanoAir"
-	local function emitterPart(name: string, size: Vector3, at: Vector3): BasePart
-		local p = Instance.new("Part")
-		p.Name = name
-		p.Anchored = true
-		p.CanCollide = false
-		p.CanQuery = false
-		p.CanTouch = false
-		p.Transparency = 1
-		p.Size = size
-		p.CFrame = CFrame.new(at)
-		p.Parent = air
-		return p
-	end
-	local ashPart = emitterPart("Ash", Vector3.new(190, 1, 190), Vector3.new(cx, rimY + 12, cz))
-	local ash = Instance.new("ParticleEmitter")
-	ash.Shape = Enum.ParticleEmitterShape.Box
-	ash.ShapeStyle = Enum.ParticleEmitterShapeStyle.Volume
-	ash.EmissionDirection = Enum.NormalId.Bottom
-	ash.Rate = 45 * EFFECTS
-	ash.Lifetime = NumberRange.new(10, 16)
-	ash.Speed = NumberRange.new(3, 6)
-	ash.SpreadAngle = Vector2.new(20, 20)
-	ash.RotSpeed = NumberRange.new(-90, 90)
-	ash.Rotation = NumberRange.new(0, 360)
-	ash.Color = ColorSequence.new(Color3.fromRGB(150, 140, 140), Color3.fromRGB(90, 85, 90))
-	ash.Size = NumberSequence.new(0.35)
-	ash.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.1, 0.25), NumberSequenceKeypoint.new(1, 0.6) })
-	ash.Parent = ashPart
-	local sparkPart = emitterPart("Sparks", Vector3.new(170, 50, 170), Vector3.new(cx, 30, cz))
-	local sparks = Instance.new("ParticleEmitter")
-	sparks.Shape = Enum.ParticleEmitterShape.Box
-	sparks.ShapeStyle = Enum.ParticleEmitterShapeStyle.Volume
-	sparks.EmissionDirection = Enum.NormalId.Top
-	sparks.Rate = 70 * EFFECTS
-	sparks.Lifetime = NumberRange.new(3, 6)
-	sparks.Speed = NumberRange.new(2, 5)
-	sparks.SpreadAngle = Vector2.new(35, 35)
-	sparks.LightEmission = 1
-	sparks.Color = ColorSequence.new(Color3.fromRGB(255, 220, 110), Color3.fromRGB(255, 70, 15))
-	sparks.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.35), NumberSequenceKeypoint.new(1, 0) })
-	sparks.Parent = sparkPart
-	local snow = Instance.new("ParticleEmitter")
-	snow.Name = "Snow"
-	snow.Shape = Enum.ParticleEmitterShape.Box
-	snow.ShapeStyle = Enum.ParticleEmitterShapeStyle.Volume
-	snow.EmissionDirection = Enum.NormalId.Bottom
-	snow.Rate = 120
-	snow.Lifetime = NumberRange.new(8, 12)
-	snow.Speed = NumberRange.new(5, 9)
-	snow.SpreadAngle = Vector2.new(25, 25)
-	snow.Color = ColorSequence.new(Color3.new(1, 1, 1))
-	snow.LightEmission = 0.4
-	snow.Size = NumberSequence.new(0.3)
-	snow.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.1, 0.1), NumberSequenceKeypoint.new(1, 0.4) })
-	snow.Parent = ashPart
-	local function snowing()
-		local id = workspace:GetAttribute("LavaEvent")
-		local on = false
-		for _, e in Config.Events or {} do
-			if e.Id == id and e.Snow then
-				on = true
+	local function buildVolcanoAir(crater: Instance, cx: number, cz: number)
+		local rimAttr = crater:GetAttribute("RimY")
+		local rimY = if type(rimAttr) == "number" then rimAttr else 80
+		local air = Instance.new("Model")
+		air.Name = "VolcanoAir"
+		local function emitterPart(name: string, size: Vector3, at: Vector3): BasePart
+			local p = Instance.new("Part")
+			p.Name = name
+			p.Anchored = true
+			p.CanCollide = false
+			p.CanQuery = false
+			p.CanTouch = false
+			p.Transparency = 1
+			p.Size = size
+			p.CFrame = CFrame.new(at)
+			p.Parent = air
+			return p
+		end
+		local ashPart = emitterPart("Ash", Vector3.new(190, 1, 190), Vector3.new(cx, rimY + 12, cz))
+		local ash = Instance.new("ParticleEmitter")
+		ash.Shape = Enum.ParticleEmitterShape.Box
+		ash.ShapeStyle = Enum.ParticleEmitterShapeStyle.Volume
+		ash.EmissionDirection = Enum.NormalId.Bottom
+		ash.Rate = 45 * EFFECTS
+		ash.Lifetime = NumberRange.new(10, 16)
+		ash.Speed = NumberRange.new(3, 6)
+		ash.SpreadAngle = Vector2.new(20, 20)
+		ash.RotSpeed = NumberRange.new(-90, 90)
+		ash.Rotation = NumberRange.new(0, 360)
+		ash.Color = ColorSequence.new(Color3.fromRGB(150, 140, 140), Color3.fromRGB(90, 85, 90))
+		ash.Size = NumberSequence.new(0.35)
+		ash.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.1, 0.25), NumberSequenceKeypoint.new(1, 0.6) })
+		ash.Parent = ashPart
+		local sparkPart = emitterPart("Sparks", Vector3.new(170, 50, 170), Vector3.new(cx, 30, cz))
+		local sparks = Instance.new("ParticleEmitter")
+		sparks.Shape = Enum.ParticleEmitterShape.Box
+		sparks.ShapeStyle = Enum.ParticleEmitterShapeStyle.Volume
+		sparks.EmissionDirection = Enum.NormalId.Top
+		sparks.Rate = 70 * EFFECTS
+		sparks.Lifetime = NumberRange.new(3, 6)
+		sparks.Speed = NumberRange.new(2, 5)
+		sparks.SpreadAngle = Vector2.new(35, 35)
+		sparks.LightEmission = 1
+		sparks.Color = ColorSequence.new(Color3.fromRGB(255, 220, 110), Color3.fromRGB(255, 70, 15))
+		sparks.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.35), NumberSequenceKeypoint.new(1, 0) })
+		sparks.Parent = sparkPart
+		local snow = Instance.new("ParticleEmitter")
+		snow.Name = "Snow"
+		snow.Shape = Enum.ParticleEmitterShape.Box
+		snow.ShapeStyle = Enum.ParticleEmitterShapeStyle.Volume
+		snow.EmissionDirection = Enum.NormalId.Bottom
+		snow.Rate = 120
+		snow.Lifetime = NumberRange.new(8, 12)
+		snow.Speed = NumberRange.new(5, 9)
+		snow.SpreadAngle = Vector2.new(25, 25)
+		snow.Color = ColorSequence.new(Color3.new(1, 1, 1))
+		snow.LightEmission = 0.4
+		snow.Size = NumberSequence.new(0.3)
+		snow.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.1, 0.1), NumberSequenceKeypoint.new(1, 0.4) })
+		snow.Parent = ashPart
+		local function snowing()
+			local id = workspace:GetAttribute("LavaEvent")
+			local on = false
+			for _, e in Config.Events or {} do
+				if e.Id == id and e.Snow then
+					on = true
+				end
+			end
+			snow.Enabled = on
+		end
+		workspace:GetAttributeChangedSignal("LavaEvent"):Connect(snowing)
+		snowing()
+		air.Parent = workspace.CurrentCamera
+		volcanoAir = air
+		table.clear(fallTextures)
+		for _, d in crater:GetDescendants() do
+			if d:IsA("BasePart") and d.Name == "LavaFall" then
+				for layer = 1, 2 do
+					local tex = Instance.new("Texture")
+					tex.Face = Enum.NormalId.Front
+					tex.Texture = "rbxasset://textures/particles/smoke_main.dds"
+					tex.StudsPerTileU = if layer == 1 then 6 else 10
+					tex.StudsPerTileV = if layer == 1 then 9 else 15
+					tex.Color3 = if layer == 1 then Color3.fromRGB(255, 230, 130) else Color3.fromRGB(255, 160, 50)
+					tex.Transparency = if layer == 1 then 0.3 else 0.45
+					tex.Parent = d
+					table.insert(fallTextures, tex)
+				end
 			end
 		end
-		snow.Enabled = on
 	end
-	workspace:GetAttributeChangedSignal("LavaEvent"):Connect(snowing)
-	snowing()
-	air.Parent = workspace.CurrentCamera
-	volcanoAir = air
-	table.clear(fallTextures)
-	for _, d in crater:GetDescendants() do
-		if d:IsA("BasePart") and d.Name == "LavaFall" then
-			for layer = 1, 2 do
-				local tex = Instance.new("Texture")
-				tex.Face = Enum.NormalId.Front
-				tex.Texture = "rbxasset://textures/particles/smoke_main.dds"
-				tex.StudsPerTileU = if layer == 1 then 6 else 10
-				tex.StudsPerTileV = if layer == 1 then 9 else 15
-				tex.Color3 = if layer == 1 then Color3.fromRGB(255, 230, 130) else Color3.fromRGB(255, 160, 50)
-				tex.Transparency = if layer == 1 then 0.3 else 0.45
-				tex.Parent = d
-				table.insert(fallTextures, tex)
+
+	local function fountain(lava: BasePart, cx: number, cz: number)
+		local top = lava.Position.Y + lava.Size.Y / 2
+		local half = lava.Size.X / 2 - 2
+		-- Somewhere in the open lava around the grid.
+		local a = math.random() * math.pi * 2
+		local r = math.random() * 6 + half - 6
+		local at = Vector3.new(cx + math.cos(a) * r, top, cz + math.sin(a) * r)
+		burst(at, FIRE, 40, 18)
+		local me = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+		if me and me:IsA("BasePart") and (me.Position - at).Magnitude < 90 then
+			play("Scorch", 0.55 + math.random() * 0.1)
+		end
+		for _ = 1, if LOW_END then 5 else 9 do
+			local blob = Instance.new("Part")
+			blob.Shape = Enum.PartType.Ball
+			blob.Material = Enum.Material.Neon
+			blob.Color = Color3.fromRGB(255, 120 + math.random(0, 80), 30)
+			local s = 0.7 + math.random() * 1.1
+			blob.Size = Vector3.new(s, s, s)
+			blob.Anchored = true
+			blob.CanCollide = false
+			blob.CanQuery = false
+			blob.CanTouch = false
+			blob.CastShadow = false
+			blob.CFrame = CFrame.new(at)
+			local trail = Instance.new("ParticleEmitter")
+			trail.Texture = "rbxasset://textures/particles/fire_main.dds"
+			trail.Rate = 40
+			trail.Lifetime = NumberRange.new(0.3, 0.6)
+			trail.Speed = NumberRange.new(0.5, 1.5)
+			trail.LightEmission = 1
+			trail.Color = FIRE
+			trail.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, s * 1.2), NumberSequenceKeypoint.new(1, 0) })
+			trail.Parent = blob
+			blob.Parent = workspace
+			local spread = Vector3.new(math.random() - 0.5, 0, math.random() - 0.5) * 22
+			table.insert(blobs, { part = blob, vel = spread + Vector3.new(0, 30 + math.random() * 22, 0), floorY = top })
+		end
+	end
+
+	Run.RenderStepped:Connect(function(dt: number)
+		local floors = workspace:FindFirstChild("SkySprout") and workspace.SkySprout:FindFirstChild("Floors")
+		local arena = floors and floors:FindFirstChild("Floor_1") and floors.Floor_1:FindFirstChild("LavaRush")
+		local crater = arena and arena:FindFirstChild("Crater", true)
+		local tower = arena and arena:FindFirstChild("LavaRushTower")
+		local cx = tower and tower:GetAttribute("CenterX")
+		local cz = tower and tower:GetAttribute("CenterZ")
+		if crater and type(cx) == "number" and type(cz) == "number" and not volcanoAir then
+			buildVolcanoAir(crater, cx, cz)
+		end
+		for _, tex in fallTextures do
+			tex.OffsetStudsV = (tex.OffsetStudsV - dt * (if tex.StudsPerTileV < 12 then 14 else 9)) % tex.StudsPerTileV
+		end
+		local lava = tower and tower:FindFirstChild("Lava")
+		if lava and lava:IsA("BasePart") and type(cx) == "number" and type(cz) == "number" and state.Phase == "Round" and os.clock() >= nextFountain then
+			nextFountain = os.clock() + (if LOW_END then 5 else 3) + math.random() * 3
+			fountain(lava, cx, cz)
+		end
+		for i = #blobs, 1, -1 do
+			local b = blobs[i]
+			b.vel += Vector3.new(0, -70 * dt, 0)
+			local pos = b.part.Position + b.vel * dt
+			if pos.Y < b.floorY and b.vel.Y < 0 then
+				burst(Vector3.new(pos.X, b.floorY, pos.Z), FIRE, 8, 8)
+				b.part:Destroy()
+				table.remove(blobs, i)
+			else
+				b.part.CFrame = CFrame.new(pos)
 			end
 		end
-	end
+	end)
 end
-
-local function fountain(lava: BasePart, cx: number, cz: number)
-	local top = lava.Position.Y + lava.Size.Y / 2
-	local half = lava.Size.X / 2 - 2
-	-- Somewhere in the open lava around the grid.
-	local a = math.random() * math.pi * 2
-	local r = math.random() * 6 + half - 6
-	local at = Vector3.new(cx + math.cos(a) * r, top, cz + math.sin(a) * r)
-	burst(at, FIRE, 40, 18)
-	local me = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-	if me and me:IsA("BasePart") and (me.Position - at).Magnitude < 90 then
-		play("Scorch", 0.55 + math.random() * 0.1)
-	end
-	for _ = 1, if LOW_END then 5 else 9 do
-		local blob = Instance.new("Part")
-		blob.Shape = Enum.PartType.Ball
-		blob.Material = Enum.Material.Neon
-		blob.Color = Color3.fromRGB(255, 120 + math.random(0, 80), 30)
-		local s = 0.7 + math.random() * 1.1
-		blob.Size = Vector3.new(s, s, s)
-		blob.Anchored = true
-		blob.CanCollide = false
-		blob.CanQuery = false
-		blob.CanTouch = false
-		blob.CastShadow = false
-		blob.CFrame = CFrame.new(at)
-		local trail = Instance.new("ParticleEmitter")
-		trail.Texture = "rbxasset://textures/particles/fire_main.dds"
-		trail.Rate = 40
-		trail.Lifetime = NumberRange.new(0.3, 0.6)
-		trail.Speed = NumberRange.new(0.5, 1.5)
-		trail.LightEmission = 1
-		trail.Color = FIRE
-		trail.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, s * 1.2), NumberSequenceKeypoint.new(1, 0) })
-		trail.Parent = blob
-		blob.Parent = workspace
-		local spread = Vector3.new(math.random() - 0.5, 0, math.random() - 0.5) * 22
-		table.insert(blobs, { part = blob, vel = spread + Vector3.new(0, 30 + math.random() * 22, 0), floorY = top })
-	end
-end
-
-Run.RenderStepped:Connect(function(dt: number)
-	local floors = workspace:FindFirstChild("SkySprout") and workspace.SkySprout:FindFirstChild("Floors")
-	local arena = floors and floors:FindFirstChild("Floor_1") and floors.Floor_1:FindFirstChild("LavaRush")
-	local crater = arena and arena:FindFirstChild("Crater", true)
-	local tower = arena and arena:FindFirstChild("LavaRushTower")
-	local cx = tower and tower:GetAttribute("CenterX")
-	local cz = tower and tower:GetAttribute("CenterZ")
-	if crater and type(cx) == "number" and type(cz) == "number" and not volcanoAir then
-		buildVolcanoAir(crater, cx, cz)
-	end
-	for _, tex in fallTextures do
-		tex.OffsetStudsV = (tex.OffsetStudsV - dt * (if tex.StudsPerTileV < 12 then 14 else 9)) % tex.StudsPerTileV
-	end
-	local lava = tower and tower:FindFirstChild("Lava")
-	if lava and lava:IsA("BasePart") and type(cx) == "number" and type(cz) == "number" and state.Phase == "Round" and os.clock() >= nextFountain then
-		nextFountain = os.clock() + (if LOW_END then 5 else 3) + math.random() * 3
-		fountain(lava, cx, cz)
-	end
-	for i = #blobs, 1, -1 do
-		local b = blobs[i]
-		b.vel += Vector3.new(0, -70 * dt, 0)
-		local pos = b.part.Position + b.vel * dt
-		if pos.Y < b.floorY and b.vel.Y < 0 then
-			burst(Vector3.new(pos.X, b.floorY, pos.Z), FIRE, 8, 8)
-			b.part:Destroy()
-			table.remove(blobs, i)
-		else
-			b.part.CFrame = CFrame.new(pos)
-		end
-	end
-end)
 
 -- Bots ride their tile like everything else on the grid: the server only says which tile, so each client places
 -- them on the moving floor every frame, with a little hop arc between tiles and a tumble into the lava when out.
@@ -2586,154 +2590,156 @@ end
 
 -- Climb meter: a slim bar on the right edge. The floor marker climbs toward the crown at the top while the
 -- lava fills up from below, so you can see at a glance how high you are and how close the lava is.
+do -- own scope, so these locals don't count toward the 200-local limit
 
-local meter: Frame = make("Frame", {
-	Name = "ClimbMeter",
-	AnchorPoint = Vector2.new(1, 0.5),
-	Position = UDim2.new(1, -18, 0.43, 0),
-	Size = UDim2.new(0, 22, 0.38, 0),
-	BackgroundColor3 = Color3.fromRGB(35, 20, 30),
-	BackgroundTransparency = 0.25,
-	Visible = false,
-}, gui)
-make("UISizeConstraint", { MinSize = Vector2.new(22, 150), MaxSize = Vector2.new(22, 320) }, meter)
-make("UICorner", { CornerRadius = UDim.new(1, 0) }, meter)
-UI.glass(meter)
-local meterLava: Frame = make("Frame", {
-	AnchorPoint = Vector2.new(0, 1),
-	Position = UDim2.fromScale(0, 1),
-	Size = UDim2.fromScale(1, 0),
-	BackgroundColor3 = Color3.new(1, 1, 1),
-	BorderSizePixel = 0,
-}, meter)
-make("UICorner", { CornerRadius = UDim.new(1, 0) }, meterLava)
-make("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(255, 200, 60), Color3.fromRGB(230, 50, 20)) }, meterLava)
-local meterCrown: TextLabel = make("TextLabel", {
-	AnchorPoint = Vector2.new(0.5, 1),
-	Position = UDim2.new(0.5, 0, 0, -4),
-	Size = UDim2.fromOffset(34, 30),
-	BackgroundTransparency = 1,
-	Font = FONT,
-	TextScaled = true,
-	Text = "👑",
-}, meter)
-local meterFloor: Frame = make("Frame", {
-	AnchorPoint = Vector2.new(0.5, 0.5),
-	Position = UDim2.fromScale(0.5, 1),
-	Size = UDim2.fromOffset(40, 12),
-	BackgroundColor3 = Color3.new(1, 1, 1),
-	ZIndex = 3,
-}, meter)
-make("UICorner", { CornerRadius = UDim.new(0, 4) }, meterFloor)
-local meterFloorStroke: UIStroke = make("UIStroke", { Thickness = 2.5, Color = Color3.fromRGB(40, 20, 30) }, meterFloor)
-local meterTicks: { Frame } = {}
--- Your personal best: a gold line with a medal beside the bar, so you can see the height to beat this round.
-local meterBest: Frame = make("Frame", {
-	Name = "BestMark",
-	AnchorPoint = Vector2.new(0.5, 0.5),
-	Position = UDim2.fromScale(0.5, 0),
-	Size = UDim2.new(1, 10, 0, 3),
-	BackgroundColor3 = Color3.fromRGB(255, 215, 80),
-	BorderSizePixel = 0,
-	Visible = false,
-	ZIndex = 2,
-}, meter)
-make("TextLabel", {
-	AnchorPoint = Vector2.new(1, 0.5),
-	Position = UDim2.new(0, -4, 0.5, 0),
-	Size = UDim2.fromOffset(22, 22),
-	BackgroundTransparency = 1,
-	Font = FONT,
-	TextScaled = true,
-	Text = "🏅",
-	ZIndex = 2,
-}, meterBest)
-local bestCheered = false
+	local meter: Frame = make("Frame", {
+		Name = "ClimbMeter",
+		AnchorPoint = Vector2.new(1, 0.5),
+		Position = UDim2.new(1, -18, 0.43, 0),
+		Size = UDim2.new(0, 22, 0.38, 0),
+		BackgroundColor3 = Color3.fromRGB(35, 20, 30),
+		BackgroundTransparency = 0.25,
+		Visible = false,
+	}, gui)
+	make("UISizeConstraint", { MinSize = Vector2.new(22, 150), MaxSize = Vector2.new(22, 320) }, meter)
+	make("UICorner", { CornerRadius = UDim.new(1, 0) }, meter)
+	UI.glass(meter)
+	local meterLava: Frame = make("Frame", {
+		AnchorPoint = Vector2.new(0, 1),
+		Position = UDim2.fromScale(0, 1),
+		Size = UDim2.fromScale(1, 0),
+		BackgroundColor3 = Color3.new(1, 1, 1),
+		BorderSizePixel = 0,
+	}, meter)
+	make("UICorner", { CornerRadius = UDim.new(1, 0) }, meterLava)
+	make("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(255, 200, 60), Color3.fromRGB(230, 50, 20)) }, meterLava)
+	local meterCrown: TextLabel = make("TextLabel", {
+		AnchorPoint = Vector2.new(0.5, 1),
+		Position = UDim2.new(0.5, 0, 0, -4),
+		Size = UDim2.fromOffset(34, 30),
+		BackgroundTransparency = 1,
+		Font = FONT,
+		TextScaled = true,
+		Text = "👑",
+	}, meter)
+	local meterFloor: Frame = make("Frame", {
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 1),
+		Size = UDim2.fromOffset(40, 12),
+		BackgroundColor3 = Color3.new(1, 1, 1),
+		ZIndex = 3,
+	}, meter)
+	make("UICorner", { CornerRadius = UDim.new(0, 4) }, meterFloor)
+	local meterFloorStroke: UIStroke = make("UIStroke", { Thickness = 2.5, Color = Color3.fromRGB(40, 20, 30) }, meterFloor)
+	local meterTicks: { Frame } = {}
+	-- Your personal best: a gold line with a medal beside the bar, so you can see the height to beat this round.
+	local meterBest: Frame = make("Frame", {
+		Name = "BestMark",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0),
+		Size = UDim2.new(1, 10, 0, 3),
+		BackgroundColor3 = Color3.fromRGB(255, 215, 80),
+		BorderSizePixel = 0,
+		Visible = false,
+		ZIndex = 2,
+	}, meter)
+	make("TextLabel", {
+		AnchorPoint = Vector2.new(1, 0.5),
+		Position = UDim2.new(0, -4, 0.5, 0),
+		Size = UDim2.fromOffset(22, 22),
+		BackgroundTransparency = 1,
+		Font = FONT,
+		TextScaled = true,
+		Text = "🏅",
+		ZIndex = 2,
+	}, meterBest)
+	local bestCheered = false
 
-local meterLavaY: number? = nil
-local meterFloorFrac = 0
-local riseY: number? = nil
-local rising = false
+	local meterLavaY: number? = nil
+	local meterFloorFrac = 0
+	local riseY: number? = nil
+	local rising = false
 
-Run.RenderStepped:Connect(function(dt: number)
-	local floors = workspace:FindFirstChild("SkySprout") and workspace.SkySprout:FindFirstChild("Floors")
-	local arena = floors and floors:FindFirstChild("Floor_1") and floors.Floor_1:FindFirstChild("LavaRush")
-	local tower = arena and arena:FindFirstChild("LavaRushTower")
-	local watching = me.Running or spectating
-	local show = tower ~= nil and state.Phase == "Round" and watching and (player:GetAttribute("VisitFloor") or 1) == 1
-	meter.Visible = show
-	if not show or not tower then
-		meterLavaY, riseY, rising = nil, nil, false
-		bestCheered = false
-		return
-	end
-	local t = workspace:GetServerTimeNow()
-	local _, gridY = Grid.Pose(tower, t)
-	local bottom, top = state.BaseY, state.CrownY
-	local span = math.max(1, top - bottom)
-	local function frac(y: number): number
-		return math.clamp((y - bottom) / span, 0, 1)
-	end
-
-	-- One tick per rise, so the bar shows how many steps are left to the crown.
-	local base, step, phases = tower:GetAttribute("BaseY"), tower:GetAttribute("RiseStep"), tower:GetAttribute("Phases")
-	if type(base) == "number" and type(step) == "number" and type(phases) == "number" and #meterTicks ~= phases then
-		for _, tick in meterTicks do
-			tick:Destroy()
+	Run.RenderStepped:Connect(function(dt: number)
+		local floors = workspace:FindFirstChild("SkySprout") and workspace.SkySprout:FindFirstChild("Floors")
+		local arena = floors and floors:FindFirstChild("Floor_1") and floors.Floor_1:FindFirstChild("LavaRush")
+		local tower = arena and arena:FindFirstChild("LavaRushTower")
+		local watching = me.Running or spectating
+		local show = tower ~= nil and state.Phase == "Round" and watching and (player:GetAttribute("VisitFloor") or 1) == 1
+		meter.Visible = show
+		if not show or not tower then
+			meterLavaY, riseY, rising = nil, nil, false
+			bestCheered = false
+			return
 		end
-		table.clear(meterTicks)
-		for p = 1, phases do
-			table.insert(meterTicks, make("Frame", {
-				AnchorPoint = Vector2.new(0.5, 0.5),
-				Position = UDim2.fromScale(0.5, 1 - frac(base + step * p)),
-				Size = UDim2.new(1, -8, 0, 2),
-				BackgroundColor3 = Color3.new(1, 1, 1),
-				BackgroundTransparency = 0.55,
-				BorderSizePixel = 0,
-				ZIndex = 2,
-			}, meter))
+		local t = workspace:GetServerTimeNow()
+		local _, gridY = Grid.Pose(tower, t)
+		local bottom, top = state.BaseY, state.CrownY
+		local span = math.max(1, top - bottom)
+		local function frac(y: number): number
+			return math.clamp((y - bottom) / span, 0, 1)
 		end
-	end
 
-	meterLavaY = if meterLavaY then meterLavaY + (state.LavaY - meterLavaY) * math.min(1, dt * 4) else state.LavaY
-	local lavaFrac = frac(meterLavaY :: number)
-	meterLava.Size = UDim2.fromScale(1, lavaFrac)
-	meterFloorFrac += (frac(gridY) - meterFloorFrac) * math.min(1, dt * 10)
-	meterFloor.Position = UDim2.fromScale(0.5, 1 - meterFloorFrac)
-	local theme = LavaThemes.Get(workspace:GetAttribute("LavaTheme"))
-	local danger = math.clamp(1 - (meterFloorFrac - lavaFrac) / 0.12, 0, 1)
-	local blink = danger > 0.5 and (REDUCED_MOTION or math.floor(t * 6) % 2 == 0)
-	meterFloor.BackgroundColor3 = if blink then Color3.fromRGB(255, 70, 40) else Color3.fromHSV(theme.TileHue or 0.05, 0.35, 1)
-	meterFloorStroke.Color = if danger > 0.5 then Color3.fromRGB(120, 10, 0) else Color3.fromRGB(40, 20, 30)
-	meterCrown.TextTransparency = if meterFloorFrac > 0.97 then 0 else 0.35
-
-	-- Personal best marker. Heights are measured at your character, which stands about 3 studs above its tile.
-	local best = tonumber(player:GetAttribute("BestHeight")) or 0
-	local bestFrac = frac(bottom + best - 3)
-	meterBest.Visible = best > 0 and bestFrac < 0.97
-	meterBest.Position = UDim2.fromScale(0.5, 1 - bestFrac)
-	local myRoot = rootPart()
-	if me.Running and best > 0 and not bestCheered and myRoot and myRoot.Position.Y - bottom > best + 0.5 then
-		bestCheered = true -- climbed past your old best: cheer once per round
-		play("Crown", 1.5)
-		floatText(myRoot.Position + Vector3.new(0, 3, 0), "🏅 NEW BEST!")
-		burst(myRoot.Position, ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(255, 215, 80)), 50, 20)
-		pop(meterBest)
-	end
-
-	-- Whoosh + a little pop on the marker each time the floor starts to rise.
-	if riseY and gridY > riseY + 0.05 then
-		if not rising then
-			rising = true
-			play("Rise", 0.95 + math.random() * 0.1)
-			pop(meterFloor)
-			erupt(tower)
+		-- One tick per rise, so the bar shows how many steps are left to the crown.
+		local base, step, phases = tower:GetAttribute("BaseY"), tower:GetAttribute("RiseStep"), tower:GetAttribute("Phases")
+		if type(base) == "number" and type(step) == "number" and type(phases) == "number" and #meterTicks ~= phases then
+			for _, tick in meterTicks do
+				tick:Destroy()
+			end
+			table.clear(meterTicks)
+			for p = 1, phases do
+				table.insert(meterTicks, make("Frame", {
+					AnchorPoint = Vector2.new(0.5, 0.5),
+					Position = UDim2.fromScale(0.5, 1 - frac(base + step * p)),
+					Size = UDim2.new(1, -8, 0, 2),
+					BackgroundColor3 = Color3.new(1, 1, 1),
+					BackgroundTransparency = 0.55,
+					BorderSizePixel = 0,
+					ZIndex = 2,
+				}, meter))
+			end
 		end
-	elseif riseY and gridY <= riseY + 0.001 then
-		rising = false
-	end
-	riseY = gridY
-end)
+
+		meterLavaY = if meterLavaY then meterLavaY + (state.LavaY - meterLavaY) * math.min(1, dt * 4) else state.LavaY
+		local lavaFrac = frac(meterLavaY :: number)
+		meterLava.Size = UDim2.fromScale(1, lavaFrac)
+		meterFloorFrac += (frac(gridY) - meterFloorFrac) * math.min(1, dt * 10)
+		meterFloor.Position = UDim2.fromScale(0.5, 1 - meterFloorFrac)
+		local theme = LavaThemes.Get(workspace:GetAttribute("LavaTheme"))
+		local danger = math.clamp(1 - (meterFloorFrac - lavaFrac) / 0.12, 0, 1)
+		local blink = danger > 0.5 and (REDUCED_MOTION or math.floor(t * 6) % 2 == 0)
+		meterFloor.BackgroundColor3 = if blink then Color3.fromRGB(255, 70, 40) else Color3.fromHSV(theme.TileHue or 0.05, 0.35, 1)
+		meterFloorStroke.Color = if danger > 0.5 then Color3.fromRGB(120, 10, 0) else Color3.fromRGB(40, 20, 30)
+		meterCrown.TextTransparency = if meterFloorFrac > 0.97 then 0 else 0.35
+
+		-- Personal best marker. Heights are measured at your character, which stands about 3 studs above its tile.
+		local best = tonumber(player:GetAttribute("BestHeight")) or 0
+		local bestFrac = frac(bottom + best - 3)
+		meterBest.Visible = best > 0 and bestFrac < 0.97
+		meterBest.Position = UDim2.fromScale(0.5, 1 - bestFrac)
+		local myRoot = rootPart()
+		if me.Running and best > 0 and not bestCheered and myRoot and myRoot.Position.Y - bottom > best + 0.5 then
+			bestCheered = true -- climbed past your old best: cheer once per round
+			play("Crown", 1.5)
+			floatText(myRoot.Position + Vector3.new(0, 3, 0), "🏅 NEW BEST!")
+			burst(myRoot.Position, ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(255, 215, 80)), 50, 20)
+			pop(meterBest)
+		end
+
+		-- Whoosh + a little pop on the marker each time the floor starts to rise.
+		if riseY and gridY > riseY + 0.05 then
+			if not rising then
+				rising = true
+				play("Rise", 0.95 + math.random() * 0.1)
+				pop(meterFloor)
+				erupt(tower)
+			end
+		elseif riseY and gridY <= riseY + 0.001 then
+			rising = false
+		end
+		riseY = gridY
+	end)
+end
 
 -- Hot Potato: a quick beep each second for the last 3 seconds while you hold the bomb.
 local lastBombText = ""
