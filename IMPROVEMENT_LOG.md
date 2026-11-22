@@ -3,6 +3,30 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 64. Result card readable on phones again (after the font change)
+
+**Why.** Checked the #60/#61 changes on a small phone (Device Simulator, iPhone 7, 666 × 374). Everything fit, but
+the result card stayed 380 design px wide while the end-of-round area is scaled to about 0.53. In the wider Luckiest Guy
+font the lines came out only 14–17 px. Also checked: bots never pick up strawberries (only real climbers are tested
+against pickups), so the 2 edge strawberries are always there for kids.
+
+**Built.**
+- **Wider on phones.** On compact screens the result card may grow to 560 design px wide (380 elsewhere); the
+  end-of-round stack has room for it.
+- **Taller rows.** When the card has fewer than four lines, each row gets up to 44 design px (was a fixed 33). That's
+  enough to read bigger, but still short enough that one line beats wrapping onto two.
+
+**Verified.** Studio solo playtests (VALORANT open, so no extra windows):
+
+| Screen | Card width | Lines |
+|---|---|---|
+| iPhone 7, before | 201 px | 14–17 px |
+| iPhone 7, wider card only | 298 px | 17 px |
+| iPhone 7, wider card + taller rows | 298 px | 23 px each, one line |
+| Desktop 1130 × 753 | 344 px | 24 and 30 px, one line each |
+
+The console was clean, and repo and Studio hashes matched. Studio was reset to the default viewport.
+
 ## 63. Measure the edge-strawberry gamble (EdgeBerries analytics)
 
 **Why.** #58 and #62 made strawberries a risk: 2 a round on the outer ring that drops away in phase 2. #58 left open

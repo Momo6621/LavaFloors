@@ -197,7 +197,9 @@ local result: Frame = make("Frame", {
 	BackgroundColor3 = Color3.new(1, 1, 1),
 	Visible = false,
 }, endStack)
-make("UISizeConstraint", { MaxSize = Vector2.new(380, 236) }, result)
+-- Phones: the end-of-round area is scaled down to ~0.5, and at 380 wide the lines came out ~14 px (width-bound in
+-- Luckiest Guy), so the card may grow wider there; the stack has room for it.
+make("UISizeConstraint", { MaxSize = Vector2.new(if UI.isCompact() then 560 else 380, 236) }, result)
 make("UICorner", { CornerRadius = UDim.new(0, 20) }, result)
 make("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(255, 150, 40), Color3.fromRGB(235, 60, 25)) }, result)
 make("UIStroke", { Thickness = 5, Color = Color3.fromRGB(110, 25, 5), ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, result)
@@ -225,13 +227,15 @@ for i = 1, 4 do
 end
 -- Fill the card: each line is { picture = image id or "berry", text }. Rows are a fixed quarter of the area (centred),
 -- so the pictures stay one size and the wide Luckiest Guy text keeps to one line instead of wrapping in tall rows.
-local RESULT_ROW = 132 / 4
+local RESULT_ROW = 132 / 4 -- with all four lines; fewer lines get taller rows, up to RESULT_ROW_MAX
+local RESULT_ROW_MAX = 44 -- tall enough to read bigger, short enough that one line beats wrapping onto two
 local function setResultLines(lines: { { any } })
 	for i, line in resultLines do
 		local item = lines[i]
 		line.row.Visible = item ~= nil
 		if item then
-			line.row.Size = UDim2.new(1, 0, 0, RESULT_ROW)
+			local rowHeight = math.min(132 / #lines, RESULT_ROW_MAX)
+			line.row.Size = UDim2.new(1, 0, 0, rowHeight)
 			local pic = item[1]
 			line.berry.Visible = pic == "berry"
 			line.image.Visible = pic ~= "berry"
@@ -240,7 +244,7 @@ local function setResultLines(lines: { { any } })
 			end
 			line.text.Text = item[2]
 			-- The text starts right after the picture, which is as wide as the row is tall.
-			local picWidth = RESULT_ROW
+			local picWidth = rowHeight
 			line.text.Position = UDim2.new(0.06, picWidth + 8, 0, 0)
 			line.text.Size = UDim2.new(0.94, -picWidth - 14, 1, 0)
 		end
