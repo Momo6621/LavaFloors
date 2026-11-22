@@ -3,7 +3,7 @@
 -- Both HUD scripts style their frames, labels and buttons through these helpers so the whole game looks the same.
 local U = {}
 
-U.Font = Enum.Font.FredokaOne
+U.Font = Enum.Font.LuckiestGuy -- chunky cartoon caps (owner picked it from Media/font-options.jpg; was Fredoka One)
 U.Glass = Color3.fromRGB(24, 15, 17)
 U.GlassTransparency = 0.16
 U.GlassLight = Color3.fromRGB(54, 33, 31)
@@ -69,7 +69,7 @@ function U.text(label: TextLabel | TextButton, kind: string?)
 	if label.BackgroundTransparency < 1 then
 		-- It has its own glass background and border stroke, so outline the text the classic way.
 		label.TextStrokeColor3 = U.Shadow
-		label.TextStrokeTransparency = 0.25
+		label.TextStrokeTransparency = 0
 		clear(label, { "UIGradient" })
 	else
 		label.TextStrokeTransparency = 1
@@ -77,8 +77,8 @@ function U.text(label: TextLabel | TextButton, kind: string?)
 		local outline = Instance.new("UIStroke")
 		outline.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
 		outline.Color = U.Shadow
-		outline.Thickness = if kind == "title" then 2.5 else 1.5
-		outline.Transparency = 0.15
+		outline.Thickness = if kind == "title" then 3.5 else 2.5 -- thick dark outline so the text pops (was 2.5 / 1.5)
+		outline.Transparency = 0
 		outline.Parent = label
 	end
 	if kind == "title" then

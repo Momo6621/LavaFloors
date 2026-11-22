@@ -15,7 +15,7 @@ local Grid = require(RS:WaitForChild("LavaGrid")) :: any
 local player = Players.LocalPlayer
 local event = RS:WaitForChild("ArenaEvent") :: RemoteEvent
 
-local FONT = Enum.Font.FredokaOne
+local FONT = Enum.Font.LuckiestGuy
 local TITLE = Color3.fromRGB(255, 245, 140)
 local ORANGE = Color3.fromRGB(255, 150, 40)
 local STROKE = Color3.fromRGB(60, 15, 0)
@@ -213,7 +213,7 @@ type ResultLine = { row: Frame, image: ImageLabel, berry: Frame, text: TextLabel
 local resultLines: { ResultLine } = {}
 for i = 1, 4 do
 	local row: Frame = make("Frame", { Name = "Line" .. i, LayoutOrder = i, BackgroundTransparency = 1, Size = UDim2.fromScale(1, 0.25), Visible = false }, resultRows)
-	local pic: Frame = make("Frame", { Name = "Pic", BackgroundTransparency = 1, AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0.06, 0, 0.5, 0), Size = UDim2.fromScale(0.86, 0.86), SizeConstraint = Enum.SizeConstraint.RelativeYY }, row)
+	local pic: Frame = make("Frame", { Name = "Pic", BackgroundTransparency = 1, AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0.06, 0, 0.5, 0), Size = UDim2.fromScale(1, 1), SizeConstraint = Enum.SizeConstraint.RelativeYY }, row)
 	local image: ImageLabel = make("ImageLabel", { BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1), Visible = false }, pic)
 	local berryBox: Frame = make("Frame", { Name = "BerryBox", BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1), Visible = false }, pic)
 	berryIcon(berryBox)
@@ -223,13 +223,15 @@ for i = 1, 4 do
 	UI.text(text, "body")
 	table.insert(resultLines, { row = row, image = image, berry = berryBox, text = text })
 end
--- Fill the card: each line is { picture = image id or "berry", text }. Rows split the height, so fewer lines read bigger.
+-- Fill the card: each line is { picture = image id or "berry", text }. Rows are a fixed quarter of the area (centred),
+-- so the pictures stay one size and the wide Luckiest Guy text keeps to one line instead of wrapping in tall rows.
+local RESULT_ROW = 132 / 4
 local function setResultLines(lines: { { any } })
 	for i, line in resultLines do
 		local item = lines[i]
 		line.row.Visible = item ~= nil
 		if item then
-			line.row.Size = UDim2.fromScale(1, 1 / #lines)
+			line.row.Size = UDim2.new(1, 0, 0, RESULT_ROW)
 			local pic = item[1]
 			line.berry.Visible = pic == "berry"
 			line.image.Visible = pic ~= "berry"
@@ -237,8 +239,8 @@ local function setResultLines(lines: { { any } })
 				line.image.Image = pic
 			end
 			line.text.Text = item[2]
-			-- The text starts right after the picture, which is 0.86 of the row's height (rows share 132 design px).
-			local picWidth = 132 / #lines * 0.86
+			-- The text starts right after the picture, which is as wide as the row is tall.
+			local picWidth = RESULT_ROW
 			line.text.Position = UDim2.new(0.06, picWidth + 8, 0, 0)
 			line.text.Size = UDim2.new(0.94, -picWidth - 14, 1, 0)
 		end
@@ -1185,7 +1187,7 @@ event.OnClientEvent:Connect(function(kind: string, v: any)
 			elseif streak == 0 and streakWas >= 2 then string.format("Streak ended at %d. Go again!", streakWas)
 			else nil
 		local bestText = if v.NewBest and (tonumber(v.PrevBest) or 0) > 0 then string.format("NEW BEST! %d (was %d)", v.Height, v.PrevBest)
-			elseif v.NewBest then "First best: " .. tostring(v.Height) .. ". Beat it next round!"
+			elseif v.NewBest then "First best: " .. tostring(v.Height) .. "!"
 			elseif type(v.Best) == "number" and not streakText then string.format("Your best: %d", v.Best) -- dropped beside a streak (the 🏅 meter marker shows it)
 			else nil
 		if bestText then

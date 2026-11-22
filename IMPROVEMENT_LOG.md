@@ -3,6 +3,34 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 61. Luckiest Guy font with thick outlines ("make it pop for kids")
+
+**Why.** After #60 the owner asked for a different font style, not just a bigger size: "make it pop for kids". A preview
+board (Media/font-options.jpg) showed four styles: today's Fredoka One, Luckiest Guy with a thick outline and gold shine,
+a beefed-up Fredoka, and Bangers. The owner picked **B: Luckiest Guy**.
+
+**Built.**
+- **Font.** `U.Font`, both HUD scripts' `FONT` and SkySproutHUD's `BOLD` are now `Enum.Font.LuckiestGuy` (was
+  Fredoka One).
+- **Outlines.** `U.text` outlines are fully opaque and thicker: titles 3.5 (was 2.5), body 2.5 (was 1.5).
+- **Result card rows.** Rows are a fixed 33 design px, centred, with full-height pictures, so the wide caps stay on one
+  line. In tall two-line rows the text had wrapped.
+- **Wording.** "First best: N. Beat it next round!" became "First best: N!".
+
+**Verified.** Studio solo playtest at 1130 × 753:
+- The round panel, tip card, coins chip, Raise button, vote card and winner banner all render in Luckiest Guy with
+  the thick outline.
+- The result card shows the crown and "ESCAPED!", then "+60 coins • height 81" (25 px) and "First best: 81!" (29 px),
+  each on one line (Media/font-luckiest.jpg).
+- Repo and Studio hashes matched, and lint was clean.
+
+Not changed: TopbarPlus labels (they use TopbarPlus's own font) and the older shop and daily panels in
+SkySproutClient.
+
+**Privacy.** The winner banner shows the tester's Roblox username, so the name is now blurred in
+Media/font-luckiest.jpg, Media/result-card-icons.jpg and Media/phone-result-card.jpg (the last two were committed
+unblurred earlier and are still in git history).
+
 ## 60. HUD and result card icons, bigger text (icon refresh, part 3)
 
 **Why.** The owner approved the preview (Media/hud-preview.jpg): "Yes, switch". They also asked to "change the font size

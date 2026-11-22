@@ -3,7 +3,7 @@ local dark=Color3.fromRGB(38,32,84);local buttonColor=Color3.fromRGB(58,52,112);
 local ink=Color3.fromRGB(16,12,40)
 local blue=Color3.fromRGB(67,128,230);local muted=Color3.fromRGB(200,205,235)
 local gold=Color3.fromRGB(255,200,45)
-local BOLD=Font.fromEnum(Enum.Font.FredokaOne)
+local BOLD=Font.fromEnum(Enum.Font.LuckiestGuy)
 local MEDIUM=Font.new("rbxasset://fonts/families/BuilderSans.json",Enum.FontWeight.Bold)
 local NAV={Queue=Color3.fromRGB(240,70,80),Floors=Color3.fromRGB(150,90,255),Quests=Color3.fromRGB(50,150,255),Styles=Color3.fromRGB(255,140,40),Map=Color3.fromRGB(25,195,165),Settings=Color3.fromRGB(120,125,160),Mount=Color3.fromRGB(80,195,75)}
 local function stroke(v,thickness,color)

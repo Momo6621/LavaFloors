@@ -25,7 +25,7 @@ local ORANGE = Color3.fromRGB(255, 122, 40)
 local GREEN = Color3.fromRGB(70, 200, 90)
 local GOLD = Color3.fromRGB(255, 196, 45)
 local RED = Color3.fromRGB(235, 70, 60)
-local FONT = Enum.Font.FredokaOne
+local FONT = Enum.Font.LuckiestGuy
 
 local function make(className: string, props: { [string]: any }, parent: Instance?): any
 	local inst = Instance.new(className :: any)
