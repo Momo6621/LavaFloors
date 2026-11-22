@@ -159,6 +159,7 @@ local CFG = {
 	CrownCoins = 42,
 	XPPerCoin = 2,
 	FriendBonus = (GameConfig.FriendDeal and GameConfig.FriendDeal.Bonus) or 0.25,
+	FriendSpawnGap = 5, -- joining a friend in the lobby puts you this many studs beside them
 
 	-- Shield
 	ShieldOrbs = 1,
@@ -4697,7 +4698,8 @@ function L.Start(arena: any, remote: RemoteEvent, stats: (Player) -> (), notice:
 		for _, o in Players:GetPlayers() do
 			if o ~= p then
 				local ok, isFriend = pcall(function()
-					return p:IsFriendsWith(o.UserId)
+					-- Studio test players are never friends; the workspace attribute StudioFakeFriends makes them so.
+					return (Run:IsStudio() and workspace:GetAttribute("StudioFakeFriends") == true) or p:IsFriendsWith(o.UserId)
 				end)
 				if ok and isFriend then
 					friends[p][o.UserId] = true
@@ -4711,11 +4713,84 @@ function L.Start(arena: any, remote: RemoteEvent, stats: (Player) -> (), notice:
 			end
 		end
 	end
+	-- Spawn with friends: someone who joins a friend appears beside them in the lobby instead of at the spawn, so they
+	-- find each other straight away. Only onto solid, non-lava ground, and never into the round: if the friend is
+	-- climbing, the newcomer just gets a notice.
+	local function note(msg: string) -- Studio-only trace, so tests can see which way it went
+		if Run:IsStudio() then
+			print("[friends] " .. msg)
+		end
+	end
+	local function spawnNearFriend(p: Player)
+		local list = friends[p]
+		if not list or next(list) == nil then
+			note(p.Name .. " has no friend here")
+			return
+		end
+		if not p.Character then
+			p.CharacterAdded:Wait()
+		end
+		task.wait(1.5) -- after the character is scaled and placed
+		local mine = root(p)
+		if not p.Parent or not mine or p:GetAttribute("ArenaMode") == "LavaRush" then
+			note(p.Name .. " skipped (left, no character, or already climbing)")
+			return
+		end
+		local climbing: Player? = nil
+		for _, o in Players:GetPlayers() do
+			local theirs = root(o)
+			if list[o.UserId] and theirs then
+				if o:GetAttribute("ArenaMode") == "LavaRush" then
+					climbing = climbing or o
+				else
+					local params = RaycastParams.new()
+					params.FilterType = Enum.RaycastFilterType.Exclude
+					params.FilterDescendantsInstances = { o.Character :: Instance, p.Character :: Instance }
+					params.RespectCanCollide = true -- look through non-solid parts (the spawn pad) to the ground
+					local gap = CFG.FriendSpawnGap
+					local misses = {}
+					for _, side in { Vector3.new(gap, 0, 0), Vector3.new(-gap, 0, 0), Vector3.new(0, 0, gap), Vector3.new(0, 0, -gap) } do
+						local spot = theirs.Position + side
+						local hit = workspace:Raycast(spot + Vector3.new(0, 4, 0), Vector3.new(0, -12, 0), params)
+						if hit and not string.find(hit.Instance.Name, "Lava") then
+							local at = hit.Position + Vector3.new(0, 3.5, 0)
+							local character = p.Character :: Model
+							character:PivotTo(CFrame.lookAt(at, Vector3.new(theirs.Position.X, at.Y, theirs.Position.Z)))
+							tell(p, "👋 You're next to your friend " .. o.DisplayName .. "!")
+							tell(o, "👋 " .. p.DisplayName .. " is here, right next to you!")
+							note(string.format("%s placed %.1f studs from %s", p.Name, (at - theirs.Position).Magnitude, o.Name))
+							return
+						end
+						table.insert(misses, if hit then hit.Instance.Name else "nothing")
+					end
+					note(p.Name .. " found no ground beside " .. o.Name .. " (" .. table.concat(misses, ", ") .. ")")
+				end
+			end
+		end
+		if climbing then
+			tell(p, "👀 Your friend " .. climbing.DisplayName .. " is climbing right now. You'll be in the next round together!")
+			note(p.Name .. "'s friend " .. climbing.Name .. " is climbing")
+		else
+			note(p.Name .. ": no friend with a character in the lobby")
+		end
+	end
 	Players.PlayerAdded:Connect(function(p)
-		task.spawn(scanFriends, p)
+		note(p.Name .. " joined after the start")
+		task.spawn(function()
+			scanFriends(p)
+			spawnNearFriend(p)
+		end)
 	end)
-	for _, p in Players:GetPlayers() do
-		task.spawn(scanFriends, p)
+	-- Players who arrived while the server was still starting (a friend following someone into a fresh server):
+	-- everyone after the first joiner goes to an earlier friend, as if they had joined after the start.
+	for i, p in Players:GetPlayers() do
+		note(p.Name .. " was here at the start (#" .. i .. ")")
+		task.spawn(function()
+			scanFriends(p)
+			if i > 1 then
+				spawnNearFriend(p)
+			end
+		end)
 	end
 	Players.PlayerRemoving:Connect(function(p)
 		friends[p] = nil

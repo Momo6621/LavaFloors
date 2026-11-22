@@ -3,6 +3,39 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 41. Spawn with friends
+
+**Research.** Roblox ships an official "Spawn With Friends" module because, in its docs' words, it can be challenging
+to locate friends in-game ([Creator docs](https://create.roblox.com/docs/resources/modules/spawn-with-friends)).
+A [DevForum thread](https://devforum.roblox.com/t/allow-developers-to-modify-the-default-spawn-system/2017252/3) lists
+spawning near friends as a top reason games customise spawning. The module's docs warn that it can drop players into
+restricted areas; here that would be the round arena. LAVA Floors already noticed friends (+25% coins) but spawned
+everyone on the lobby pad.
+
+**Change.**
+- When someone joins and a friend is in the lobby, they're placed `FriendSpawnGap` (5) studs beside the friend,
+  facing them. Both get a 👋 notice.
+- The four candidate spots are raycast, and only ground that isn't lava counts. Non-solid parts such as the spawn pad
+  are ignored.
+- If the friend is climbing, the newcomer stays put and gets "👀 Your friend … is climbing right now. You'll be in
+  the next round together!"
+- Players who arrive while the server is still starting go through the same step: everyone after the first joiner
+  goes to an earlier friend.
+- Studio only: `StudioFakeFriends` makes test players friends, and `[friends]` lines in the server console show
+  which way it went.
+
+**What went wrong on the way.**
+- A line starting with `(p.Character :: Model):PivotTo(...)` right after another statement is ambiguous Luau. It
+  stopped the whole lava service from loading in the first test. Fixed with a local; a checker for this follows in
+  the next commit.
+- The ground check required `CanCollide`, but the friend stood on the spawn pad, which has `CanCollide` off, so every
+  spot was rejected. The `[friends]` trace showed it (four hits on "SpawnLocation"). Fixed with
+  `RespectCanCollide`.
+
+**Verified.** 2-player Studio test with `StudioFakeFriends`: the server printed "Player2 placed 5.0 studs from
+Player1", with no errors. Studio matches the repo by chunk hash; the attribute was cleared, and the place was saved
+as version 70. Not seen in a test: the "friend is climbing" notice (both players joined while the lobby was open).
+
 ## 40. Shove and hot potato knockout reasons checked (no change needed)
 
 **Why.** Entry 24 added a one-line "why you fell" reason to every knockout. The 💥 shove and 💣 hot potato reasons were

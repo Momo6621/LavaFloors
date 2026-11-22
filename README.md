@@ -51,6 +51,10 @@ have left, the reward waits for your next visit. Playing in the same server as a
 +25% coins every round, shown by the green "Friend boost" badge. Numbers live in `FriendDeal` in SkySproutConfig.
 In Studio, set the workspace attribute `StudioFakeReferrer` to a test player's UserId to simulate an invite.
 
+Spawn with friends: joining a friend who's in the lobby puts you 5 studs beside them (`FriendSpawnGap`), only on solid
+ground that isn't lava. If they're climbing, you get a notice that you'll be in the next round together. In Studio,
+the workspace attribute `StudioFakeFriends` makes every test player a friend, and the server prints `[friends]` lines.
+
 Round extras:
 - Final showdown: when two climbers (or two Duos teams) are left the lava surges and shoves hit harder.
 - Twist vote: at the end of a round everyone votes on one of three twists for the next round.
