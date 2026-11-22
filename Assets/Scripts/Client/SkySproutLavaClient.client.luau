@@ -917,6 +917,7 @@ event.OnClientEvent:Connect(function(kind: string, v: any)
 		local r = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
 		local h = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
 		if r and r:IsA("BasePart") and h and typeof(v) == "Vector3" and v.Magnitude < 120 then
+			h:SetAttribute("LavaShovedAt", os.clock()) -- forgiving jumps skip right after a shove or blast
 			h:ChangeState(Enum.HumanoidStateType.Freefall)
 			local attachment = make("Attachment", { Name = "LavaShoveAttachment" }, r)
 			make("LinearVelocity", {
@@ -2796,3 +2797,72 @@ do
 		end
 	end)
 end
+
+-- Forgiving jumps (coyote time and a jump buffer): a jump pressed up to COYOTE seconds after you walk off a tile or it
+-- drops away still jumps, and one pressed up to BUFFER seconds before you land jumps the moment you touch down. Only
+-- one jump per touch of the ground (no double jumps), and never right after a shove or the hot potato blast, so a
+-- hit still sends you flying. Its own function, so its locals don't count toward this script's 200-local limit.
+task.defer(function()
+	local COYOTE = 0.2 -- from when the feet leave the floor; Roblox already jumps for ~0.115 s (until it notices the fall)
+	local BUFFER = 0.12
+	local GROUNDED = {
+		[Enum.HumanoidStateType.Running] = true,
+		[Enum.HumanoidStateType.RunningNoPhysics] = true,
+		[Enum.HumanoidStateType.Landed] = true,
+	}
+	local lastGrounded = 0
+	local jumped = true -- already jumped since we last stood on something
+	local bufferedAt = -1
+	local function humanoid(): Humanoid?
+		local c = player.Character
+		return c and c:FindFirstChildOfClass("Humanoid")
+	end
+	local function canJump(h: Humanoid): boolean
+		local power = if h.UseJumpPower then h.JumpPower else h.JumpHeight
+		return h.Health > 0 and power > 0 and not h.Sit and not h.PlatformStand and h:GetStateEnabled(Enum.HumanoidStateType.Jumping)
+	end
+	local function watch(character: Model)
+		local h = character:WaitForChild("Humanoid", 10)
+		if h and h:IsA("Humanoid") then
+			h.StateChanged:Connect(function(_, new)
+				if new == Enum.HumanoidStateType.Jumping then
+					jumped = true
+				end
+			end)
+		end
+	end
+	player.CharacterAdded:Connect(watch)
+	if player.Character then
+		task.spawn(watch, player.Character)
+	end
+	Run.Heartbeat:Connect(function()
+		local h = humanoid()
+		if not h or not GROUNDED[h:GetState()] or h.FloorMaterial == Enum.Material.Air then
+			return
+		end
+		lastGrounded = os.clock()
+		jumped = false
+		if bufferedAt > 0 then
+			local fresh = lastGrounded - bufferedAt <= BUFFER
+			bufferedAt = -1
+			if fresh and canJump(h) then
+				jumped = true
+				h:ChangeState(Enum.HumanoidStateType.Jumping) -- h.Jump is ignored in the Landed state
+			end
+		end
+	end)
+	UIS.JumpRequest:Connect(function()
+		local h = humanoid()
+		if not h or h:GetState() ~= Enum.HumanoidStateType.Freefall or not canJump(h) then
+			return -- on the ground Roblox jumps by itself
+		end
+		local t = os.clock()
+		local shovedAt = tonumber(h:GetAttribute("LavaShovedAt")) or -1
+		if not jumped and t - lastGrounded <= COYOTE and t - shovedAt > 0.6 then
+			jumped = true
+			h:ChangeState(Enum.HumanoidStateType.Jumping)
+		else
+			bufferedAt = t
+		end
+	end)
+end)

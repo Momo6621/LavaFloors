@@ -3,6 +3,35 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 73. Forgiving jumps (coyote time and a jump buffer)
+
+**Why.** Floor-is-lava listings and DevForum/itch.io feedback on similar games keep coming back to movement: players
+like the idea but say the movement needs work
+(https://devforum.roblox.com/t/woah-is-the-floor-disappearing-looking-for-feedback-on-spleef-battles/324273). In
+LAVA Floors tiles shatter under you and kids hop tile to tile and up the pillar ledges, so a press a moment too late
+or too early just fails. Platformers forgive both; Roblox only forgives ~0.115 s late (until the humanoid notices the
+fall) and not at all early.
+
+**Built.** SkySproutLavaClient, client only (your own character's movement is yours anyway):
+- Coyote time: a jump pressed in free fall up to `COYOTE` (0.2 s) after the feet left a floor still jumps.
+- Jump buffer: a jump pressed up to `BUFFER` (0.12 s) before landing jumps on touchdown (`ChangeState(Jumping)`;
+  `Humanoid.Jump` is ignored in the Landed state).
+- One jump per landing, so no double jumps; skipped for 0.6 s after a shove or hot potato blast (the shove handler
+  stamps `LavaShovedAt` on the humanoid) so shoves still send you flying.
+
+**Mistake caught.** The first version added one top-level `local` and the script went over Luau's 200-local limit
+("Out of local registers when trying to allocate TILT"), so the whole lava client failed to compile in Studio. Lint
+passed; the Studio console showed it. Fixed by keeping the new code inside its own `task.defer` function and using a
+humanoid attribute instead of a new top-level local. Nothing broken was committed. A lint rule for this comes next,
+in its own change.
+
+**Verified.** Solo Studio playtest with a test platform 60 studs up removed by a key, real key presses, and the
+humanoid's states logged: press 0.13 s after the drop (already Freefall) jumped; press 0.3 s after did not; press
+0.09 s before landing jumped on touchdown; press 0.29 s before did not; a second press right after a jump did not
+double-jump; with `LavaShovedAt` just set, a press 0.13 s after the drop did not jump. The script compiles
+(`loadstring`), repo and Studio match (125669 bytes, hash 395013665), console clean. Not tested on touch or a
+controller (both go through JumpRequest).
+
 ## 72. Monetization table lists every pass (docs only)
 
 **Why.** Comparing the README with the code: commit 2700f5b added a one-time VIP game pass (`VipPassId`, preferred
