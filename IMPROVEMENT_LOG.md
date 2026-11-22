@@ -3,6 +3,32 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 47. Smoke test: every twist for a full round (no change needed)
+
+**Why.** Before launch, every round twist should run cleanly at least once with the current code. Several only get
+exercised when they come up at random, and the code around them has changed many times since they were written
+(shove feel, gifts, gems, titles, daily card, fun check).
+
+**Checked.** One solo Studio session, with the survival driver keeping the player alive through every phase. The
+server forced each twist for the next round with `StudioForceMutator`, then waited for that round to start and end:
+
+| Twist | Round length |
+|---|---|
+| Low Gravity | 36 s |
+| Turbo Spin | 34 s |
+| Hole Party | 36 s |
+| Speed Rush | 26 s |
+| Shield Party | 23 s |
+| Drop Party | 35 s |
+| Hot Potato | 19 s |
+| Duos | 20 s |
+| Big Heads | 20 s |
+| Classic | 26 s |
+
+Every round started and ended. The console showed no errors across all ten, only analytics lines and the expected
+Studio DataStore notice. A follow-up round confirmed the forcing itself: the round was announced as
+"🌅 Sunset · Twist: 🛡️ Shield Party!". No code changed, and the forced-twist attribute was cleared.
+
 ## 46. 🍭 Candy Crater, a bright daytime world
 
 **Why.** Editorial lists name variety as the main draw of party games (entry 31's sources), and entry 44's
