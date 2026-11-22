@@ -177,6 +177,31 @@ UI.glass(result, 20)
 UI.text(resultTitle, "title")
 UI.text(resultBody, "body")
 
+-- Fun check: once a session (after a few rounds) the server asks "Having fun?" under the result card. Three emoji, no
+-- typing; the answer goes to the game's analytics with the round's twist, so the owner can see what kids enjoy.
+local funCard: Frame = make("Frame", { Name = "FunCard", LayoutOrder = 3, Size = UDim2.new(1, 0, 0, 52), Visible = false }, endStack)
+make("UISizeConstraint", { MaxSize = Vector2.new(380, 52) }, funCard)
+UI.glass(funCard, 16)
+local funLabel: TextLabel = make("TextLabel", { BackgroundTransparency = 1, Position = UDim2.fromOffset(14, 0), Size = UDim2.new(0.42, -14, 1, 0), Font = FONT, TextScaled = true, Text = "Having fun?", TextXAlignment = Enum.TextXAlignment.Left }, funCard)
+UI.text(funLabel, "body")
+make("UIPadding", { PaddingTop = UDim.new(0, 10), PaddingBottom = UDim.new(0, 10) }, funLabel)
+local funRow: Frame = make("Frame", { Name = "Faces", BackgroundTransparency = 1, AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -8, 0.5, 0), Size = UDim2.new(0.58, -8, 0, 40) }, funCard)
+make("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Right, Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder }, funRow)
+for i, face in { "😀", "😐", "😞" } do
+	local value = 4 - i -- 3 = 😀, 1 = 😞
+	local b: TextButton = make("TextButton", { Name = "Fun" .. value, LayoutOrder = i, Size = UDim2.fromOffset(52, 40), Font = FONT, TextScaled = true, Text = face }, funRow)
+	make("UICorner", { CornerRadius = UDim.new(0, 12) }, b)
+	UI.button(b, UI.Lava)
+	b.Activated:Connect(function()
+		event:FireServer("LavaFun", value)
+		funLabel.Text = "💛 Thanks!"
+		funRow.Visible = false
+		task.delay(1.5, function()
+			funCard.Visible = false
+		end)
+	end)
+end
+
 -- 📸 Share: after you escape or survive, share a screenshot of your result with an invite link to the game, through
 -- Roblox's own share sheet. Players whose settings don't allow sharing never see the button, and where sharing isn't
 -- supported Roblox offers a download instead. The button hides itself so it isn't in the picture.
@@ -991,15 +1016,21 @@ event.OnClientEvent:Connect(function(kind: string, v: any)
 		showChest(v.Chest)
 		result.Visible = true
 		shareButton.Visible = canShare and v.Outcome ~= "SCORCHED" -- worth showing off: you escaped or survived
+		if v.AskFun then
+			funLabel.Text = "Having fun?"
+			funRow.Visible = true
+			funCard.Visible = true
+		end
 		pop(result)
 		local shownFor = chestShown
 		local hold = if type(v.Chest) == "table" and (tonumber(v.Chest.Opened) or 0) > 0 then 7 else 5.5
-		if shareButton.Visible then
-			hold = math.max(hold, 8) -- time to notice and tap 📸 Share
+		if shareButton.Visible or v.AskFun then
+			hold = math.max(hold, 8) -- time to notice and tap 📸 Share or a face
 		end
 		task.delay(hold, function()
 			if shownFor == chestShown then
 				result.Visible = false
+				funCard.Visible = false
 			end
 		end)
 	end

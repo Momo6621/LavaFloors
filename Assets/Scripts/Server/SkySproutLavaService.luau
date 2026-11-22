@@ -160,6 +160,7 @@ local CFG = {
 	XPPerCoin = 2,
 	FriendBonus = (GameConfig.FriendDeal and GameConfig.FriendDeal.Bonus) or 0.25,
 	FriendSpawnGap = 5, -- joining a friend in the lobby puts you this many studs beside them
+	FunAskAfter = 3, -- once a session, after this many finished rounds, ask "Having fun?" (analytics FunRating)
 
 	-- Shield
 	ShieldOrbs = 1,
@@ -340,6 +341,8 @@ local L = {
 	RoundId = 0, -- counts rounds on this server (analytics funnel sessions)
 	Predictions = {} :: { [Player]: string }, -- knocked-out players' free "pick the winner" guesses this round
 	Gifted = {} :: { [Player]: boolean }, -- players who already sent their strawberry gift this round
+	SessionRounds = setmetatable({}, { __mode = "k" }) :: any, -- [Player] = rounds finished this session
+	FunAsked = setmetatable({}, { __mode = "k" }) :: any, -- [Player] = twist Id while "Having fun?" is open, true once answered
 	LastCheer = setmetatable({}, { __mode = "k" }) :: any, -- [Player] = time of their last cheer (rate limit)
 	LossStreak = setmetatable({}, { __mode = "k" }) :: any, -- [Player] = rounds in a row knocked out (this server)
 	BotEase = 0, -- extra bot mistake chance after bot wins in a row (see CFG.BotEase)
@@ -3121,7 +3124,13 @@ local function payout()
 				A.Season.AddXP(p, xp.Played + (if r.crowned then xp.Crowned elseif r.alive then xp.Survived else 0) + (if r.crowned or r.alive then r.embers * xp.Berry else 0))
 			end
 			pushStats(p)
+			L.SessionRounds[p] = (L.SessionRounds[p] or 0) + 1
+			local askFun = L.SessionRounds[p] == CFG.FunAskAfter and L.FunAsked[p] == nil
+			if askFun then
+				L.FunAsked[p] = L.Mutator.Id -- the twist this answer is about
+			end
 			event:FireClient(p, "LavaResult", {
+				AskFun = askFun,
 				Outcome = if r.crowned then "CROWNED" elseif r.alive then "SURVIVED" else "SCORCHED",
 				Height = height,
 				Best = tonumber(d.BestHeight) or height,
@@ -4386,6 +4395,23 @@ function L.HandleAction(p: Player, action: unknown, _value: unknown): boolean
 			L.LastCheer[p] = now()
 			for _, other in Players:GetPlayers() do
 				event:FireClient(other, "LavaCheer", { Name = p.DisplayName, Emoji = emoji })
+			end
+		end
+		return true
+	end
+	if action == "LavaFun" then
+		-- "Having fun?" answer: 1 😞, 2 😐, 3 😀. Only after the server asked, only once a session; logged with the
+		-- round's twist so the owner can see which twists kids enjoy (analytics records nothing in Studio).
+		local twist = L.FunAsked[p]
+		local value = tonumber(_value)
+		if type(twist) == "string" and value and value % 1 == 0 and value >= 1 and value <= 3 then
+			L.FunAsked[p] = true
+			track(function()
+				AnalyticsService:LogCustomEvent(p, "FunRating", value, { [Enum.AnalyticsCustomFieldKeys.CustomField01.Name] = "Twist - " .. twist })
+			end)
+			tell(p, "💛 Thanks! That helps make LAVA Floors more fun.")
+			if Run:IsStudio() then
+				print(string.format("[fun] %s rated %d after a %s round", p.Name, value, twist))
 			end
 		end
 		return true

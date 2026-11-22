@@ -3,6 +3,25 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 44. "Having fun?" check (in progress)
+
+**Why.** Every iteration so far has been steered by outside research. Once the game is live, players' own answers
+should steer it. Roblox analytics custom events are server-only and record nothing in Studio
+(Studio's `rbx-instrument-analytics` skill); custom fields are preferred over new event names, which are capped at 100.
+
+**Change.**
+- Once a session, on the player's 3rd finished round (`FunAskAfter`), the result message carries `AskFun`.
+- The client shows a small "Having fun? 😀 😐 😞" strip under the result card. There's no typing, and the card
+  stays up 8 s.
+- The server accepts one answer (1–3), only after it asked, and logs `FunRating` with CustomField01 "Twist - <id>",
+  so the dashboard can show which twists kids enjoy. The player gets a 💛 thank-you notice.
+
+**Verified so far.** Solo Studio play test: the strip appeared on the 3rd result (screenshot), under the result card
+with no overlap. Studio matches the repo by chunk hash; place saved as version 74.
+
+**Not verified yet (paused here).** The click and the server's `[fun]` log line: the card closed before the test's
+click arrived. Next step: restart play, then click the moment the strip appears.
+
 ## 43. 📸 Share your escape
 
 **Research.** Roblox's Captures API lets a game take a screenshot and open the device's share sheet with it, plus an
