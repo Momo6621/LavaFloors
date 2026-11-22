@@ -3,6 +3,26 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 46. 🍭 Candy Crater, a bright daytime world
+
+**Why.** Editorial lists name variety as the main draw of party games (entry 31's sources), and entry 44's
+"Having fun?" check now records which rounds kids enjoy. All four world themes were fiery or night-time, and kids'
+favourite worlds lean bright and colourful.
+
+**Change.** A fifth theme in LavaThemes (weight 2):
+- mint tiles (hue 0.44) over lava shifted to strawberry pink (`Hue` 0.92);
+- pinkish crater rock and a sunny midday sky (`Sky` "Day", clock 13.5) with a soft pink haze.
+
+It's data only, picked like the other themes. Mint keeps the red warning tiles easy to tell apart. The first try used
+hue 0.52, which read as ice, so it moved to mint.
+
+**Verified.** Studio play test with `StudioForceTheme = "Candy"`:
+- The theme was "Candy" and the clock 13.5.
+- Screenshots from a climber's view and overhead mid-round (saved as `Media/candy-crater.jpg`): the gaps and lava
+  glow pink, worn tiles darken visibly, and strawberries stand out.
+- The console was clean. Studio matches the repo by chunk hash; the forced theme was cleared, and the place was
+  saved as version 81.
+
 ## 45. Daily reward: a gentle streak and a calendar you can see
 
 **Why.** Roblox's discovery now weights day-1 retention

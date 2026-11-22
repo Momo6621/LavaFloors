@@ -144,6 +144,36 @@ T.List = {
 		Saturation = 0.1,
 		Contrast = 0.07,
 	},
+	{
+		-- The one bright daytime world: mint tiles over strawberry-pink "syrup" lava under a sunny sky. Mint keeps the
+		-- red warning tiles easy to tell apart.
+		Id = "Candy",
+		Name = "🍭 Candy Crater",
+		Weight = 2,
+		Hue = 0.92,
+		Rock = Color3.fromRGB(150, 98, 140),
+		RockMix = 0.45,
+		Moon = nil,
+		MoonHalo = nil,
+		Sky = "Day",
+		Stars = 0,
+		Clock = 13.5,
+		Brightness = 2.4,
+		Exposure = 0,
+		Ambient = Color3.fromRGB(170, 150, 178),
+		Outdoor = Color3.fromRGB(185, 165, 195),
+		AirColor = Color3.fromRGB(255, 196, 226),
+		AirDecay = Color3.fromRGB(150, 100, 175),
+		AirDensity = 0.24,
+		Haze = 1.1,
+		Tint = Color3.fromRGB(255, 242, 250),
+		Water = Color3.fromRGB(110, 190, 230),
+		TileHue = 0.44,
+		Bloom = 0.22,
+		BloomThreshold = 1.8,
+		Saturation = 0.15,
+		Contrast = 0.05,
+	},
 } :: { Theme }
 
 T.ById = {} :: { [string]: Theme }
