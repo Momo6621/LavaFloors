@@ -3,6 +3,27 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 66. Coin icon on shop prices, the Raise button and challenge rewards
+
+**Why.** The last 💰 emoji next to the new coins panel. A preview (Media/coin-icon-preview.jpg) of shop price buttons,
+the Raise button and a challenge reward, with emoji and with the Flibpook coin, got "Yes, use the coin icon".
+
+**Built.** In LavaFloorsUI:
+- **Shop prices.** A `setPrice(button, amount, colour)` helper shows the number with the coin just left of it (placed
+  from the text width, re-placed when the text or size changes). `setButton` hides the coin again when a card switches
+  to WEAR, ✓ WORN or BRING. Gloves, hats and buddies all use it.
+- **Challenge rewards.** They read "+50" with the coin after it.
+- **Raise button.** It's now a "⬆️ RAISE" line over a coin and 40 row.
+- **Left alone.** The Lava Pass reward labels, the event pill and the Invite label weren't part of the approved preview.
+
+**Verified.** Studio solo playtest (VALORANT open, so no extra windows):
+- A real tap on the Gloves button opened the shop. The price buttons showed the coin and 160, 320 and 600, while
+  ✓ WORN showed no coin.
+- In a round the Raise button showed "⬆️ RAISE" over the coin and 40.
+- Studio rendered 3D again this time, and the round line showed the 3D strawberry after the berry count, which closes
+  the check left open in #60.
+- The console was clean, and repo and Studio hashes matched (50,240 bytes).
+
 ## 65. Pre-launch hygiene sweep (no change needed)
 
 **Why.** After 64 iterations of syncing, temporary preview boards, Studio-only test hooks and test attributes, check that

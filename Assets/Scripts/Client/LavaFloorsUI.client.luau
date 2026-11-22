@@ -193,6 +193,29 @@ end
 local function setButton(b: TextButton, text: string, color: Color3)
 	b.Text = text
 	UI.button(b, color)
+	local coin = b:FindFirstChild("CoinIcon")
+	if coin and coin:IsA("ImageLabel") then
+		coin.Visible = false -- a price button that now says WEAR / ✓ WORN
+	end
+end
+-- Prices show the Flibpook coin (as on the coins panel) just left of the number, instead of 💰.
+local function setPrice(b: TextButton, amount: number, color: Color3)
+	setButton(b, tostring(amount), color)
+	local coin = b:FindFirstChild("CoinIcon") :: ImageLabel?
+	if not coin then
+		local icon: ImageLabel = make("ImageLabel", { Name = "CoinIcon", BackgroundTransparency = 1, Image = Icons.Coin, AnchorPoint = Vector2.new(1, 0.5), Size = UDim2.fromScale(0.62, 0.62), SizeConstraint = Enum.SizeConstraint.RelativeYY }, b)
+		local function place()
+			local width = b.AbsoluteSize.X
+			if width > 0 then
+				icon.Position = UDim2.new(0.5 - b.TextBounds.X / width / 2, -3, 0.5, 0)
+			end
+		end
+		b:GetPropertyChangedSignal("TextBounds"):Connect(place)
+		b:GetPropertyChangedSignal("AbsoluteSize"):Connect(place)
+		task.defer(place)
+		coin = icon
+	end
+	(coin :: ImageLabel).Visible = true
 end
 
 for i, s in C.Skins do
@@ -210,7 +233,7 @@ for i, s in C.Skins do
 					setButton(b, "WEAR", ORANGE)
 				else
 					local afford = (player:GetAttribute("Coins") or 0) >= s.Cost
-					setButton(b, "💰 " .. s.Cost, if afford then ORANGE else Color3.fromRGB(170, 150, 140))
+					setPrice(b, s.Cost, if afford then ORANGE else Color3.fromRGB(170, 150, 140))
 				end
 			end,
 		})
@@ -252,7 +275,7 @@ for i, h in C.Hats do
 				setButton(b, "🎟️ PASS", Color3.fromRGB(150, 90, 255))
 			else
 				local afford = (player:GetAttribute("Coins") or 0) >= h.Cost
-				setButton(b, "💰 " .. h.Cost, if afford then ORANGE else Color3.fromRGB(170, 150, 140))
+				setPrice(b, h.Cost, if afford then ORANGE else Color3.fromRGB(170, 150, 140))
 			end
 		end,
 	})
@@ -284,7 +307,7 @@ for i, h in C.Pets or {} do
 				setButton(b, "BRING", ORANGE)
 			else
 				local afford = (player:GetAttribute("Coins") or 0) >= h.Cost
-				setButton(b, "💰 " .. h.Cost, if afford then ORANGE else Color3.fromRGB(170, 150, 140))
+				setPrice(b, h.Cost, if afford then ORANGE else Color3.fromRGB(170, 150, 140))
 			end
 		end,
 	})
@@ -784,11 +807,12 @@ refreshChallenges = function()
 		text.Position = UDim2.fromOffset(14, 6)
 		text.Size = UDim2.new(1, -120, 0, 28)
 		text.TextXAlignment = Enum.TextXAlignment.Left
-		local reward = label(row, "+" .. tostring(c.Reward) .. " 💰", 20, UI.Gold)
+		local reward = label(row, "+" .. tostring(c.Reward), 20, UI.Gold)
 		reward.AnchorPoint = Vector2.new(1, 0)
-		reward.Position = UDim2.new(1, -14, 0, 6)
-		reward.Size = UDim2.fromOffset(100, 28)
+		reward.Position = UDim2.new(1, -42, 0, 6)
+		reward.Size = UDim2.fromOffset(72, 28)
 		reward.TextXAlignment = Enum.TextXAlignment.Right
+		make("ImageLabel", { Name = "CoinIcon", BackgroundTransparency = 1, Image = Icons.Coin, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -14, 0, 7), Size = UDim2.fromOffset(26, 26) }, row)
 		local back = make("Frame", { Position = UDim2.fromOffset(14, 42), Size = UDim2.new(1, -28, 0, 14), BackgroundColor3 = UI.Glass, BackgroundTransparency = 0.2 }, row)
 		corner(back, 7)
 		local frac = math.clamp((tonumber(c.Progress) or 0) / math.max(1, tonumber(c.Goal) or 1), 0, 1)
@@ -1137,7 +1161,21 @@ CAS:BindAction("LavaRaise", function(_, state)
 	end
 	return Enum.ContextActionResult.Sink
 end, false, Enum.KeyCode.E, Enum.KeyCode.ButtonY)
-local raiseButton = button(gui, "⬆️ RAISE" .. string.char(10) .. "40 💰", Color3.fromRGB(255, 185, 40), UDim2.fromOffset(96, 72))
+local raiseButton = button(gui, "", Color3.fromRGB(255, 185, 40), UDim2.fromOffset(96, 72))
+do -- "⬆️ RAISE" over a coin + 40 row (the Flibpook coin, as on the coins panel, instead of 💰)
+	local top = label(raiseButton, "⬆️ RAISE", 18, Color3.new(1, 1, 1))
+	top.Size = UDim2.new(1, 0, 0.5, 0)
+	top.Position = UDim2.fromScale(0, 0.06)
+	UI.text(top, "body")
+	local row = make("Frame", { Name = "Cost", BackgroundTransparency = 1, Position = UDim2.fromScale(0, 0.5), Size = UDim2.new(1, 0, 0.42, 0) }, raiseButton)
+	make("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Center, VerticalAlignment = Enum.VerticalAlignment.Center, Padding = UDim.new(0, 4), SortOrder = Enum.SortOrder.LayoutOrder }, row)
+	make("ImageLabel", { Name = "CoinIcon", LayoutOrder = 1, BackgroundTransparency = 1, Image = Icons.Coin, Size = UDim2.fromOffset(22, 22) }, row)
+	local cost = label(row, "40", 20, Color3.new(1, 1, 1))
+	cost.LayoutOrder = 2
+	cost.Size = UDim2.new(0, 0, 1, 0)
+	cost.AutomaticSize = Enum.AutomaticSize.X
+	UI.text(cost, "body")
+end
 raiseButton.AnchorPoint = Vector2.new(1, 1)
 raiseButton.Position = if UIS.TouchEnabled then UDim2.new(1, -172, 1, if UI.isCompact() then -150 else -250) else UDim2.new(1, -24, 1, -150)
 raiseButton.TextSize = 18
