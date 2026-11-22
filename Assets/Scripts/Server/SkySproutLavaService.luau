@@ -154,6 +154,7 @@ local CFG = {
 	ShoveCooldown = 0.8,
 	ShoveSpeed = 66,
 	ShoveLift = 18,
+	JoinGrace = 2, -- seconds nobody can shove a climber who just landed on the grid (joined late or was rescued)
 
 	-- Rewards. Scaled to 0.7x when rounds went from 7 phases to 3: a round cycle is now ~44 s instead of ~63 s, so
 	-- this keeps coins per minute where they were (it was 3 / 0.15 / 20 / 60).
@@ -2758,10 +2759,21 @@ local function shoveImpact(p: Player, victim: Player?, at: Vector3)
 	end
 end
 
+-- Fair starts: no shoves during the get-ready seconds before the floor moves (so nobody is out before the round
+-- begins), and a climber who just landed on the grid can't be shoved for JoinGrace seconds.
+local toldNoShove: { [Player]: number } = setmetatable({}, { __mode = "k" }) :: any -- RoundId we last told them in
 local function shove(p: Player)
 	local r = L.Runners[p]
 	local me = root(p)
 	if not r or not r.alive or r.crowned or not me then
+		return
+	end
+	local start = tower and tower:GetAttribute("Start")
+	if type(start) == "number" and now() < start then
+		if toldNoShove[p] ~= L.RoundId then
+			toldNoShove[p] = L.RoundId
+			tell(p, "⏳ Shoves start when the floor moves!")
+		end
 		return
 	end
 	local t = os.clock()
@@ -2773,7 +2785,7 @@ local function shove(p: Player)
 	local bestDist = CFG.ShoveRange
 	for other, o in L.Runners do
 		local them = root(other)
-		if other ~= p and o.alive and not o.crowned and them and not sameTeam(p, other) then
+		if other ~= p and o.alive and not o.crowned and them and not sameTeam(p, other) and now() - o.enteredAt >= CFG.JoinGrace then
 			local delta = them.Position - me.Position
 			local flat = Vector3.new(delta.X, 0, delta.Z)
 			if flat.Magnitude < bestDist and math.abs(delta.Y) < 6 and (flat.Magnitude < 0.5 or me.CFrame.LookVector:Dot(flat.Unit) > 0.3) then

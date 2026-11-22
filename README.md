@@ -32,7 +32,8 @@ so the D-pad and A vote right away.
 When it does, everyone sees a winner banner with confetti over the winners.
 
 Whoever is still standing after phase 3 gets crowned. With two or more players, the last one standing wins
-straight away, so nobody waits out a long round after falling. You can shove other players off, and every so often
+straight away, so nobody waits out a long round after falling. You can shove other players off (not during the
+get-ready seconds before the floor moves, and not someone who landed on the grid under 2 s ago, `JoinGrace`), and every so often
 one supply drop pops in far from everyone, floating out of reach under a beam of light: jump to grab it before its
 ring shrinks away. Drops are fruit: banana (speed), pineapple (super jump), blueberry (shield), coconut (rescue) and
 watermelon (berry bag). Strawberries are a risk: only 2 a round (`Berries`), all on the outer ring that grows in during

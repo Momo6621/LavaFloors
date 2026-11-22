@@ -3,6 +3,23 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 71. Fair starts: no shoves before the floor moves
+
+**Why.** Roblox's onboarding guide and DevForum retention threads
+(https://create.roblox.com/docs/production/game-design/onboarding,
+https://devforum.roblox.com/t/improving-new-user-engagement-on-my-game/2947546) say new players leave when the first
+moments feel unfair or confusing. In LAVA Floors anyone could shove during the 3 s get-ready before the floor starts,
+so a kid could be out before their round even began, and a late joiner could be shoved the instant they landed.
+
+**Built.** `shove` (SkySproutLavaService) does nothing until the tower's `Start` time and tells the shover once per
+round "⏳ Shoves start when the floor moves!". Climbers who landed on the grid under `JoinGrace` (2 s) ago (late join
+or coconut rescue) can't be picked as a shove target. Bots and the hot potato are unchanged.
+
+**Verified.** Solo playtest in Studio, driven from the client over ArenaEvent: two punches 2.9 s and 1.7 s before the
+start gave one notice and no swing; a punch 0.2 s after the start gave the swing. Repo and Studio match (187656 bytes,
+hash 118038813). Console: no errors from the game. Not tested: the 2 s late-join grace needs two real players
+(VALORANT was running, so no multiplayer test).
+
 ## 70. README brought up to date (docs only)
 
 **Why.** Entries #57–#69 changed the look (font, icons, phone menu, coin counter and ping, plain fruit pickups), but
