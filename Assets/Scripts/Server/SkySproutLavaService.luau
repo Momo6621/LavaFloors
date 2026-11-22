@@ -4769,6 +4769,7 @@ function L.Start(arena: any, remote: RemoteEvent, stats: (Player) -> (), notice:
 		end
 		if climbing then
 			tell(p, "👀 Your friend " .. climbing.DisplayName .. " is climbing right now. You'll be in the next round together!")
+			p:SetAttribute("LavaWatchFriend", climbing.UserId) -- the client starts spectating and follows them
 			note(p.Name .. "'s friend " .. climbing.Name .. " is climbing")
 		else
 			note(p.Name .. ": no friend with a character in the lobby")

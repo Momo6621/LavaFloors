@@ -3,6 +3,31 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 42. Joined mid-round? Watch your friend climb
+
+**Why.** Entry 34's research named waiting after joining mid-round as a top onboarding problem
+([DevForum](https://devforum.roblox.com/t/allow-developers-to-mark-servers-as-unpreferred-for-new-player-joins/3680997)).
+Entry 41 told a newcomer whose friend was climbing that they'd be in the next round together, but left them standing
+in the lobby. The spectate camera only started when a player's mode changed to Lobby during a round, which a fresh
+joiner never triggers.
+
+**Change.**
+- In that case the server names the friend in a player attribute, `LavaWatchFriend`.
+- The client starts spectating and follows the friend. The bar reads "👀 Watching your friend …", and the 🍓 gift is
+  ready to send.
+- It retries for a few seconds if the round state hasn't arrived yet, and does nothing if the friend has already
+  left the round.
+- A move key hands the camera back, as for any spectator, so nobody exploring the lobby is trapped.
+
+**Verified.** 2-player Studio test with `StudioFakeFriends`:
+- Player1 was kept climbing with the driver, and Player2 was opted out in the lobby. The server set
+  `LavaWatchFriend` on Player2 mid-round (the same call the join path makes).
+- Player2's bar showed "👀 Watching your friend Player1" with the gift button, and the camera was scripted.
+- At round end the winner cam swung to "THEY ESCAPED!" (screenshot).
+- The client console was clean. Studio matches the repo by chunk hash for the service and client; the attribute was
+  cleared, and the place was saved as version 72.
+- Not seen: the real join path setting the attribute (both test players join while the lobby is open).
+
 ## 41. Spawn with friends
 
 **Research.** Roblox ships an official "Spawn With Friends" module because, in its docs' words, it can be challenging

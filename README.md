@@ -52,7 +52,8 @@ have left, the reward waits for your next visit. Playing in the same server as a
 In Studio, set the workspace attribute `StudioFakeReferrer` to a test player's UserId to simulate an invite.
 
 Spawn with friends: joining a friend who's in the lobby puts you 5 studs beside them (`FriendSpawnGap`), only on solid
-ground that isn't lava. If they're climbing, you get a notice that you'll be in the next round together. In Studio,
+ground that isn't lava. If they're climbing, you get a notice that you'll be in the next round together, and your
+camera starts following them ("👀 Watching your friend …", with the 🍓 gift ready; any move key hands it back). In Studio,
 the workspace attribute `StudioFakeFriends` makes every test player a friend, and the server prints `[friends]` lines.
 
 Round extras:

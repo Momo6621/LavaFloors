@@ -1794,6 +1794,34 @@ player:GetAttributeChangedSignal("ArenaMode"):Connect(function()
 		end)
 	end
 end)
+-- Joined while a friend is climbing: the server names them ("LavaWatchFriend"), so start spectating and follow them;
+-- the wait for the next round goes on cheering them on (the 🍓 gift is ready too). A move key hands the camera
+-- back, as for any spectator. Tries for a few seconds, since the round state may not have arrived yet.
+local function watchFriend(tries: number?)
+	local id = player:GetAttribute("LavaWatchFriend")
+	if type(id) ~= "number" or player:GetAttribute("ArenaMode") == "LavaRush" then
+		return
+	end
+	local left = tries or 6
+	if state.Phase ~= "Round" then
+		if left > 0 then
+			task.delay(1, watchFriend, left - 1)
+		end
+		return
+	end
+	local friend = Players:GetPlayerByUserId(id)
+	if not friend or friend:GetAttribute("ArenaMode") ~= "LavaRush" then
+		return
+	end
+	startSpectate()
+	followKey = "P" .. id
+	spectateLabel.Text = "👀 Watching your friend " .. friend.DisplayName
+	setGiftTarget(id)
+end
+player:GetAttributeChangedSignal("LavaWatchFriend"):Connect(function()
+	watchFriend()
+end)
+watchFriend()
 local LOOK_KEYS = {
 	[Enum.KeyCode.W] = true,
 	[Enum.KeyCode.A] = true,
