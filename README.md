@@ -146,8 +146,9 @@ Look and feel (each change was picked by the owner from a side-by-side preview; 
   Raise button, the daily reward card, the Lava Pass and the result card (crown or checkmark beside the title; coin,
   3D strawberry, trophy and lightning beside its lines; a gold gem on the chest bar). Strawberries are drawn as the
   game's own 3D fruit. Twist names keep their emoji.
-- Phones: below 900 px wide, Pass, VIP, the event pill, Invite and Music move into one ⚙ dropdown. Below 960 px the
-  top bar uses short labels, and on compact screens the result card may grow to 560 wide so its lines stay readable.
+- Phones: below 900 px wide, Pass, VIP, the event pill, Invite and Music move into one ☰ dropdown (gear icon). The
+  less important top bar buttons switch to short labels below 1300 px and the rest below 960 px; on compact screens
+  the result card may grow to 560 wide so its lines stay readable.
 - Coins: when coins go up, the number counts up, the coin bounces, a gold "+N" floats beside the panel and a quiet ping
   plays (Reduce Motion keeps just the number and the ping).
 - Pickups: shield orbs and supply drops show only the 3D fruit, its glow and the light beam (no floating labels).

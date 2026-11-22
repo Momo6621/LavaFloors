@@ -3,6 +3,16 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 70. README brought up to date (docs only)
+
+**Why.** Entries #57–#69 changed the look (font, icons, phone menu, coin counter and ping, plain fruit pickups), but
+the README still described emoji labels that are no longer in the game.
+
+**Built.** The server goal, streak and near-miss lines now match the current UI, and a new "Look and feel" section
+covers the font, Flibpook icons, phone ☰ menu, compact result card, coin counter and ping, and pickup visuals.
+
+**Verified.** None (docs only). The wording was checked against the client scripts.
+
 ## 69. A coin ping with each gain
 
 **Why.** It completes #68: kids' Roblox games pair the count-up and bounce with a sound, so a gain registers even
