@@ -169,9 +169,10 @@ make("UISizeConstraint", { MaxSize = Vector2.new(380, 210) }, result)
 make("UICorner", { CornerRadius = UDim.new(0, 20) }, result)
 make("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(255, 150, 40), Color3.fromRGB(235, 60, 25)) }, result)
 make("UIStroke", { Thickness = 5, Color = Color3.fromRGB(110, 25, 5), ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, result)
-local resultTitle: TextLabel = make("TextLabel", { BackgroundTransparency = 1, Position = UDim2.fromOffset(10, 10), Size = UDim2.new(1, -20, 0, 60), Font = FONT, TextScaled = true, TextColor3 = TITLE, Text = "" }, result)
+-- Title 48 / body 100 (was 60 / 80): on an iPhone 7 the card is scaled to ~0.53 and four body lines came out ~10 px.
+local resultTitle: TextLabel = make("TextLabel", { BackgroundTransparency = 1, Position = UDim2.fromOffset(10, 10), Size = UDim2.new(1, -20, 0, 48), Font = FONT, TextScaled = true, TextColor3 = TITLE, Text = "" }, result)
 stroked(resultTitle, 3)
-local resultBody: TextLabel = make("TextLabel", { BackgroundTransparency = 1, Position = UDim2.fromOffset(10, 76), Size = UDim2.new(1, -20, 0, 80), Font = FONT, TextScaled = true, TextColor3 = Color3.new(1, 1, 1), Text = "" }, result)
+local resultBody: TextLabel = make("TextLabel", { BackgroundTransparency = 1, Position = UDim2.fromOffset(10, 62), Size = UDim2.new(1, -20, 0, 100), Font = FONT, TextScaled = true, TextColor3 = Color3.new(1, 1, 1), Text = "" }, result)
 stroked(resultBody)
 UI.glass(result, 20)
 UI.text(resultTitle, "title")
@@ -1098,15 +1099,18 @@ event.OnClientEvent:Connect(function(kind: string, v: any)
 			titleGradient.Enabled = v.Outcome ~= "SCORCHED"
 		end
 		resultTitle.TextColor3 = if v.Outcome == "SCORCHED" then Color3.fromRGB(255, 140, 120) else Color3.new(1, 1, 1)
-		local emberLine = if v.Embers > 0 then string.format("\n%d embers banked%s", v.Embers, if v.Doubled then " (x2!)" else "") else ""
+		local emberLine = if v.Embers > 0 then string.format("\n🍓 %d berries banked%s", v.Embers, if v.Doubled then " (x2!)" else "") else ""
 		local bestLine = if v.NewBest and (tonumber(v.PrevBest) or 0) > 0 then string.format("\n🏅 NEW BEST! %d (was %d)", v.Height, v.PrevBest)
 			elseif v.NewBest then "\n🏅 First best: " .. tostring(v.Height) .. ". Beat it next round!"
 			elseif type(v.Best) == "number" then string.format("\nYour best: %d", v.Best)
 			else ""
 		local streak, streakWas = tonumber(v.Streak) or 0, tonumber(v.StreakWas) or 0
 		local streakLine = if streak >= 2 then string.format("\n🔥 %d rounds in a row!", streak)
-			elseif streak == 0 and streakWas >= 2 then string.format("\nYour streak: %d in a row. Start a new one!", streakWas)
+			elseif streak == 0 and streakWas >= 2 then string.format("\n🔥 Streak ended at %d. Go again!", streakWas)
 			else ""
+		if streakLine ~= "" and not v.NewBest then
+			bestLine = "" -- keep the card to three lines so it stays readable on phones (the 🏅 meter marker shows your best)
+		end
 		resultBody.Text = string.format("Height %d  •  +%d coins%s%s%s%s%s", v.Height, v.Coins, if v.Boosted then " (2x)" else "", if v.Friends then " 👥+25%" else "", emberLine, bestLine, streakLine)
 		if v.NewBest and (tonumber(v.PrevBest) or 0) > 0 then
 			play("Crown", 1.2)

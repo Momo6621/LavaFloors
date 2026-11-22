@@ -3,6 +3,35 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 56. Result card readable on phones
+
+**Why.** #50 left one check open: a four-line result card (height, berries, best, streak) shrinks its TextScaled text.
+DevForum guidance warns that UI that scales down with the screen can get unreadably small on phones ("Specific details
+about UI scaling best practices"; "All about text best practices"). Measured in Device Simulator on an iPhone 7
+(666 × 374), where the card is scaled to about 0.53 (201 × 111 px): the four body lines came out at about **10 px** each.
+The card also said "embers banked", while the HUD and the floor show 🍓 strawberries.
+
+**Built.**
+- The title goes from 60 to 48 design px and the body grows from 80 to 100, so the body gets 25% more height. The chest
+  bar stays where it was.
+- When a streak line shows and there's no new best, the plain "Your best: N" line is dropped. The 🏅 marker on the climb
+  meter already shows your best. Most cards now have at most three lines.
+- "N embers banked" now reads "🍓 N berries banked", and "Your streak: N in a row. Start a new one!" is now the shorter
+  "🔥 Streak ended at N. Go again!".
+
+**Verified.** Device Simulator on iPhone 7, solo play with the survival driver (VALORANT was open, so no multiplayer
+windows), reading each card's live TextBounds:
+
+| Card | Before | After |
+|---|---|---|
+| 2 lines ("SO CLOSE", first best) | — | 25.5 px/line |
+| 3 lines (crowned, berries, best) | ≈12 | 17 px/line |
+| 4 lines (crowned, berries, new best, streak) | 10 | 13 px/line |
+
+The screenshot (Media/phone-result-card.jpg) shows all four lines legible. The console was clean, repo and Studio
+hashes matched, and Studio was reset to the default viewport. The 4-line worst case is still small: a phone-only layout
+for the end-of-round cards (bigger card, less scaling) is the next step if it's worth it.
+
 ## 55. Phones: a ☰ menu instead of two overflow menus
 
 **Why.** The follow-up to #54. Device Simulator on an iPhone 7 (666 × 374) showed both halves of the top bar folded

@@ -117,7 +117,7 @@ Progression and live-ops:
   analytics custom event `FunRating` (1–3) with the round's twist, so the Creator Dashboard shows which twists kids
   enjoy. `FunAskAfter` in CFG.
 - Survival streak: survive or escape two or more rounds in a row and the result card says "🔥 N rounds in a row!";
-  when it ends, "Your streak: N in a row. Start a new one!". This visit only, just for show (no coins).
+  when it ends, "🔥 Streak ended at N. Go again!". This visit only, just for show (no coins).
 - Near miss: knocked out one or two rises from the crown, the result card says "😱 SO CLOSE! N rises left".
 - Cheers: anyone not climbing (knocked out or sitting a round out) gets a bar of six preset emoji. A tap floats
   the emoji with your name up everyone's screen. No typing; the server allows one every 1.2 s (CFG.CheerCooldown).
