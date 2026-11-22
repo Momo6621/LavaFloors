@@ -217,10 +217,11 @@ VIP comfort perks. Nothing is random and there are no fake timers.
 
 | What | Type | Where it's set |
 |---|---|---|
-| ⭐ VIP: VIP tag (head + chat), Golden Apple hat, golden shimmer, 2x daily reward, +25% round coins | Subscription | `VipSubscriptionId` |
+| ⭐ VIP: VIP tag (head + chat), Golden Apple hat, golden shimmer, 2x daily reward, +25% round coins | One-time game pass (preferred for a kids' game) or subscription; the VIP panel offers whichever is set | `VipPassId` / `VipSubscriptionId` |
 | 🎟️ Lava Pass Premium: unlocks the premium track (extra coins, Dragon Fruit and Star Fruit hats) | Game pass | `LavaPassPremiumId` |
 | 2x Lava Coins | Game pass | `DoubleLavaPassId` |
 | Aurora Gloves | Game pass | `PassId` |
+| 🔥 Flame Trail: a fiery ribbon from your back, in rounds and the lobby (just a look) | Game pass | `TrailPassId` |
 | Coin packs: 100 / 500 / 2,000 / 6,000 | Developer products | `ProductIds.Coins*` |
 | 💖 Tips: 25 / 100 / 500 / 1,000 Robux, shown on the Top Supporters board | Developer products | `ProductIds.Tip*` |
 | 📺 Watch an ad for 100 coins (only shown when Roblox has an ad for that player) | Rewarded video | uses `ProductIds.Coins100` |
@@ -229,7 +230,8 @@ The free Lava Pass track (20 tiers, XP from playing, surviving, crowns and straw
 
 ## Before publishing
 
-- Create the subscription, passes and products above on the Creator Dashboard and paste the IDs into
+- Create the passes (VIP, Lava Pass Premium, 2x Lava Coins, Aurora Gloves, Flame Trail), the products and, if wanted,
+  the VIP subscription on the Creator Dashboard and paste the IDs into
   `SkySproutConfig` (anything left at 0 or "" stays hidden in game).
 - Turn on Price Optimization for the passes and products, and set a private server price.
 - Rewarded video ads only start once the game is public and meets Roblox's eligibility rules.

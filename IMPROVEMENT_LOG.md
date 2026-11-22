@@ -3,6 +3,20 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 72. Monetization table lists every pass (docs only)
+
+**Why.** Comparing the README with the code: commit 2700f5b added a one-time VIP game pass (`VipPassId`, preferred
+over a subscription for a kids' game) and a Flame Trail pass (`TrailPassId`), but the README's monetization table
+and "Before publishing" checklist still listed VIP as a subscription only and left out the trail. The owner creates
+passes from that checklist, so a missing row means a pass that never goes on sale.
+
+**Built.** The table now shows VIP as a one-time pass or subscription (`VipPassId` / `VipSubscriptionId`) and adds
+🔥 Flame Trail (just a look). The checklist names all five passes.
+
+**Verified.** None (docs only). Checked against SkySproutPassService (the trail only adds a Trail between two
+attachments, no speed or jump change) and the VIP panel in LavaFloorsUI (it prompts `VipPassId` when set, else the
+subscription).
+
 ## 71. Fair starts: no shoves before the floor moves
 
 **Why.** Roblox's onboarding guide and DevForum retention threads
