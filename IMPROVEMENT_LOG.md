@@ -3,6 +3,19 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 62. Edge strawberries: 2 a round (owner's call); twist emoji stay
+
+**Why.** Follow-up to #58. Asked whether to keep 4 edge strawberries or make them scarcer, the owner picked "Make it 2".
+In the same check-in, a preview of the vote card and round title without the twist emoji (Media/twist-names-preview.jpg)
+got "Keep the emoji", so those stay as they are. A scan of the live UI found everything on screen already in
+Luckiest Guy (including the top bar labels), apart from TopbarPlus hover captions and its tiny notice counter.
+
+**Built.** `Berries = 2` (was 4) in SkySproutLavaService CFG. Each one is still 4 coins. README updated.
+
+**Verified.** Studio solo playtest (VALORANT open, so no extra windows): the server counted 3 strawberries in the round,
+2 on ring 4 (the edge that drops away) plus the pillar top (ring 0). The console was clean, and repo and Studio hashes
+matched.
+
 ## 61. Luckiest Guy font with thick outlines ("make it pop for kids")
 
 **Why.** After #60 the owner asked for a different font style, not just a bigger size: "make it pop for kids". A preview

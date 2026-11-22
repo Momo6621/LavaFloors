@@ -168,7 +168,7 @@ local CFG = {
 
 	-- Strawberries: few, and only on the outer ring that grows in during phase 1 and drops away in phase 2, so grabbing
 	-- one means running to the edge and getting back in time (risk / reward). Plus the one on top of the pillar.
-	Berries = 4,
+	Berries = 2, -- owner: scarcer (was 4)
 
 	-- Shield
 	ShieldOrbs = 1,
