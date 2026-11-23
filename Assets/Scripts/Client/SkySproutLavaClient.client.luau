@@ -875,15 +875,17 @@ event.OnClientEvent:Connect(function(kind: string, v: any)
 			Debris:AddItem(attachment, 0.2)
 			play("Shove", 0.9)
 			tint.BackgroundTransparency = 0.6
-			-- You got shoved: a firm camera jolt and a short buzz on a controller, so the hit is felt, not just seen.
+			-- You got shoved: a firm camera jolt and a short buzz, so the hit is felt, not just seen. HapticEffect
+			-- reaches phones as well as controllers (the old HapticService motors were gamepad-only).
 			rumble(0.4, 0.35)
-			local haptics = game:GetService("HapticService")
-			if haptics:IsVibrationSupported(Enum.UserInputType.Gamepad1) then
-				haptics:SetMotor(Enum.UserInputType.Gamepad1, Enum.VibrationMotor.Large, 0.5)
-				task.delay(0.15, function()
-					haptics:SetMotor(Enum.UserInputType.Gamepad1, Enum.VibrationMotor.Large, 0)
-				end)
-			end
+			pcall(function()
+				local effect = Instance.new("HapticEffect")
+				effect.Name = "LavaShoveHaptic"
+				effect.Type = Enum.HapticEffectType.GameplayCollision
+				effect.Parent = workspace
+				effect:Play()
+				Debris:AddItem(effect, 2)
+			end)
 		end
 	elseif kind == "LavaFX" then
 		if v.Kind == "Ember" then
@@ -1604,19 +1606,23 @@ local function tileUnderFeet(): BasePart?
 	return nil
 end
 
--- Your own tile cracking: a low crack when the tile under you is half worn, and a lower one with a short gamepad buzz
--- when it's about to break. Your character usually hides that tile from the camera, so the warning shouldn't be
--- visual only (Xbox Accessibility Guideline 103: key cues through more than one sense).
-local HapticService = game:GetService("HapticService")
+-- Your own tile cracking: a low crack when the tile under you is half worn, and a lower one with a short buzz (phones
+-- and controllers) when it's about to break. Your character usually hides that tile from the camera, so the warning
+-- shouldn't be visual only (Xbox Accessibility Guideline 103: key cues through more than one sense).
 local crackHeard: { [BasePart]: number } = setmetatable({}, { __mode = "k" }) :: any -- tile -> crack stage already played
 local function buzz()
 	pcall(function()
-		if HapticService:IsVibrationSupported(Enum.UserInputType.Gamepad1) then
-			HapticService:SetMotor(Enum.UserInputType.Gamepad1, Enum.VibrationMotor.Small, 0.6)
-			task.delay(0.18, function()
-				HapticService:SetMotor(Enum.UserInputType.Gamepad1, Enum.VibrationMotor.Small, 0)
-			end)
-		end
+		local effect = Instance.new("HapticEffect")
+		effect.Name = "LavaCrackHaptic"
+		effect.Type = Enum.HapticEffectType.Custom
+		-- 0.6 strength for 180 ms, the same buzz the gamepad motor used to give.
+		effect:SetWaveformKeys({
+			FloatCurveKey.new(0, 0.6, Enum.KeyInterpolationMode.Constant),
+			FloatCurveKey.new(180, 0, Enum.KeyInterpolationMode.Constant),
+		})
+		effect.Parent = workspace
+		effect:Play()
+		Debris:AddItem(effect, 2)
 	end)
 end
 local function crackCue(tile: BasePart?)

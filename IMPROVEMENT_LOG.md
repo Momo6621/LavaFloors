@@ -3,6 +3,23 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 86. Phones feel shoves and cracking tiles too (HapticEffect)
+
+**Why.** The two buzzes in the game (being shoved, #39, and your own tile about to break, #20) used
+HapticService's motors, which only reach gamepads. Most kids play on phones, so they felt nothing. Roblox's newer
+`HapticEffect` (https://create.roblox.com/docs/reference/engine/classes/HapticEffect) covers Android and iOS phones
+with haptics as well as PlayStation, Xbox and Quest controllers.
+
+**Built.** SkySproutLavaClient: a shove now plays a `GameplayCollision` HapticEffect, and the tile-about-to-break cue
+plays a custom 180 ms buzz at 0.6 strength (the same as the old gamepad motor). Each effect is cleaned up after
+2 s. The top-level `HapticService` local is gone (one fewer local in the client).
+
+**Verified.** Lint and the local-limit check pass. The Studio copy matches the repo (123330 bytes, hash 22971980)
+and compiles. Solo Studio playtest: standing still in a round made the tile crack, and `LavaCrackHaptic` (Custom)
+appeared and was cleaned up; client console clean. Both effect types also played on the Studio client without
+errors. Not tested: the shove buzz in a real two-player shove (same code, checked on its own), and how either
+feels on a real phone (this PC has no vibration). Worth a feel on a phone after the next publish.
+
 ## 85. Measure the catch-up bubbles (CatchUpBubble analytics)
 
 **Why.** The two-player test in #82 found that, with bots winning most rounds, a struggling kid had the underdog

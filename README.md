@@ -140,8 +140,8 @@ Progression and live-ops:
   joins the cheer bar. Once a round it sends them a strawberry, which counts like one picked off the floor (banked
   only if they survive), and floats "🍓 You → Them" up everyone's screen. Never to yourself or a bot.
   `GiftBerries` in CFG.
-- Accessibility: the tile under you cracks out loud when it's half worn and again (with a gamepad buzz) just before
-  it breaks, since your own character often hides it from the camera. Red warning plates also carry a ⚠ symbol (not colour alone), and Roblox's Reduce Motion setting turns
+- Accessibility: the tile under you cracks out loud when it's half worn and again (with a short buzz on phones and
+  controllers, via HapticEffect) just before it breaks, since your own character often hides it from the camera. Red warning plates also carry a ⚠ symbol (not colour alone), and Roblox's Reduce Motion setting turns
   off camera shake, the FOV kick, speed streaks, tile wobble and blinking (warnings stay on, steady). Roblox's
   Text Size setting (Large / Larger / Largest) grows the game's HUD by 1.15x / 1.3x / 1.45x, as far as the screen
   has room (`U.textScale` in LavaUI). The engine doesn't enlarge TextScaled text on its own.
