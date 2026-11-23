@@ -3,6 +3,22 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 131. Pre-publish smoke test: every twist in one session (no change needed)
+
+**Why.** #109–#130 hadn't been published, and each was tested on its own. Before the owner publishes them together,
+they should run together. Studio had also been closed and reopened, so its scripts might not match the repo.
+
+**Checked.**
+- All 48 scripts in the reopened place were hashed by name against the repo: 48/48 identical (sizes and chunk
+  hashes), so nothing synced earlier was lost.
+- One Studio session ran all 17 twists back to back. A server helper set `StudioForceMutator` to the next twist after
+  each round's payout. Classic, Low Gravity, Turbo Spin, Hole Party, Speed Rush, Shield Party, Drop Party, Hot Potato,
+  Duos, Big Heads, Mega Shoves, Quick Crumble, Bouncy, Shove Frenzy, Slow-Mo, Fast-Forward and Magnet Hands each
+  played and paid out, spread over all five worlds. The client saw each twist's countdown notice.
+
+**Result.** No errors or warnings in the console over the 17 rounds (only the engine's analytics lines). No change
+needed. The helper ran only in the play session; no force attribute is left in the place.
+
 ## 130. Top bar pills take the world's glass tint (owner's request, follows #126/#128)
 
 **Why.** After #126 and #128 the TopbarPlus pills were the last UI still on the fixed lava-brown glass in every world.
