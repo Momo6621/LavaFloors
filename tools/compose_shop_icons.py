@@ -4,7 +4,7 @@ Made from scratch with Pillow: the game's lava colours, Fredoka One (the free fo
 License) for the labels, and Windows' Segoe UI Emoji for the pictures. No generated imagery.
 Badge icons keep everything inside the centre circle, since Roblox shows badges as circles.
 
-Usage: python tools/compose_shop_icons.py   (writes Media/store/icons/*.png)
+Usage: python tools/compose_shop_icons.py   (writes Media/store/*.png)
 """
 
 import glob
@@ -14,7 +14,7 @@ import pathlib
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 SIZE = 512
-OUT = pathlib.Path(__file__).resolve().parent.parent / "Media" / "store" / "icons"
+OUT = pathlib.Path(__file__).resolve().parent.parent / "Media" / "store"
 EMOJI_FONT = "C:/Windows/Fonts/seguiemj.ttf"
 
 
