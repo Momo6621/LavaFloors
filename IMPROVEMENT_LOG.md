@@ -3,6 +3,28 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 123. 🌍 World Traveler title
+
+**Why.** Feature loop. Collect-them-all goals are a favourite with kids, and the five worlds are the game's most
+visible variety. #120 rewards three worlds in a day; this is the lifetime version: play in all five, ever, and wear
+it over your head.
+
+**Built.** SkySproutLavaService: title 🌍 World Traveler (teal), `Need = "Worlds"`, unlocked when `WorldsSeen`
+holds every theme in `LavaThemes.List`. `payout` adds the round's world to the saved `WorldsSeen` and, when the
+last new one fills the set, unlocks the title with the usual "🏷️ New title" notice. SkySproutRules: `WorldsSeen`
+defaults to `{}` and is cleaned on load (string keys, `true` values, at most 20). Existing players start with an
+empty set; nothing is backfilled.
+
+**Verified.** Lints pass. The Studio copies match the repo (lava service 206527 bytes, hash 220546736; Rules 11204,
+153935382) and compile; `R.clean` kept `{Candy, Sunset}` and dropped a bad entry, and `R.new()` has the table. Solo
+playtest with no temporary code. A first helper that advanced `StudioForceTheme` whenever the theme changed raced
+ahead: in Studio that attribute re-themes on the spot, so it jumped through all five at once and the rounds stayed
+Candy. A second helper set the next world only after each round's payout. After a Purple Moon round, the Blue
+Inferno round ended with "🏷️ New title: 🌍 World Traveler!" and `LavaTitles` listed it. Picking it gave the head tag
+"🌍 World Traveler". The screenshot missed the player, so the emoji render on the tag isn't confirmed. The first
+helper muddled which worlds were already seen, so this shows the unlock firing once at a round end, not the exact
+fifth-world moment. Console clean; no force attribute left in the place.
+
 ## 122. Duos teams get names
 
 **Why.** Feature loop. In Duos you could only tell your team by its outline colour, and the win line read "Team Ann &

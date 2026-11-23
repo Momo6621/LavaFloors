@@ -1,7 +1,7 @@
 local C=require(game.ReplicatedStorage.SkySproutConfig)
 local R={}
 function R.floor(points)return math.clamp(1+math.floor(points/C.PointsPerFloor),1,C.MaxFloor)end
-function R.new()return {Version=8,Waystones={},Contracts={},XP=0,Style="Vanguard",Relic="Ember",BossClears={},Hunts={},Stories={},Coins=0,Points=0,BestFloor=1,Wins=0,Losses=0,Knockouts=0,Skin="Mint",Owned={Mint=true},FloorQuests={},Receipts={},LastDaily=0,DailyStreak=0,Crowns=0,Hat="",OwnedHats={},Pet="",OwnedPets={},PassSeason=0,PassXP=0,PassFree={},PassPrem={},Tipped=0,WelcomeClaimed=false,Invited={},InviteDay=0,InviteToday=0,Daily={Day=0,P={},C={}},Redeemed={},TutorialDone=false,WeekNo=0,WeekCrowns=0,BestHeight=0,Chest=0,ChestsOpened=0,Gems={},Title="",GiftsSent=0,EscapeParties=0,WinEmote="Cheer",MusicOff=false,FirstCrownDay=0,TwistWins={}}end
+function R.new()return {Version=8,Waystones={},Contracts={},XP=0,Style="Vanguard",Relic="Ember",BossClears={},Hunts={},Stories={},Coins=0,Points=0,BestFloor=1,Wins=0,Losses=0,Knockouts=0,Skin="Mint",Owned={Mint=true},FloorQuests={},Receipts={},LastDaily=0,DailyStreak=0,Crowns=0,Hat="",OwnedHats={},Pet="",OwnedPets={},PassSeason=0,PassXP=0,PassFree={},PassPrem={},Tipped=0,WelcomeClaimed=false,Invited={},InviteDay=0,InviteToday=0,Daily={Day=0,P={},C={}},Redeemed={},TutorialDone=false,WeekNo=0,WeekCrowns=0,BestHeight=0,Chest=0,ChestsOpened=0,Gems={},Title="",GiftsSent=0,EscapeParties=0,WinEmote="Cheer",MusicOff=false,FirstCrownDay=0,TwistWins={},WorldsSeen={}}end
 function R.clean(raw)
  local p=R.new();if type(raw)~="table"then return p end
  for _,k in ipairs({"Coins","Points","Wins","Losses","Knockouts","BestFloor","XP","Crowns"})do
@@ -51,6 +51,7 @@ function R.clean(raw)
  if type(raw.GiftsSent)=="number"and raw.GiftsSent==raw.GiftsSent then p.GiftsSent=math.clamp(math.floor(raw.GiftsSent),0,10000000)end
  if type(raw.EscapeParties)=="number"and raw.EscapeParties==raw.EscapeParties then p.EscapeParties=math.clamp(math.floor(raw.EscapeParties),0,10000000)end
  if type(raw.FirstCrownDay)=="number"and raw.FirstCrownDay==raw.FirstCrownDay then p.FirstCrownDay=math.clamp(math.floor(raw.FirstCrownDay),0,10000000)end
+ if type(raw.WorldsSeen)=="table"then local n=0;for k,v in pairs(raw.WorldsSeen)do if type(k)=="string"and #k<=24 and v==true and n<20 then p.WorldsSeen[k]=true;n+=1 end end end
  if type(raw.TwistWins)=="table"then local n=0;for k,v in pairs(raw.TwistWins)do if type(k)=="string"and #k<=24 and v==true and n<60 then p.TwistWins[k]=true;n+=1 end end end
  if type(raw.Gems)=="table"then local n=0;for k,v in pairs(raw.Gems)do if type(k)=="string"and #k<=8 and v==true and n<50 then p.Gems[k]=true;n+=1 end end end
  if type(raw.Daily)=="table"then

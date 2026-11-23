@@ -56,7 +56,8 @@ and "Grab 1 lost buddy" is one of the daily challenges (so are "Cheer 3 times fr
 gift", "Grab 2 shield orbs", "Survive 2 twist rounds", "Vote for the next twist 3 times", "Knock 2 climbers off the floor" (bots count
 too) and "Play in 3 different worlds"). Being crowned in 5 different twists unlocks 🌀 Twist Tamer
 (`TitleTwists`, saved as `TwistWins`), and being part of 3 escape parties unlocks 🤝 Team Player (`TitleParties`, saved
-as `EscapeParties`).
+as `EscapeParties`). Playing in all five worlds (ever, not in one day) unlocks 🌍 World
+Traveler (saved as `WorldsSeen`).
 
 ![A Strawberry Buddy floating by a player's shoulder in the lobby](Media/fruit-buddy.jpg)
 

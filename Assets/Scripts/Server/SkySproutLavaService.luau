@@ -252,6 +252,7 @@ local CFG = {
 		{ Id = "Buddies", Need = "Buddies", Text = "🐾 Buddy Collector", Color = Color3.fromRGB(175, 115, 255) }, -- every theme buddy found (#98)
 		{ Id = "Twists", Need = "Twists", Text = "🌀 Twist Tamer", Color = Color3.fromRGB(120, 220, 160) }, -- crowned in TitleTwists different twists (#105)
 		{ Id = "Team", Need = "Parties", Text = "🤝 Team Player", Color = Color3.fromRGB(110, 200, 255) }, -- in TitleParties escape parties (#114)
+		{ Id = "Traveler", Need = "Worlds", Text = "🌍 World Traveler", Color = Color3.fromRGB(90, 220, 190) }, -- played in every world theme (#123)
 	},
 	TitleTwists = 5, -- different twists you've been crowned in, for 🌀 Twist Tamer
 	TitleParties = 3, -- 🤝 Escape parties you were part of, for 🤝 Team Player
@@ -3295,6 +3296,21 @@ local function payout()
 				daily.W[L.Theme] = true
 				challenge(p, "Worlds", 1)
 			end
+			-- 🌍 World Traveler (#123): every world theme you've ever played in; the last new one unlocks the title.
+			d.WorldsSeen = d.WorldsSeen or {}
+			if not d.WorldsSeen[L.Theme] then
+				d.WorldsSeen[L.Theme] = true
+				local seen = 0
+				for _, theme in Themes.List do
+					if d.WorldsSeen[theme.Id] then
+						seen += 1
+					end
+				end
+				if seen == #Themes.List then
+					applyTitle(p)
+					tell(p, "🏷️ New title: 🌍 World Traveler! Pick it with the 🏷️ button in 📋 Challenges.")
+				end
+			end
 			if r.crowned or r.alive then
 				challenge(p, "Survive", 1)
 				if L.Mutator.Id ~= "Classic" then
@@ -3593,6 +3609,13 @@ local function titleUnlocked(t: any, d: any, crowns: number): boolean
 		return (tonumber(d.ChestsOpened) or 0) >= CFG.TitleChests
 	elseif t.Need == "Gifts" then
 		return (tonumber(d.GiftsSent) or 0) >= CFG.TitleGifts
+	elseif t.Need == "Worlds" then
+		for _, theme in Themes.List do
+			if not (d.WorldsSeen and d.WorldsSeen[theme.Id]) then
+				return false
+			end
+		end
+		return true
 	elseif t.Need == "Parties" then
 		return (tonumber(d.EscapeParties) or 0) >= CFG.TitleParties
 	elseif t.Need == "Twists" then
