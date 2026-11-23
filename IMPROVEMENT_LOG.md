@@ -3,6 +3,22 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 104. A cue when your bubble ends
+
+**Why.** Feature loop. Bubbles now matter a lot (first-round, underdog and pickup shields, #83, #87, #91), but the
+only sign one has ended is the bubble disappearing around your own character, which is easy to miss mid-climb. Key
+cues should come through more than one sense (the same reasoning as the tile crack in #20). No visual change.
+
+**Built.** SkySproutLavaClient, in a `task.defer` block (no new top-level locals): when the `LavaBubble` ForceField
+leaves your character during a round and no new one replaced it (a pickup refresh swaps it straight away), it plays
+the "bubble on" chime lower (`Crown`, pitch 1.1) and a light `UIClick` HapticEffect on phones and controllers.
+
+**Verified.** Lints pass. The Studio copy matches the repo (124718 bytes, hash 349026693) and compiles. Solo Studio
+playtest with the bubble shortened to 2 s and the underdog bubble given after one loss (Studio copy only, so it ends
+while the test player is still climbing): in two rounds the cue (`LavaBubbleEndHaptic`) came 1.9 and 2.0 s after the
+bubble appeared, at the moment it went. In an earlier run with a 4 s bubble, the player was knocked out first and no
+cue came, which is right. Consoles clean; test values restored and re-hashed.
+
 ## 103. 🐢 Slow-Mo twist (a gentler round)
 
 **Why.** Feature loop. The recent twists (#99, #102) make rounds wilder; younger kids also need rounds they can

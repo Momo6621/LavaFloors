@@ -157,6 +157,8 @@ Progression and live-ops:
   joins the cheer bar. Once a round it sends them a strawberry, which counts like one picked off the floor (banked
   only if they survive), and floats "🍓 You → Them" up everyone's screen. Never to yourself or a bot.
   `GiftBerries` in CFG.
+- Bubble ending: when your shield bubble wears off mid-round you hear a soft falling chime and feel a light buzz, so
+  you know shoves can reach you again (a bubble refreshed by a pickup gives no cue).
 - Accessibility: the tile under you cracks out loud when it's half worn and again (with a short buzz on phones and
   controllers, via HapticEffect) just before it breaks, since your own character often hides it from the camera. Red warning plates also carry a ⚠ symbol (not colour alone), and Roblox's Reduce Motion setting turns
   off camera shake, the FOV kick, speed streaks, tile wobble and blinking (warnings stay on, steady). Roblox's

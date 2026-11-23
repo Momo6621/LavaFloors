@@ -2823,3 +2823,34 @@ task.defer(function()
 		end
 	end)
 end)
+
+-- Your bubble ends (#104): when your shield bubble wears off mid-round, a soft falling chime (the "bubble on" sound, lower)
+-- and a light buzz, so you know shoves can reach you again: the cue comes through more than one sense, like the tile
+-- crack (#20). A bubble replaced by a fresh one (a pickup) comes straight back, so only a bubble that's really gone
+-- gets the cue.
+task.defer(function()
+	local function watch(character: Model)
+		character.ChildRemoved:Connect(function(child)
+			if child.Name ~= "LavaBubble" or not child:IsA("ForceField") or player:GetAttribute("ArenaMode") ~= "LavaRush" then
+				return
+			end
+			task.defer(function()
+				if character.Parent and not character:FindFirstChild("LavaBubble") and player:GetAttribute("ArenaMode") == "LavaRush" then
+					play("Crown", 1.1)
+					pcall(function()
+						local effect = Instance.new("HapticEffect")
+						effect.Name = "LavaBubbleEndHaptic"
+						effect.Type = Enum.HapticEffectType.UIClick
+						effect.Parent = workspace
+						effect:Play()
+						Debris:AddItem(effect, 2)
+					end)
+				end
+			end)
+		end)
+	end
+	if player.Character then
+		watch(player.Character)
+	end
+	player.CharacterAdded:Connect(watch)
+end)
