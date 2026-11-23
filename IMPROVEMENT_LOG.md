@@ -3,6 +3,23 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 89. Measure real load times (LoadTime analytics)
+
+**Why.** #88 left the real-world wait unmeasured: Studio loads instantly, so nobody knows how long phones take or
+whether the 20 s `ReadyWait` fallback is too short or too long. Analytics answers that from live play, the same way
+#63 and #85 did for strawberries and catch-up bubbles.
+
+**Built.** SkySproutLavaService: a new `markReady` marks a player ready once, from the client's "LavaReady" or the
+fallback. For players who joined after the service started, it logs the custom event `LoadTime`: the value is the
+seconds from joining to ready (data load plus client load), and field 1 is "Under 5s", "5-10s", "10s+" or
+"Fallback". Players already in the server at start are skipped, because their join time is unknown.
+
+**Verified.** Lint and the local-limit check pass. The Studio copy matches the repo (191585 bytes, hash 304660356)
+and compiles. Solo Studio playtests with a temporary print (Studio copy only): a normal join logged once ("Client",
+1.8 s, "Under 5s") and the fallback 20 s later stayed silent. With the client's send temporarily disabled, it logged
+"Fallback" at 20 s. "LogCustomEvent event fired" both times; console clean. Test edits removed and both scripts
+re-hashed (LavaFloorsUI still 54583 / 75811917); no test attributes left.
+
 ## 88. Loaded first: no round until the game has loaded for you
 
 **Why.** The game is live now, and most kids play on phones, where loading can take many seconds. The server

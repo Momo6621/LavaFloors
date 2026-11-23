@@ -114,7 +114,9 @@ Progression and live-ops:
   Creator Dashboard shows how often kids get a bubble and whether it helps them.
 - Loaded first: a new player joins the automatic rounds only once their client says the game has loaded
   ("LavaReady", resent until the server confirms), or after 20 s if that never arrives (`ReadyWait` in CFG). A slow
-  phone isn't dropped into its first round (and first-round bubble) from the loading screen.
+  phone isn't dropped into its first round (and first-round bubble) from the loading screen. Each join logs the
+  analytics custom event `LoadTime` (seconds from joining to ready; field 1 "Under 5s", "5-10s", "10s+" or
+  "Fallback"), so the Creator Dashboard shows whether 20 s fits real devices.
 - Away: after 2 minutes with no input you sit out the automatic rounds (so nobody is dropped in to fall off while
   they're gone); any input puts you back in the queue. A manual opt-out is never undone. Set by `AwayAfter` in CFG.
 - Winner cam: if you were watching from above when someone escapes, the camera swings round to the winner for

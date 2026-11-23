@@ -371,6 +371,7 @@ local L = {
 	BotEase = 0, -- extra bot mistake chance after bot wins in a row (see CFG.BotEase)
 	Goal = 0, -- rises climbed toward the server goal (CFG.GoalRises)
 	GoalHelpers = setmetatable({}, { __mode = "k" }) :: any, -- [Player] = true if they climbed since the last goal
+	JoinedAt = setmetatable({}, { __mode = "k" }) :: any, -- [Player] = os.clock() when they joined (LoadTime analytics)
 }
 local friends: { [Player]: { [number]: boolean } } = {}
 
@@ -4476,9 +4477,27 @@ end
 
 -- Public
 
+-- Loaded first (CFG.ReadyWait): mark a player ready for the automatic rounds, once. Logs the analytics custom event
+-- LoadTime (seconds from joining to ready; field 1 is a bucket, or "Fallback") so the owner can see how long devices
+-- really take and whether ReadyWait fits.
+local function markReady(p: Player, how: string)
+	if p:GetAttribute("LavaReady") then
+		return
+	end
+	p:SetAttribute("LavaReady", true)
+	local joined = L.JoinedAt[p]
+	if joined then
+		local seconds = math.floor((os.clock() - joined) * 10 + 0.5) / 10
+		local bucket = if how == "Fallback" then "Fallback" elseif seconds < 5 then "Under 5s" elseif seconds < 10 then "5-10s" else "10s+"
+		track(function()
+			AnalyticsService:LogCustomEvent(p, "LoadTime", seconds, { [Enum.AnalyticsCustomFieldKeys.CustomField01.Name] = bucket })
+		end)
+	end
+end
+
 function L.HandleAction(p: Player, action: unknown, _value: unknown): boolean
 	if action == "LavaReady" then
-		p:SetAttribute("LavaReady", true) -- see CFG.ReadyWait
+		markReady(p, "Client")
 		return true
 	end
 	if action == "LavaJoin" then
@@ -4993,12 +5012,13 @@ function L.Start(arena: any, remote: RemoteEvent, stats: (Player) -> (), notice:
 	-- Fallback for CFG.ReadyWait: join the rounds anyway if the client's "LavaReady" never arrives.
 	local function readyLater(p: Player)
 		task.delay(CFG.ReadyWait, function()
-			if p.Parent and not p:GetAttribute("LavaReady") then
-				p:SetAttribute("LavaReady", true)
+			if p.Parent then
+				markReady(p, "Fallback")
 			end
 		end)
 	end
 	Players.PlayerAdded:Connect(function(p)
+		L.JoinedAt[p] = os.clock() -- not for players already here at the start: their join time is unknown
 		task.delay(3, function()
 			if p.Parent then
 				broadcast()
