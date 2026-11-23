@@ -54,7 +54,8 @@ glow. The first climber to grab it keeps it and it starts following them; grabbi
 (`BuddyFindCoins`). Their shop cards say where to find them. Finding all four unlocks the title 🐾 Buddy Collector,
 and "Grab 1 lost buddy" is one of the daily challenges (so are "Cheer 3 times from the sidelines", "Send 1 strawberry
 gift" and "Grab 2 shield orbs"). Being crowned in 5 different twists unlocks 🌀 Twist Tamer
-(`TitleTwists`, saved as `TwistWins`).
+(`TitleTwists`, saved as `TwistWins`), and being part of 3 escape parties unlocks 🤝 Team Player (`TitleParties`, saved
+as `EscapeParties`).
 
 ![A Strawberry Buddy floating by a player's shoulder in the lobby](Media/fruit-buddy.jpg)
 

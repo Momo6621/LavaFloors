@@ -244,8 +244,10 @@ local CFG = {
 		{ Id = "Kind", Need = "Gifts", Text = "🍓 Kind Climber", Color = Color3.fromRGB(255, 130, 160) },
 		{ Id = "Buddies", Need = "Buddies", Text = "🐾 Buddy Collector", Color = Color3.fromRGB(175, 115, 255) }, -- every theme buddy found (#98)
 		{ Id = "Twists", Need = "Twists", Text = "🌀 Twist Tamer", Color = Color3.fromRGB(120, 220, 160) }, -- crowned in TitleTwists different twists (#105)
+		{ Id = "Team", Need = "Parties", Text = "🤝 Team Player", Color = Color3.fromRGB(110, 200, 255) }, -- in TitleParties escape parties (#114)
 	},
 	TitleTwists = 5, -- different twists you've been crowned in, for 🌀 Twist Tamer
+	TitleParties = 3, -- 🤝 Escape parties you were part of, for 🤝 Team Player
 	TitleChests = 5, -- Lava Chests opened for 🎁 Chest Cracker (Gem Hunter needs every lava gem)
 	TitleGifts = 5, -- strawberry gifts sent for 🍓 Kind Climber
 
@@ -3329,6 +3331,11 @@ local function payout()
 				d.Coins = math.min(100000000, d.Coins + CFG.EscapePartyCoins)
 				logCoins(p, "Gameplay", CFG.EscapePartyCoins, "EscapeParty")
 				tell(p, "🤝 Escape party! " .. escaped .. " climbers escaped together: +" .. CFG.EscapePartyCoins .. " coins")
+				d.EscapeParties = (tonumber(d.EscapeParties) or 0) + 1
+				if d.EscapeParties == CFG.TitleParties then
+					applyTitle(p)
+					tell(p, "🏷️ New title: 🤝 Team Player! Pick it with the 🏷️ button in 📋 Challenges.")
+				end
 			end
 			-- Lava Chest progress (flat coins, the same for everyone, added after the round multipliers).
 			local fill = CFG.ChestPlay + math.floor(math.clamp(r.peak / crownHeight, 0, 1) * CFG.ChestClimb)
@@ -3544,6 +3551,8 @@ local function titleUnlocked(t: any, d: any, crowns: number): boolean
 		return (tonumber(d.ChestsOpened) or 0) >= CFG.TitleChests
 	elseif t.Need == "Gifts" then
 		return (tonumber(d.GiftsSent) or 0) >= CFG.TitleGifts
+	elseif t.Need == "Parties" then
+		return (tonumber(d.EscapeParties) or 0) >= CFG.TitleParties
 	elseif t.Need == "Twists" then
 		local n = 0
 		for _ in d.TwistWins or {} do

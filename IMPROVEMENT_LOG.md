@@ -3,6 +3,24 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 114. 🤝 Team Player title
+
+**Why.** Feature loop. Titles are the game's collectibles, and kids show them off over their heads. Every title so
+far rewarded solo feats (crowns, gems, chests, twists) except 🍓 Kind Climber. The new escape party (#113) gives a
+natural second title for playing together.
+
+**Built.** SkySproutLavaService: the title 🤝 Team Player (light blue) unlocks after CFG.TitleParties (3) escape
+parties. Each escape party adds 1 to the saved `EscapeParties` counter, and the third unlocks the title with the
+usual "🏷️ New title" notice. SkySproutRules: `EscapeParties` defaults to 0 and is cleaned on load like `GiftsSent`.
+No client change: the title list is built by the server.
+
+**Verified.** Lints pass. The Studio copies match the repo (lava service 202576 bytes, hash 89202579; Rules 10816,
+893950994) and compile; `R.new()` gives `EscapeParties = 0`. As in #113, the round was tested in a temporary
+Studio-only copy (every runner counts, threshold 1, title after 1 party). One solo round gave the escape party notice,
+then "🏷️ New title: 🤝 Team Player!", and `LavaTitles` listed it. Picking it with the LavaTitle remote showed
+"🤝 Team Player" over the climber's head, emoji rendered (screenshot). The copy was then restored and re-hashed.
+Console clean.
+
 ## 113. 🤝 Escape party bonus
 
 **Why.** Feature loop. Shoving is the core of the game, but in a server full of kids the best rounds are the ones
