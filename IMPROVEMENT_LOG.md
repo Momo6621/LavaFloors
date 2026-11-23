@@ -3,6 +3,26 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 90. Leak check after this session's changes (no change needed)
+
+**Why.** Since the last leak check (#22) a lot of per-round code has changed: haptic effects created per shove and
+per crack (#86), shield bubbles that now persist through orb pickups (#87), the ready gate (#88) and two new
+analytics events (#85, #89). Now that the game is live, rounds run for hours per server, so anything left behind
+each round would add up.
+
+**Checked.**
+- 8 solo Studio rounds (about 3.5 minutes), sampling after each round once the player was settled in the lobby.
+- Server: workspace stayed between 3471 and 3536 instances and the whole game between 6139 and 6204, with no
+  upward trend (the spread is bots and pickups). No HapticEffect or ForceField was left after any round.
+- Client: workspace stayed between 3973 and 4029 and PlayerGui at 1994–1996, also with no HapticEffect left.
+- Studio's total memory stayed between 2096 and 2110 MB (shared by the server and client in one process), with no
+  trend.
+- Bot and community DataStore reads are within budget: the weekly board and the supporters board each read once a
+  minute, and writes happen only on a crown or a tip.
+- No deprecated APIs (legacy wait/delay/spawn, Body movers, Humanoid:LoadAnimation) anywhere in the scripts.
+
+**Verified.** As above; consoles clean apart from Studio's usual DataStore notice. No code changed.
+
 ## 89. Measure real load times (LoadTime analytics)
 
 **Why.** #88 left the real-world wait unmeasured: Studio loads instantly, so nobody knows how long phones take or
