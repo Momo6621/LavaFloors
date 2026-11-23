@@ -3,6 +3,23 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 113. 🤝 Escape party bonus
+
+**Why.** Feature loop. Shoving is the core of the game, but in a server full of kids the best rounds are the ones
+where a group of friends makes it out together. Nothing rewarded that. A small shared bonus nudges players toward
+helping each other survive without taking anything from anyone.
+
+**Built.** SkySproutLavaService `payout`: counts the players crowned this round (bots don't count). If it's
+CFG.EscapePartyMin (3) or more, each crowned player gets CFG.EscapePartyCoins (15) on top, flat and after the
+multipliers like the first-crown bonus, logged as the "EscapeParty" economy event, with the notice "🤝 Escape party!
+N climbers escaped together: +15 coins". No client change.
+
+**Verified.** Lints pass. The Studio copy matches the repo (202017 bytes, hash 518200290) and compiles. A test
+player can't reliably survive a full round, and three crowned players would need a multiplayer test that can't win
+either, so the payout was tested in a temporary Studio-only copy that counted every runner with a threshold of 1. A
+solo round gave the notice and the Coins attribute went 25 → 75 (round 35 + bonus 15). The copy was then restored
+and re-hashed. Not tested: the real 3-crown count in a live server (a simple count over the round's runners).
+
 ## 112. 🎲 Surprise! in the twist vote
 
 **Why.** Feature loop. Kids love a mystery box. The vote always showed three named twists, so the twists nobody

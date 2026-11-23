@@ -120,6 +120,8 @@ Progression and live-ops:
   Just a look: jump height and timing don't change.
 - First crown of the day: your first crown each day (UTC) pays 50 coins on top ("👑 First crown today!"), the same
   for everyone, after VIP and 2x multipliers. `FirstCrownCoins` in CFG, saved as `FirstCrownDay`.
+- Escape party: when 3 or more players are crowned in the same round, each of them gets 15 coins on top ("🤝 Escape
+  party!"), flat and the same for everyone. `EscapePartyMin` / `EscapePartyCoins` in CFG.
 - Lava Chest: every round fills a bar on the result card (12 for playing, up to 30 for height, +15 survive, +30 crown).
   At 215 it opens for 100 coins; every 5th chest gives 300. The card always says how close the next chest is
   ("one more round to the chest!"). Fixed coins, nothing random or paid. Numbers are `Chest*` in CFG.

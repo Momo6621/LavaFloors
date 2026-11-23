@@ -175,6 +175,8 @@ local CFG = {
 	SurviveCoins = 14,
 	CrownCoins = 42,
 	FirstCrownCoins = 50, -- once a day (UTC), your first crown pays this on top, the same for everyone (#101)
+	EscapePartyMin = 3, -- 🤝 Escape party (#113): this many players crowned in one round...
+	EscapePartyCoins = 15, -- ...each get this flat bonus on top
 	XPPerCoin = 2,
 	FriendBonus = (GameConfig.FriendDeal and GameConfig.FriendDeal.Bonus) or 0.25,
 	FriendSpawnGap = 5, -- joining a friend in the lobby puts you this many studs beside them
@@ -3234,6 +3236,13 @@ local function publishEvent()
 end
 
 local function payout()
+	-- 🤝 Escape party (#113): when enough players escape together, each of them gets a small flat bonus.
+	local escaped = 0
+	for p, r in L.Runners do
+		if r.crowned and p.Parent then
+			escaped += 1
+		end
+	end
 	for p, r in L.Runners do
 		local d = data(p)
 		if p.Parent and d then
@@ -3315,6 +3324,11 @@ local function payout()
 				d.Coins = math.min(100000000, d.Coins + CFG.FirstCrownCoins)
 				logCoins(p, "Gameplay", CFG.FirstCrownCoins, "FirstCrownToday")
 				tell(p, "👑 First crown today! +" .. CFG.FirstCrownCoins .. " coins")
+			end
+			if r.crowned and escaped >= CFG.EscapePartyMin then
+				d.Coins = math.min(100000000, d.Coins + CFG.EscapePartyCoins)
+				logCoins(p, "Gameplay", CFG.EscapePartyCoins, "EscapeParty")
+				tell(p, "🤝 Escape party! " .. escaped .. " climbers escaped together: +" .. CFG.EscapePartyCoins .. " coins")
 			end
 			-- Lava Chest progress (flat coins, the same for everyone, added after the round multipliers).
 			local fill = CFG.ChestPlay + math.floor(math.clamp(r.peak / crownHeight, 0, 1) * CFG.ChestClimb)
