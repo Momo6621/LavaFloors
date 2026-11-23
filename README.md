@@ -130,6 +130,8 @@ Progression and live-ops:
   Just a look: jump height and timing don't change.
 - First crown of the day: your first crown each day (UTC) pays 50 coins on top ("👑 First crown today!"), the same
   for everyone, after VIP and 2x multipliers. `FirstCrownCoins` in CFG, saved as `FirstCrownDay`.
+- Round milestones: your 10th, 25th, 50th, 100th, 250th, 500th and 1000th rounds come with a thank-you gift (25 →
+  300 coins, "🎉 That was your 50th round!"), flat for everyone (`RoundMilestones` in CFG, saved as `RoundsPlayed`).
 - Escape party: when 3 or more players are crowned in the same round, each of them gets 15 coins on top ("🤝 Escape
   party!"), flat and the same for everyone. `EscapePartyMin` / `EscapePartyCoins` in CFG.
 - Lava Chest: every round fills a bar on the result card (12 for playing, up to 30 for height, +15 survive, +30 crown).

@@ -3,6 +3,22 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 124. Round milestones: a thank-you at 10, 25, 50, 100… rounds
+
+**Why.** Feature loop. Kids love round numbers and being noticed for sticking with a game. Every reward so far is
+for doing something in a round (crowns, shoves, berries) or for the day (daily reward, challenges). Nothing
+recognised a kid who has simply played a lot. A milestone gift is pure thanks: no timer, nothing to lose.
+
+**Built.** SkySproutLavaService `payout`: every finished round adds 1 to the saved `RoundsPlayed`. At 10, 25, 50,
+100, 250, 500 and 1000 rounds (`CFG.RoundMilestones`, 25 → 300 coins) it pays a flat gift, logged as
+"RoundMilestone_N", with "🎉 That was your 50th round! Thanks for playing: +75 coins". SkySproutRules: `RoundsPlayed`
+defaults to 0 and is cleaned on load (whole number, 0–10,000,000). Existing players start counting at the publish.
+
+**Verified.** Lints pass. The Studio copies match the repo (lava service 207257 bytes, hash 798003889; Rules 11369,
+929505463) and compile; `R.new()` gives 0, `R.clean` turns 42.7 into 42 and "x" into 0. Solo playtest with a
+temporary Studio-only milestone at round 2: round 1 paid none; round 2 showed the notice, and Coins went
+215 → 250 (round 10 + gift 25). The copy was restored and re-hashed. Console clean.
+
 ## 123. 🌍 World Traveler title
 
 **Why.** Feature loop. Collect-them-all goals are a favourite with kids, and the five worlds are the game's most

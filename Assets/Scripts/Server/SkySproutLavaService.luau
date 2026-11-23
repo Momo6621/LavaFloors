@@ -184,6 +184,8 @@ local CFG = {
 	FirstCrownCoins = 50, -- once a day (UTC), your first crown pays this on top, the same for everyone (#101)
 	EscapePartyMin = 3, -- 🤝 Escape party (#113): this many players crowned in one round...
 	EscapePartyCoins = 15, -- ...each get this flat bonus on top
+	-- Round milestones (#124): lifetime rounds played -> a thank-you gift, flat and the same for everyone.
+	RoundMilestones = { [10] = 25, [25] = 50, [50] = 75, [100] = 100, [250] = 150, [500] = 200, [1000] = 300 } :: { [number]: number },
 	XPPerCoin = 2,
 	FriendBonus = (GameConfig.FriendDeal and GameConfig.FriendDeal.Bonus) or 0.25,
 	FriendSpawnGap = 5, -- joining a friend in the lobby puts you this many studs beside them
@@ -3289,6 +3291,14 @@ local function payout()
 				logOnboarding(p, 4, "SecondRoundFinished")
 			end
 			challenge(p, "Play", 1)
+			-- Round milestones (#124): count every finished round, ever; some counts come with a thank-you gift.
+			d.RoundsPlayed = (tonumber(d.RoundsPlayed) or 0) + 1
+			local milestone = CFG.RoundMilestones[d.RoundsPlayed]
+			if milestone then
+				d.Coins = math.min(100000000, d.Coins + milestone)
+				logCoins(p, "Gameplay", milestone, "RoundMilestone_" .. d.RoundsPlayed)
+				tell(p, "🎉 That was your " .. d.RoundsPlayed .. "th round! Thanks for playing: +" .. milestone .. " coins")
+			end
 			-- Worlds challenge (#120): remember which world themes you've played in today (saved in Daily.W).
 			local daily = dailyState(d)
 			daily.W = daily.W or {}
