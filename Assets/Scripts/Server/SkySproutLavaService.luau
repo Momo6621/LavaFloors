@@ -170,6 +170,7 @@ local CFG = {
 	CoinsPerStud = 0.105,
 	SurviveCoins = 14,
 	CrownCoins = 42,
+	FirstCrownCoins = 50, -- once a day (UTC), your first crown pays this on top, the same for everyone (#101)
 	XPPerCoin = 2,
 	FriendBonus = (GameConfig.FriendDeal and GameConfig.FriendDeal.Bonus) or 0.25,
 	FriendSpawnGap = 5, -- joining a friend in the lobby puts you this many studs beside them
@@ -3271,6 +3272,13 @@ local function payout()
 			end
 			d.Coins = math.min(100000000, d.Coins + coins)
 			logCoins(p, "Gameplay", coins, "RoundPayout")
+			-- First crown of the day (#101): a flat bonus once per UTC day, added after the round multipliers.
+			if r.crowned and d.FirstCrownDay ~= today() then
+				d.FirstCrownDay = today()
+				d.Coins = math.min(100000000, d.Coins + CFG.FirstCrownCoins)
+				logCoins(p, "Gameplay", CFG.FirstCrownCoins, "FirstCrownToday")
+				tell(p, "👑 First crown today! +" .. CFG.FirstCrownCoins .. " coins")
+			end
 			-- Lava Chest progress (flat coins, the same for everyone, added after the round multipliers).
 			local fill = CFG.ChestPlay + math.floor(math.clamp(r.peak / crownHeight, 0, 1) * CFG.ChestClimb)
 				+ (if r.crowned then CFG.ChestCrown elseif r.alive then CFG.ChestSurvive else 0)

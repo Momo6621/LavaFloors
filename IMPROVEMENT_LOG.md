@@ -3,6 +3,23 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 101. 👑 First crown of the day bonus
+
+**Why.** Feature loop. A small daily goal gives kids a reason to come back, and a crown is the game's real
+achievement. It stays kid-fair: there's no timer, nothing is lost if you skip a day, and it isn't bought; the daily
+reward ladder already pauses rather than resetting (#45).
+
+**Built.**
+- SkySproutLavaService payout: when a climber is crowned and their saved `FirstCrownDay` isn't today (UTC), they get
+  `FirstCrownCoins` (50) on top, added after the round multipliers so VIP and 2x don't change it, with the notice
+  "👑 First crown today! +50 coins" and an economy event `FirstCrownToday`.
+- SkySproutRules: `FirstCrownDay` in new profiles and kept by `clean`, so rejoining can't claim it twice.
+
+**Verified.** Lints pass. The Studio copies match the repo (lava service 197745 bytes, hash 174225143; rules 10457,
+404400078) and compile. A test player can't win a round in Studio, so for the playtest the condition was temporarily
+`(r.crowned or true)` in the Studio copy only. The bonus notice came with the first round's payout and not with the
+second or third (once a day). Consoles clean. The temporary change was removed and re-hashed.
+
 ## 100. "🐾 Bonus round" in the countdown
 
 **Why.** Feature loop. The themed worlds now have extra fruit drops (#96) and a lost buddy to find (#97), but nothing

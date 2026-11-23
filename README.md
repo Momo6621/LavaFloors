@@ -108,6 +108,8 @@ Progression and live-ops:
   so muted music stays muted the next time you join.
 - Victory emote: the 🏆 "When I win" button in the 😀 Emotes panel cycles through the six free emotes and previews
   each one; your pick plays when you're crowned (Cheer by default). Saved as `WinEmote` (CFG.WinEmotes).
+- First crown of the day: your first crown each day (UTC) pays 50 coins on top ("👑 First crown today!"), the same
+  for everyone, after VIP and 2x multipliers. `FirstCrownCoins` in CFG, saved as `FirstCrownDay`.
 - Lava Chest: every round fills a bar on the result card (12 for playing, up to 30 for height, +15 survive, +30 crown).
   At 215 it opens for 100 coins; every 5th chest gives 300. The card always says how close the next chest is
   ("one more round to the chest!"). Fixed coins, nothing random or paid. Numbers are `Chest*` in CFG.
