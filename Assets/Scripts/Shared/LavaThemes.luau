@@ -25,6 +25,8 @@ export type Theme = {
 	TileHue: number, -- the floor tiles are shades of this one hue
 	TextTop: Color3?, -- title text gradient, top (HUD titles follow the round's theme, #106)
 	TextBottom: Color3?, -- title text gradient, bottom
+	UIAccent: Color3?, -- HUD borders and default buttons (#126); nil keeps the lava orange
+	UIGlass: Color3?, -- HUD panel glass tint (#126); nil keeps the dark lava-brown
 	Bloom: number,
 	BloomThreshold: number,
 	Saturation: number,
@@ -59,6 +61,8 @@ T.List = {
 		TileHue = 0.035,
 		TextTop = Color3.fromRGB(255, 240, 170),
 		TextBottom = Color3.fromRGB(255, 150, 50),
+		UIAccent = Color3.fromRGB(255, 112, 36),
+		UIGlass = Color3.fromRGB(24, 15, 17),
 		Bloom = 0.16,
 		BloomThreshold = 2,
 		Saturation = 0.035,
@@ -89,6 +93,8 @@ T.List = {
 		TileHue = 0.57,
 		TextTop = Color3.fromRGB(215, 240, 255),
 		TextBottom = Color3.fromRGB(80, 160, 255),
+		UIAccent = Color3.fromRGB(70, 160, 255),
+		UIGlass = Color3.fromRGB(12, 20, 38),
 		Bloom = 0.45,
 		BloomThreshold = 1.4,
 		Saturation = 0.12,
@@ -119,6 +125,8 @@ T.List = {
 		TileHue = 0.77,
 		TextTop = Color3.fromRGB(245, 225, 255),
 		TextBottom = Color3.fromRGB(180, 120, 255),
+		UIAccent = Color3.fromRGB(175, 105, 255),
+		UIGlass = Color3.fromRGB(25, 14, 38),
 		Bloom = 0.45,
 		BloomThreshold = 1.4,
 		Saturation = 0.14,
@@ -149,6 +157,8 @@ T.List = {
 		TileHue = 0.66,
 		TextTop = Color3.fromRGB(255, 250, 215),
 		TextBottom = Color3.fromRGB(140, 160, 255),
+		UIAccent = Color3.fromRGB(130, 150, 255),
+		UIGlass = Color3.fromRGB(13, 15, 34),
 		Bloom = 0.4,
 		BloomThreshold = 1.5,
 		Saturation = 0.1,
@@ -181,6 +191,8 @@ T.List = {
 		TileHue = 0.44,
 		TextTop = Color3.fromRGB(225, 255, 240),
 		TextBottom = Color3.fromRGB(255, 125, 200),
+		UIAccent = Color3.fromRGB(255, 110, 190),
+		UIGlass = Color3.fromRGB(58, 22, 48),
 		Bloom = 0.22,
 		BloomThreshold = 1.8,
 		Saturation = 0.15,

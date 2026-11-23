@@ -1355,6 +1355,8 @@ do
 		local top = theme and theme.TextTop or Color3.fromRGB(255, 240, 170)
 		local bottom = theme and theme.TextBottom or Color3.fromRGB(255, 150, 50)
 		UI.setTitleColors(top, bottom, player:FindFirstChildOfClass("PlayerGui"))
+		-- Borders, panels and lava buttons follow the theme too (#126).
+		UI.setThemeColors(theme and theme.UIAccent or UI.Lava, theme and theme.UIGlass or UI.Glass, player:FindFirstChildOfClass("PlayerGui"))
 	end
 	workspace:GetAttributeChangedSignal("LavaTheme"):Connect(applyThemeColors)
 	applyThemeColors()

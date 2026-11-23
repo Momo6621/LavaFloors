@@ -3,6 +3,29 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 126. The whole HUD follows the world theme, not just the titles (owner's request)
+
+**Why.** The owner: "the UI color still doesnt match the theme". #106 only recoloured the title text. The panel
+glass (dark lava-brown), the glowing borders and the default buttons (orange) stayed the same in every world. In Blue
+Inferno that meant orange-on-brown panels over an icy blue crater (screenshot), and the same clash in Purple Moon,
+Starry Night and Candy Crater.
+
+**Built.**
+- LavaThemes: `UIAccent` and `UIGlass` per theme. Blue Inferno blue on navy, Purple Moon violet on deep purple,
+  Starry Night periwinkle on midnight, Candy Crater pink on berry; Sunset keeps the lava orange and brown.
+- LavaUI: `U.Accent` / `U.GlassTint` replace the fixed lava colours in `lavaStroke`, `glass`, `tone` and `button`
+  wherever the default lava accent is used, and mark what they style (`AccentStroke` gradients, `ThemeGlass` and
+  `ThemeButton` attributes). The new `U.setThemeColors(accent, glass, root)` recolours everything marked and sets the
+  colours for anything built later. A named accent (gold Raise, green, red buttons) keeps its colour.
+- LavaFloorsUI: the #106 theme hook now calls `U.setThemeColors` along with `U.setTitleColors`.
+- Not covered: the TopbarPlus pills and the lobby shop panels, which use their own fixed colours.
+
+**Verified.** Lints pass. The Studio copies match the repo (LavaThemes 5835 bytes, hash 950909851; LavaUI 10193,
+823329373; LavaFloorsUI 58329, 64136841) and compile. Studio playtest: before-and-after screenshots in Blue Inferno
+(orange/brown → blue/navy) and an after screenshot in Candy Crater (pink/berry, notice pill themed too). The gold
+Raise button stayed gold. The owner approved from those screenshots ("Yes, ship them"). Console clean; the force
+attribute was cleared.
+
 ## 125. Fix: notices that arrive together all get shown
 
 **Why.** Found while looking for this iteration's feature. A notice replaced the one on screen instantly, so notices

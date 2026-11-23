@@ -18,6 +18,11 @@ U.Shadow = Color3.fromRGB(18, 6, 2)
 -- from LavaThemes' TextTop/TextBottom whenever the theme changes. These are the Sunset colours.
 U.TitleTop = Color3.fromRGB(255, 240, 170)
 U.TitleBottom = Color3.fromRGB(255, 150, 50)
+-- Border/button accent and panel glass. They follow the round's world theme too (#126): U.setThemeColors swaps them
+-- from LavaThemes' UIAccent/UIGlass. Anything styled with the default lava accent follows; a named accent (gold,
+-- green, red) keeps its colour.
+U.Accent = U.Lava
+U.GlassTint = U.Glass
 
 local WHITE = Color3.new(1, 1, 1)
 local BLACK = Color3.new(0, 0, 0)
@@ -36,12 +41,16 @@ end
 -- A border that glows from hot yellow at the top to deep lava at the bottom.
 function U.lavaStroke(obj: GuiObject, thickness: number?, accent: Color3?): UIStroke
 	clear(obj, { "UIStroke" })
-	local a = accent or U.Lava
+	local themed = accent == nil or accent == U.Lava
+	local a = if themed then U.Accent else accent :: Color3
 	local s = Instance.new("UIStroke")
 	s.Thickness = thickness or 2
 	s.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 	s.Color = WHITE
 	local g = Instance.new("UIGradient")
+	if themed then
+		g.Name = "AccentStroke" -- recoloured by U.setThemeColors
+	end
 	g.Rotation = 90
 	g.Color = ColorSequence.new(a:Lerp(WHITE, 0.4), a:Lerp(BLACK, 0.2))
 	g.Parent = s
@@ -52,7 +61,8 @@ end
 -- Dark see-through panel with a soft top-to-bottom shade and a glowing border.
 function U.glass(obj: GuiObject, radius: number?, accent: Color3?)
 	clear(obj, { "UIGradient", "UIStroke" })
-	obj.BackgroundColor3 = U.Glass
+	obj.BackgroundColor3 = U.GlassTint
+	obj:SetAttribute("ThemeGlass", true) -- recoloured by U.setThemeColors
 	obj.BackgroundTransparency = U.GlassTransparency
 	obj.BorderSizePixel = 0
 	local c = obj:FindFirstChildOfClass("UICorner") or Instance.new("UICorner")
@@ -113,13 +123,15 @@ end
 
 -- Background and border colours for a button in an accent colour.
 function U.tone(color: Color3): (Color3, Color3)
-	return color:Lerp(U.Glass, 0.45), color:Lerp(WHITE, 0.2)
+	return color:Lerp(U.GlassTint, 0.45), color:Lerp(WHITE, 0.2)
 end
 
 -- A dark button tinted by its accent, with a glowing accent border and light text.
 function U.button(b: GuiButton, accent: Color3)
 	clear(b, { "UIGradient", "UIStroke" })
-	local bg = U.tone(accent)
+	local themed = accent == U.Lava
+	local bg = U.tone(if themed then U.Accent else accent)
+	b:SetAttribute("ThemeButton", if themed then true else nil) -- recoloured by U.setThemeColors
 	b.BackgroundColor3 = bg
 	b.BackgroundTransparency = 0.05
 	b.BorderSizePixel = 0
@@ -132,6 +144,25 @@ function U.button(b: GuiButton, accent: Color3)
 		b.TextColor3 = U.Text
 		b.TextStrokeColor3 = U.Shadow
 		b.TextStrokeTransparency = 0.3
+	end
+end
+
+-- Switch the accent and glass to a theme's colours (#126): every lava-accent border, glass panel and lava button
+-- under root is recoloured, and new ones use these colours too.
+function U.setThemeColors(accent: Color3, glass: Color3, root: Instance?)
+	U.Accent, U.GlassTint = accent, glass
+	if root then
+		for _, d in root:GetDescendants() do
+			if d:IsA("UIGradient") and d.Name == "AccentStroke" then
+				d.Color = ColorSequence.new(accent:Lerp(WHITE, 0.4), accent:Lerp(BLACK, 0.2))
+			elseif d:IsA("GuiObject") then
+				if d:GetAttribute("ThemeButton") then
+					d.BackgroundColor3 = U.tone(accent)
+				elseif d:GetAttribute("ThemeGlass") then
+					d.BackgroundColor3 = glass
+				end
+			end
+		end
 	end
 end
 

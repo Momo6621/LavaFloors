@@ -198,6 +198,11 @@ Look and feel (each change was picked by the owner from a side-by-side preview; 
 - Title colours follow the round's world theme (#106): the gold-to-orange title gradient becomes ice-to-blue in Blue
   Inferno, lavender-to-purple in Purple Moon, cream-to-periwinkle in Starry Night and mint-to-pink in Candy Crater
   (`TextTop`/`TextBottom` in LavaThemes, `U.setTitleColors` in LavaUI). Body text stays light.
+- The rest of the HUD follows the theme too (#126): panel glass, glowing borders, notices and the default orange
+  buttons turn blue on navy (Blue Inferno), violet on deep purple (Purple Moon), periwinkle on midnight (Starry Night)
+  and pink on berry (Candy Crater); Sunset keeps the lava look (`UIAccent`/`UIGlass` in LavaThemes,
+  `U.setThemeColors` in LavaUI). Buttons with their own colour (gold Raise, green, red), the top bar and the lobby
+  shop keep their colours.
 - Icons: the free Flibpook pack (`Shared/LavaIcons.luau`) instead of emoji in the top bar (shop stall, purple gem,
   crown, checkmark, trophy, heart, lightning, speaker, gear), the coins panel, shop prices, challenge rewards, the
   Raise button, the daily reward card, the Lava Pass and the result card (crown or checkmark beside the title; coin,
