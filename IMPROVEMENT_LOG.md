@@ -3,6 +3,28 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 82. Two-player smoke test of the shove twists (no change needed)
+
+**Why.** This session changed a lot around shoves and rounds (late-join grace, the shove speed cap, Mega Shoves,
+Quick Crumble, the client's new scopes, new music, tips removed), so a regression run before moving on. The owner
+also chose to keep strawberries scarce, so no Berry Rain twist (see #81).
+
+**Checked.** A 2-player Studio test with the server forcing six twists in turn, two rounds each (Mega Shoves, Quick
+Crumble, Hot Potato, Duos, Shield Party, Big Heads), while both players repeatedly moved next to each other and
+shoved:
+- Every twist was announced and ran. Hot Potato passed the bomb back and forth; a blast arrived as a 70 push with
+  the right knockout tip.
+- Shoves arrived at 66 (normal) and 89 (showdown 1.35x); Duos teammates couldn't shove each other; shields (Shield
+  Party and the underdog shield) blocked shoves with the usual message; a bot was shoved into the lava.
+- No unprompted tips appeared; the only tips were knockout reasons.
+
+**Note for later.** With bots winning most rounds, both test players had the underdog shield nearly every round
+(3 losses in a row, 15 s). That's working as designed, but it means a struggling kid is often unshoveable for half a
+round. Worth watching in real play data before changing.
+
+**Verified.** As above; server console clean across 12 rounds. Forced twist and away attributes are cleared in the
+Edit copy. No code changed.
+
 ## 81. ⚡ Quick Crumble twist
 
 **Why.** Variety through rare modes: Grow a Garden's "Sheckle Rain" shows kids love a rare surprise round
