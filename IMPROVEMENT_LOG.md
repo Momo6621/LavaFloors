@@ -3,6 +3,24 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 93. A missed shove still answers the button
+
+**Why.** In the #92 two-player test most shove presses didn't land (the 0.8 s cooldown and a nearer bot took some),
+and a press that misses gave the shover nothing at all: no sound, no flash. Game-feel guides (see #39) say every
+input should get a response. A check of every effect kind the server sends against the client handlers found the
+reason: the server has sent a "Swing" effect on each accepted shove press since the first version, but no client
+ever handled it.
+
+**Built.** SkySproutLavaClient: "Swing" now plays the existing shove sound high and light (pitch 1.9), so every
+accepted press makes a whoosh. A hit adds its usual thud on top. It reuses the message the server already sends, so
+there's no new network traffic, and presses during the cooldown stay silent, as before. No visual change.
+
+**Verified.** Lint and the local-limit check pass. The Studio copy matches the repo (123530 bytes, hash 4610860)
+and compiles. Solo Studio playtest: three shove presses 1 s apart in a round with nobody in reach each got a "Swing"
+on the client (the shove sound is loaded) and no errors; console clean. Not checked by ear: how the whoosh sounds.
+The other way round, the client also handles four kinds no server sends (Avatar, Contract, Explore, Story); they
+belong to the old SkySprout RPG screens and were left alone.
+
 ## 92. Two-player check: the shove buzz and the ready gate (no change needed)
 
 **Why.** Two of this session's changes had only been checked with one player: the shove buzz (#86 said "not

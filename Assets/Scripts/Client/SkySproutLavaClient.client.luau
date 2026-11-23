@@ -905,6 +905,10 @@ event.OnClientEvent:Connect(function(kind: string, v: any)
 				floatText(v.Position + Vector3.new(0, 2.5, 0), "💥")
 			end
 			rumble(0.15, 0.2)
+		elseif v.Kind == "Swing" then
+			-- Every shove press (after the cooldown) gets a light, high whoosh, so a miss still answers the button.
+			-- A hit adds its own thud on top.
+			play("Shove", 1.9)
 		elseif v.Kind == "ShoveSeen" then
 			-- Someone else's shove landed nearby: a lighter puff and 💥 so it's clear what happened.
 			local cam = workspace.CurrentCamera
