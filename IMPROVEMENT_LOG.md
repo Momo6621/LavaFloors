@@ -3,6 +3,24 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 92. Two-player check: the shove buzz and the ready gate (no change needed)
+
+**Why.** Two of this session's changes had only been checked with one player: the shove buzz (#86 said "not
+tested: the shove buzz in a real two-player shove") and the ready gate (#88) with more than one client joining. I
+also checked whether the catch-up bubbles are fair in 💣 Hot Potato.
+
+**Checked.**
+- 2-player Studio test. Both players had `LavaReady` set on joining and both went through a round normally.
+- Player1 moved next to Player2 in a round and shoved. Player2's client got the shove (speed 68) and the
+  "💥 Player1 shoved you!" notice, and created `LavaShoveHaptic` (GameplayCollision) at the same moment. After the
+  knockout, the "shoved you off" reason followed, and a crack buzz (`LavaCrackHaptic`) fired later in the round. All
+  haptic effects were cleaned up within 2 s.
+- Hot Potato, read from the code: a shielded kid can still be passed the bomb, but their bubble soaks the blast
+  ("Your bubble shield soaked the blast!"), so the bubbles stay fair in that twist.
+
+**Verified.** As above; server and Player2 consoles had no errors (only Studio's DataStore notice); test ended with
+`EndTest`; no test attributes left in the place. No code changed. Still untested: the feel on a real phone.
+
 ## 91. Fix: the bubble vanished after a reset in phase 1
 
 **Why.** Found while checking the edge cases around #87. A kid who resets (or otherwise loses their character) in
