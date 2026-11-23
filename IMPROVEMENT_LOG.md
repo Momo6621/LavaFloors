@@ -3,6 +3,23 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 78. 💥 Mega Shoves twist
+
+**Why.** Same research as #77 (variety through modifiers). Shoving is the part kids play with most, so a twist that
+makes it bigger is cheap chaos. Unlike Slippery Floor it is server-only, with no new look and no movement code.
+
+**Built.** SkySproutLavaService: a tenth twist, `MegaShove` ("💥 Mega Shoves", weight 2), in the vote pool like the
+others. Player shoves are 1.6x as strong (`MegaShove`), and a shoved bot slides 2.6 tiles instead of 1.6. Shields
+still block it. **Bug caught before testing:** the client drops any shove over 120 studs/s as a bad value, and Mega
+Shoves in the showdown (1.35x) would have sent 143, so those shoves would have silently done nothing. Shove speed is
+now capped at `ShoveMax` (110).
+
+**Verified.** 2-player Studio test with the twist forced: Player2 received a shove of 105.6 horizontal (66 x 1.6)
+and 18 lift, with "Player1 shoved you off"; Player1's other shove knocked a bot into the lava. The underdog shield
+kept blocking shoves in the first runs, so for one run the Studio copy's `UnderdogAfter` was raised and then put
+back (the Studio copy matches the repo again: 188255 bytes, hash 906128646). Server console clean; the forced twist
+attribute is cleared.
+
 ## 77. 🧊 Slippery Floor twist: tried, not shipped (owner's call needed)
 
 **Why.** DevForum minigame feedback asks for variety through modifiers

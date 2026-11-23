@@ -154,6 +154,8 @@ local CFG = {
 	ShoveCooldown = 0.8,
 	ShoveSpeed = 66,
 	ShoveLift = 18,
+	MegaShove = 1.6, -- Mega Shoves twist: shoves fly this much further (bots slide one tile further)
+	ShoveMax = 110, -- top horizontal shove speed; the client drops anything over 120 as a bad value
 	JoinGrace = 2, -- seconds nobody can shove a climber who just landed on the grid (joined late or was rescued)
 
 	-- Rewards. Scaled to 0.7x when rounds went from 7 phases to 3: a round cycle is now ~44 s instead of ~63 s, so
@@ -271,6 +273,7 @@ local MUTATORS: { Mutator } = {
 	{ Id = "HotPotato", Name = "💣 Hot Potato", Weight = 3 },
 	{ Id = "Duos", Name = "👥 Duos", Weight = 2 },
 	{ Id = "BigHeads", Name = "🎈 Big Heads", Weight = 2 },
+	{ Id = "MegaShove", Name = "💥 Mega Shoves", Weight = 2 },
 }
 -- Twist vote: when a round ends everyone gets a few twists to pick from; the most votes wins (ties and no votes are
 -- settled at random among the options).
@@ -2808,8 +2811,10 @@ local function shove(p: Player)
 		local them = root(best) :: BasePart
 		local dir = Vector3.new(them.Position.X - me.Position.X, 0, them.Position.Z - me.Position.Z)
 		dir = if dir.Magnitude > 0.1 then dir.Unit else me.CFrame.LookVector
-		local power = if L.ShowdownAt > 0 then CFG.ShowdownShove else 1
-		event:FireClient(best, "LavaShove", dir * CFG.ShoveSpeed * power + Vector3.new(0, CFG.ShoveLift, 0))
+		local power = (if L.ShowdownAt > 0 then CFG.ShowdownShove else 1) * (if L.Mutator.Id == "MegaShove" then CFG.MegaShove else 1)
+		-- Capped at ShoveMax: the client ignores shoves over 120 studs/s (Mega Shoves in the showdown would pass it).
+		local speed = math.min(CFG.ShoveSpeed * power, CFG.ShoveMax)
+		event:FireClient(best, "LavaShove", dir * speed + Vector3.new(0, CFG.ShoveLift, 0))
 		if target then
 			target.shovedBy, target.shovedAt = p.DisplayName, now()
 		end
@@ -3779,7 +3784,8 @@ end
 local function shoveBot(p: Player, b: Bot, dir: Vector3)
 	local towerModel = tower :: Model
 	local from = botPosition(b)
-	local row, col = Grid.TileAt(towerModel, from + dir * CFG.GridTile * 1.6 + Vector3.new(0, 2, 0), now())
+	local reach = if L.Mutator.Id == "MegaShove" then 2.6 else 1.6 -- tiles; Mega Shoves pushes a bot one tile further
+	local row, col = Grid.TileAt(towerModel, from + dir * CFG.GridTile * reach + Vector3.new(0, 2, 0), now())
 	shoveImpact(p, nil, from)
 	challenge(p, "Shoves", 1)
 	if row and col and walkable(Grid.TileState(towerModel, row, col, now())) then
