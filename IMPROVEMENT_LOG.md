@@ -3,6 +3,22 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 95. Name sweep: settings and attributes (no change needed)
+
+**Why.** The message check in #93/#94 found a real gap, so I ran the same kind of name check on the other things
+looked up by string.
+
+**Checked.**
+- SkySproutLavaService `CFG`: 144 keys defined, 144 used. None is read without being defined, and none is unused.
+- SkySproutConfig (shared): every key the lava service, both lava clients, the shop and the pass service read
+  exists.
+- Attributes read but never set by any script: 41, almost all from the old SkySprout RPG systems (portals, tower,
+  wilds), set in the place itself or Studio-only test switches (`StudioForce*`, `StudioGrant*`). The only lava ones
+  are `FallFrom` / `FallStart` / `FallSpeed` in `LavaGrid.FallLift`, left from the parachute crates removed in
+  ff4ff20 ("flash spawns"). It now always returns 0, costs next to nothing and was left in place.
+
+**Verified.** Read-only scans of Assets/Scripts; no code changed.
+
 ## 94. Lint: messages nobody handles (tools/check_remotes.py)
 
 **Why.** The "Swing" gap fixed in #93 went unnoticed from the first version until now: the server sent an effect on
