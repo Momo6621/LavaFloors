@@ -221,6 +221,9 @@ The island itself (terrain, palms, flower bushes, tiki torches and clouds) is re
 
 Before syncing scripts, `python tools/check_luau.py` flags lines that start with `(` right after a callable
 expression. Luau refuses to load those ("Ambiguous syntax"), which once stopped the whole lava service.
+`python tools/check_locals.py` warns before a script nears Luau's 200-local limit, and
+`python tools/check_remotes.py` flags messages between server and clients (actions, message kinds, effect kinds)
+that the other side never handles.
 
 To work on the scripts from the repo, serve them with [Rojo](https://rojo.space):
 

@@ -3,6 +3,26 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 94. Lint: messages nobody handles (tools/check_remotes.py)
+
+**Why.** The "Swing" gap fixed in #93 went unnoticed from the first version until now: the server sent an effect on
+every shove press and no client handled it. The game talks over one RemoteEvent with string names, so a typo or a
+forgotten handler fails silently. Per the project rule, a mistake gets one fix, and here that's a lint. It's a
+separate change from #93, so the check didn't land in the same commit as the code it judges.
+
+**Built.** `tools/check_remotes.py` checks three things by name:
+- actions clients send with `FireServer("Name")` that no server script compares against,
+- message kinds the server sends with `FireClient(p, "Name")` / `FireAllClients("Name")` that no client checks,
+- effect kinds the server puts in a message (`Kind = "Name"`) that no client checks.
+
+`QuestReward` (the old SkySprout tower quests, not used in party mode) is listed as known and doesn't fail. The
+script exits 1 on anything else. The README's Building section now lists it with the other two lints.
+
+**Verified.** On the repo: "0 unhandled message name(s)", exit 0, with QuestReward reported as known. On a scratch
+copy with the #93 fix undone and a made-up `FireServer("LavaNope")` added, it reported both ("server effect
+"Swing" is sent but no client checks for it" and "client action "LavaNope" is sent but no server script handles
+it") and exited 1. No game scripts changed.
+
 ## 93. A missed shove still answers the button
 
 **Why.** In the #92 two-player test most shove presses didn't land (the 0.8 s cooldown and a nearer bot took some),
