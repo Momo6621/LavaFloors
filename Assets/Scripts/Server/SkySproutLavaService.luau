@@ -37,6 +37,7 @@ local CFG = {
 	-- kept just over the crater rim (CraterHeight 80) so the last rise still lifts the winners out of the volcano.
 	GridRise = 23,
 	PhaseTime = 10,
+	SlowMoPhaseTime = 13, -- 🐢 Slow-Mo twist: each phase lasts this long, so the whole floor moves 1.3x slower (#103)
 	StartDelay = 3,
 	GridSpins = { 90, -135, 180 },
 	GridGrow = { 2, 0, 0 }, -- 5x5 grows to 9x9 in phase 1
@@ -290,6 +291,7 @@ local MUTATORS: { Mutator } = {
 	{ Id = "QuickCrumble", Name = "⚡ Quick Crumble", Weight = 1 },
 	{ Id = "Bouncy", Name = "🦘 Bouncy", Weight = 2 }, -- everyone jumps higher (CFG.BouncyJumpPower, #99)
 	{ Id = "ShoveFrenzy", Name = "🎯 Shove Frenzy", Weight = 2 }, -- shove cooldown halved (CFG.FrenzyShoveCooldown, #102)
+	{ Id = "SlowMo", Name = "🐢 Slow-Mo", Weight = 2 }, -- longer phases, a gentler round (CFG.SlowMoPhaseTime, #103)
 }
 -- Twist vote: when a round ends everyone gets a few twists to pick from; the most votes wins (ties and no votes are
 -- settled at random among the options).
@@ -2396,7 +2398,8 @@ local function buildTower()
 		end
 	end
 	model:SetAttribute("GridSeed", rng:NextInteger(1, 1000000))
-	model:SetAttribute("PhaseTime", CFG.PhaseTime)
+	-- The schedule (grid, round end, lava height) all follows this attribute, on the server and every client.
+	model:SetAttribute("PhaseTime", if L.Mutator.Id == "SlowMo" then CFG.SlowMoPhaseTime else CFG.PhaseTime)
 	model:SetAttribute("Phases", #CFG.GridSpins)
 	model:SetAttribute("Size", CFG.GridSize)
 	model:SetAttribute("Tile", CFG.GridTile)
@@ -2725,7 +2728,8 @@ end
 
 local function lateOpen(): boolean
 	local start = tower and tower:GetAttribute("Start")
-	return L.Phase == "Round" and type(start) == "number" and now() < start + CFG.PhaseTime
+	local phaseTime = tower and tower:GetAttribute("PhaseTime")
+	return L.Phase == "Round" and type(start) == "number" and now() < start + (if type(phaseTime) == "number" then phaseTime else CFG.PhaseTime)
 end
 
 local function enter(p: Player): boolean

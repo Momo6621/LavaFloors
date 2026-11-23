@@ -3,6 +3,23 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 103. 🐢 Slow-Mo twist (a gentler round)
+
+**Why.** Feature loop. The recent twists (#99, #102) make rounds wilder; younger kids also need rounds they can
+actually win. Slow-Mo slows the whole floor for everyone, so it's fair, and it gives new players room to learn the
+moves.
+
+**Built.** SkySproutLavaService: a new twist `{ Id = "SlowMo", Name = "🐢 Slow-Mo", Weight = 2 }`. `buildTower` sets
+the tower's `PhaseTime` attribute to `SlowMoPhaseTime` (13 s) instead of `PhaseTime` (10 s). The grid schedule, the
+round's end time and the lava height all follow that attribute, on the server and on every client, so the whole
+round runs 1.3x slower (39 s instead of 30). `lateOpen` (the phase-1 "dropping you back in" window) now reads the
+tower's phase time too, instead of the fixed setting.
+
+**Verified.** Lints pass. The Studio copy matches the repo (198548 bytes, hash 851915652) and compiles. Solo Studio
+playtest: a forced Slow-Mo round had `PhaseTime` 13 and a 39 s schedule; the next round, forced Classic, had 10 and
+30 s. Consoles clean; force attribute cleared. Not separately tested: a phase-1 drop-back between 10 and 13 s into a
+Slow-Mo round.
+
 ## 102. 🎯 Shove Frenzy twist
 
 **Why.** Feature loop. Shoving is the game's core interaction (#39) and the party-game charts are led by shove games
