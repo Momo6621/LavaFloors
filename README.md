@@ -44,7 +44,7 @@ ring shrinks away. Drops are fruit: banana (speed), pineapple (super jump), blue
 watermelon (berry bag). Strawberries are a risk: only 2 a round (`Berries`), all on the outer ring that grows in during
 phase 1 and drops away in phase 2, plus one on top of the pillar. Each is 4 coins (`EmberCoins`) if you survive.
 Supply drops come every 20 s (`DropEvery`), or every 12 s in the bonus rounds: every world theme except Sunset
-(`ThemeDropEvery`). A drop is never the same fruit as the one before it. Fruit hats are in the shop, and so are 🐾 fruit
+(`ThemeDropEvery`); their countdown says "🐾 Bonus round". A drop is never the same fruit as the one before it. Fruit hats are in the shop, and so are 🐾 fruit
 buddies: little fruit pets with googly eyes that float by your shoulder and bob along (Strawberry 600 to Coconut 3000
 coins, all earnable; tap again to send it to rest; Reduce Motion keeps it still). `Pets` in SkySproutConfig,
 `PetSize`/`PetOffset` in CFG, saved as `Pet`/`OwnedPets`. Four more buddies can't be bought, only found: in every

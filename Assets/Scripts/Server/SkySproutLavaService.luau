@@ -4362,8 +4362,11 @@ local function loop()
 		L.Theme = theme.Id
 		broadcast()
 		task.spawn(setTheme, theme.Id)
+		-- Bonus rounds (#96, #97): every theme except Sunset has extra fruit drops and a lost buddy; the countdown says
+		-- so in the same notice (no extra pop-up).
+		local bonus = if theme.Id ~= "Sunset" then " · 🐾 Bonus round" else ""
 		for p in L.Queue do
-			tell(p, theme.Name .. (if L.Mutator.Id == "Classic" then " · Lava Rush in " .. CFG.Countdown .. "s!" else " · Twist: " .. L.Mutator.Name .. "!"))
+			tell(p, theme.Name .. bonus .. (if L.Mutator.Id == "Classic" then " · Lava Rush in " .. CFG.Countdown .. "s!" else " · Twist: " .. L.Mutator.Name .. "!"))
 		end
 		while now() < L.EndsAt do
 			autoQueue()

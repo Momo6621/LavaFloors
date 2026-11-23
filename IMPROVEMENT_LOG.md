@@ -3,6 +3,20 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 100. "🐾 Bonus round" in the countdown
+
+**Why.** Feature loop. The themed worlds now have extra fruit drops (#96) and a lost buddy to find (#97), but nothing
+told kids that. Without a cue, a buddy on the outer ring looks like a random object, and kids don't know to go for it.
+The owner wants fewer pop-ups (#80), so this goes into the existing countdown notice rather than a new one.
+
+**Built.** SkySproutLavaService: in every theme except Sunset, the countdown notice reads, for example,
+"🌙 Purple Moon · 🐾 Bonus round · Twist: 💥 Mega Shoves!". Sunset rounds read exactly as before.
+
+**Verified.** Lints pass. The Studio copy matches the repo (197236 bytes, hash 694770723) and compiles. Solo Studio
+playtest: with Purple Moon forced, the countdowns read "🌙 Purple Moon · 🐾 Bonus round · Twist: 🎁 Drop Party!" and
+"… · Twist: 💥 Mega Shoves!". With Sunset and Classic forced, the countdown read "🌅 Sunset · Lava Rush in 4s!".
+Server and client consoles clean; force attributes cleared.
+
 ## 99. 🦘 Bouncy twist
 
 **Why.** Feature loop, second feature. Twists are the game's main source of round-to-round variety, and the twist
