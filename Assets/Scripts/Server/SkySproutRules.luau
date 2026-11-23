@@ -137,7 +137,7 @@ end
 function R.pet(p,id)
  for _,h in ipairs(C.Pets or{})do if h.Id==id then
   if p.Pet==id then p.Pet="";return true,h.Name.." is resting."end
-  if not p.OwnedPets[id]then if p.Coins<h.Cost then return false,h.Cost.." coins needed."end;p.Coins-=h.Cost;p.OwnedPets[id]=true end
+  if not p.OwnedPets[id]then if h.FindIn then return false,"Find the "..h.Name.." in "..(h.Where or "its world").." rounds!"end;if p.Coins<h.Cost then return false,h.Cost.." coins needed."end;p.Coins-=h.Cost;p.OwnedPets[id]=true end
   p.Pet=id;return true,h.Name.." is following you!"
  end end
  return false,"Unknown buddy."

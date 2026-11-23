@@ -50,6 +50,7 @@ local CFG = {
 	CharacterScale = 0.62,
 	-- Fruit buddy (pet): size and place beside the shoulder, in studs for a full-size character (scaled with it).
 	PetSize = 1.5,
+	BuddyFindCoins = 40, -- bonus rounds: grabbing a lost theme buddy you already own pays this instead (#97)
 	PetOffset = Vector3.new(2, 1.5, 0.8),
 	RoundWalkSpeed = 24,
 	SpeedRushWalkSpeed = 30,
@@ -1996,6 +1997,84 @@ local function makeShield(parent: Instance, position: Vector3, stepIndex: number
 	})
 end
 
+-- Theme buddies (GameConfig.Pets entries with FindIn): never sold, found in their world theme's rounds.
+local function petDef(id: string): any?
+	for _, h in GameConfig.Pets or {} do
+		if h.Id == id then
+			return h
+		end
+	end
+	return nil
+end
+
+-- A buddy's glow: a soft light in its colour, plus flames or sparkles (def.Aura).
+local function addAura(parent: BasePart, def: any?)
+	if not def or not def.Aura then
+		return
+	end
+	local light = Instance.new("PointLight")
+	light.Color = def.Color
+	light.Range = 6
+	light.Brightness = 1.5
+	light.Parent = parent
+	if def.Aura == "Fire" then
+		local fire = Instance.new("Fire")
+		fire.Color = def.Color
+		fire.SecondaryColor = Color3.fromRGB(200, 230, 255)
+		fire.Size = 2
+		fire.Heat = 4
+		fire.Parent = parent
+	elseif def.Aura == "Sparkles" then
+		local sparkles = Instance.new("Sparkles")
+		sparkles.SparkleColor = def.Color
+		sparkles.Parent = parent
+	end
+end
+
+-- Bonus rounds (#97): in every world theme except Sunset, that theme's lost buddy floats on the floor in a bubble.
+-- The first climber to grab it keeps it, and it starts following them; one they already own pays BuddyFindCoins.
+local function makeBuddyFind(parent: Instance, position: Vector3, stepIndex: number, def: any)
+	local holder = part(parent, "BuddyFind", Vector3.new(3.4, 3.4, 3.4), CFrame.new(position), def.Color, Enum.Material.SmoothPlastic)
+	holder.Shape = Enum.PartType.Ball
+	holder.Transparency = 1
+	holder.CanCollide = false
+	holder.CanQuery = false
+	holder.CanTouch = false
+	local bubble = part(holder, "Bubble", Vector3.new(3.2, 3.2, 3.2), CFrame.new(position), def.Color, Enum.Material.ForceField)
+	bubble.Shape = Enum.PartType.Ball
+	bubble.CanCollide = false
+	bubble.CanQuery = false
+	bubble.CanTouch = false
+	fruit(def.Model, 1.4, CFrame.new(position), holder)
+	addAura(holder, def)
+	ride(holder, stepIndex)
+	table.insert(pickups, {
+		item = holder,
+		radius = 4,
+		take = function(p: Player, _r: any)
+			holder:Destroy()
+			local d = data(p)
+			if not d then
+				return
+			end
+			d.OwnedPets = d.OwnedPets or {}
+			if d.OwnedPets[def.Id] then
+				d.Coins = math.min(100000000, d.Coins + CFG.BuddyFindCoins)
+				logCoins(p, "Gameplay", CFG.BuddyFindCoins, "BuddyFind")
+				pushStats(p)
+				tell(p, "🐾 Another " .. def.Name .. "! +" .. CFG.BuddyFindCoins .. " coins")
+			else
+				d.OwnedPets[def.Id] = true
+				d.Pet = def.Id
+				pushStats(p)
+				applyPet(p)
+				tell(p, "🐾 You found the " .. def.Name .. "! It follows you now.")
+				logEvent(p, "BuddyFound", def.Id)
+			end
+		end,
+	})
+end
+
 type Boost = { Id: string, Name: string, Icon: string, Color: Color3, Weight: number, Fruit: string }
 local BOOSTS: { Boost } = {
 	{ Id = "Speed", Name = "⚡ Speed Boost", Icon = "⚡", Color = Color3.fromRGB(255, 225, 60), Weight = 3, Fruit = "Banana" },
@@ -2415,6 +2494,25 @@ local function buildTower()
 			special[index] = true
 			placed += 1
 			makeShield(model, platforms[index].Position + Vector3.new(0, 4, 0), index)
+		end
+	end
+	-- Bonus rounds (#97): this theme's lost buddy waits out on the outer ring that grows in during phase 1, like the
+	-- strawberries, so it's something you go and get rather than spawn on (none in Sunset).
+	local findDef: any? = nil
+	for _, h in GameConfig.Pets or {} do
+		if h.FindIn == L.Theme then
+			findDef = h
+		end
+	end
+	if findDef then
+		local spots = if #berryTiles > 0 then berryTiles else startTiles
+		for _ = 1, 40 do
+			local index = spots[rng:NextInteger(1, #spots)]
+			if not special[index] then
+				special[index] = true
+				makeBuddyFind(model, platforms[index].Position + Vector3.new(0, 3.5, 0), index, findDef)
+				break
+			end
 		end
 	end
 
@@ -4382,11 +4480,13 @@ applyPet = function(p: Player)
 	end
 	local d = data(p)
 	local id = d and d.Pet
-	if type(id) ~= "string" or id == "" or not FruitModels:FindFirstChild(id) then
+	local def = if type(id) == "string" then petDef(id) else nil
+	local modelName = if def and def.Model then def.Model else id -- theme buddies are made from another fruit
+	if type(id) ~= "string" or id == "" or type(modelName) ~= "string" or not FruitModels:FindFirstChild(modelName) then
 		return
 	end
 	local s = root.Size.Y / 2 -- 1 for a full-size character
-	local pet = (FruitModels:FindFirstChild(id) :: Model):Clone()
+	local pet = (FruitModels:FindFirstChild(modelName) :: Model):Clone()
 	pet.Name = "FruitBuddy"
 	local _, size = pet:GetBoundingBox()
 	pet:ScaleTo(CFG.PetSize * s / math.max(size.X, size.Y, size.Z))
@@ -4397,6 +4497,7 @@ applyPet = function(p: Player)
 	core.Transparency = 1
 	core.CFrame = box
 	core.Parent = pet
+	addAura(core, def)
 	pet.PrimaryPart = core
 	local eyeSize = math.min(scaled.X, scaled.Y) * 0.3
 	for _, side in { -1, 1 } do

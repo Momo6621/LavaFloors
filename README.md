@@ -47,7 +47,11 @@ Supply drops come every 20 s (`DropEvery`), or every 12 s in the bonus rounds: e
 (`ThemeDropEvery`). A drop is never the same fruit as the one before it. Fruit hats are in the shop, and so are 🐾 fruit
 buddies: little fruit pets with googly eyes that float by your shoulder and bob along (Strawberry 600 to Coconut 3000
 coins, all earnable; tap again to send it to rest; Reduce Motion keeps it still). `Pets` in SkySproutConfig,
-`PetSize`/`PetOffset` in CFG, saved as `Pet`/`OwnedPets`.
+`PetSize`/`PetOffset` in CFG, saved as `Pet`/`OwnedPets`. Four more buddies can't be bought, only found: in every
+world theme except Sunset, that theme's lost buddy floats in a bubble on the outer ring (Inferno Berry in Blue
+Inferno, Moon Banana in Purple Moon, Star Buddy in Starry Night, Candy Dragon in Candy Crater), each with its own
+glow. The first climber to grab it keeps it and it starts following them; grabbing one you already own pays 40 coins
+(`BuddyFindCoins`). Their shop cards say where to find them.
 
 ![A Strawberry Buddy floating by a player's shoulder in the lobby](Media/fruit-buddy.jpg)
 

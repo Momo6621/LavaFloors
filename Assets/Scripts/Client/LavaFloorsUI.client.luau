@@ -343,10 +343,11 @@ for i, h in C.Hats do
 	})
 end
 
--- Fruit buddies: little fruit pets that float by your shoulder (coins only).
+-- Fruit buddies: little fruit pets that float by your shoulder (coins only). Theme buddies (FindIn) aren't sold: the
+-- card says which world to find them in.
 for i, h in C.Pets or {} do
 	local f, b = card(80 + i, h.Color, "🐾 " .. h.Name)
-	local model = FruitModels:FindFirstChild(h.Id)
+	local model = FruitModels:FindFirstChild(h.Model or h.Id)
 	if model then
 		local view: ViewportFrame = make("ViewportFrame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 4), Size = UDim2.fromOffset(64, 64), BackgroundTransparency = 1, ZIndex = 3 }, f)
 		local copy = model:Clone()
@@ -367,6 +368,8 @@ for i, h in C.Pets or {} do
 				setButton(b, "✓ WITH YOU", GREEN)
 			elseif player:GetAttribute("OwnsPet" .. id) then
 				setButton(b, "BRING", ORANGE)
+			elseif h.FindIn then
+				setButton(b, "Find in " .. (h.Where or "its world"), Color3.fromRGB(170, 150, 140))
 			else
 				local afford = (player:GetAttribute("Coins") or 0) >= h.Cost
 				setPrice(b, h.Cost, if afford then ORANGE else Color3.fromRGB(170, 150, 140))

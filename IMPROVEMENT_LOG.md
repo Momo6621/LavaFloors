@@ -3,6 +3,37 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 97. Theme buddies to find in the bonus rounds (owner's request)
+
+**Why.** Second half of the owner's request in #96: the themed worlds should also drop collectibles, "like a pet that
+follows you around". Collecting pets is one of the main draws of party games (see #51), and a buddy you can only find
+in one world gives each theme its own reason to cheer when it comes up.
+
+**Built.**
+- SkySproutConfig `Pets`: four buddies with `FindIn` (the theme), `Model` (the fruit they're made from), `Where` and
+  `Aura`: Inferno Berry (blueberry, blue flames), Moon Banana (banana, purple glow), Star Buddy (star fruit,
+  sparkles) and Candy Dragon (dragon fruit, pink sparkles). `Cost = 0`, and they're never sold.
+- SkySproutRules `pet`: an unowned theme buddy can't be bought; it answers "Find the Inferno Berry in 💙 Blue Inferno
+  rounds!".
+- SkySproutLavaService: in every theme except Sunset, `buildTower` puts that theme's lost buddy in a bubble on an
+  outer-ring tile that isn't a strawberry's (it grows in during phase 1, like the strawberries, so you go and get
+  it). The first climber to grab it gets it in `OwnedPets`, it becomes their buddy and follows them, with the notice
+  "🐾 You found the Inferno Berry! It follows you now." and an analytics custom event `BuddyFound`. A buddy they
+  already own pays `BuddyFindCoins` (40) instead. `applyPet` builds theme buddies from their `Model` fruit and adds
+  the aura (a light, plus Fire or Sparkles).
+- LavaFloorsUI shop: theme buddy cards show the right fruit and "Find in 💙 Blue Inferno" until found, then BRING /
+  ✓ WITH YOU like the others.
+
+**Verified.** Lints pass. The owner approved the look from a Studio preview (bubbles and buddies with googly eyes;
+flames and sparkles only show in play). Solo Studio playtest with Blue Inferno forced: the lost buddy spawned in its
+bubble with Fire and a PointLight. Grabbing it set `OwnsPetInfernoBerry` and `PetStyle = InfernoBerry`, and the
+buddy followed the player with its fire; a second one the next round paid "🐾 Another Inferno Berry! +40 coins".
+Studio matched the repo for the config, rules and UI scripts. Console clean.
+
+**Not yet verified.** That first test placed the buddy on a start tile, where a player could spawn on it, so it was
+moved to the outer ring. That move was synced to Studio, but Studio disconnected before the re-hash and a playtest of
+the new spot, so both are still to do before publishing.
+
 ## 96. Bonus rounds: more, and more varied, fruit drops in the themed worlds (owner's request)
 
 **Why.** The owner asked for the coloured worlds to drop more items and collectibles: "every theme except Sunset

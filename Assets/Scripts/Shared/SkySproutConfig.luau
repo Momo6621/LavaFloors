@@ -44,6 +44,12 @@ return {
  {Id="Pineapple",Name="Pineapple Buddy",Cost=1500,Color=Color3.fromRGB(255,170,60)},
  {Id="Watermelon",Name="Watermelon Buddy",Cost=2200,Color=Color3.fromRGB(255,110,140)},
  {Id="Coconut",Name="Coconut Buddy",Cost=3000,Color=Color3.fromRGB(150,95,60)},
+ -- Theme buddies: never sold. One "lost buddy" waits on the floor in each round of its world theme; the first climber
+ -- to grab it keeps it (Model = the fruit it's made from, FindIn = the theme Id, Aura = its glow).
+ {Id="InfernoBerry",Name="Inferno Berry",Model="Blueberry",FindIn="BlueInferno",Where="💙 Blue Inferno",Aura="Fire",Cost=0,Color=Color3.fromRGB(70,150,255)},
+ {Id="MoonBanana",Name="Moon Banana",Model="Banana",FindIn="PurpleMoon",Where="🌙 Purple Moon",Aura="Glow",Cost=0,Color=Color3.fromRGB(175,115,255)},
+ {Id="StarBuddy",Name="Star Buddy",Model="StarFruit",FindIn="StarryNight",Where="✨ Starry Night",Aura="Sparkles",Cost=0,Color=Color3.fromRGB(255,240,160)},
+ {Id="CandyDragon",Name="Candy Dragon",Model="DragonFruit",FindIn="Candy",Where="🍭 Candy Crater",Aura="Sparkles",Cost=0,Color=Color3.fromRGB(255,120,200)},
  },
  Hats={
  {Id="Strawberry",Name="Strawberry Hat",Cost=250,Color=Color3.fromRGB(235,70,80)},
