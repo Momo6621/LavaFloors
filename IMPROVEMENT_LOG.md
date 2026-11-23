@@ -3,6 +3,22 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 105. 🌀 Twist Tamer title
+
+**Why.** Feature loop. With 16 twists, there's now a reason to try them all. A collect-them-all title (like Gem
+Hunter and Buddy Collector) rewards variety without coins and without favouring anyone.
+
+**Built.**
+- SkySproutLavaService: a new title, 🌀 Twist Tamer (`Need = "Twists"`), unlocked once you've been crowned in
+  `TitleTwists` (5) different twists. Each crown adds that round's twist to the profile's `TwistWins`; the fifth
+  different one runs `applyTitle` and says "🏷️ New title: 🌀 Twist Tamer! …", as Chest Cracker does.
+- SkySproutRules: `TwistWins` in new profiles, and `clean` keeps it (string keys, at most 60).
+
+**Verified.** Lints pass. The Studio copies match the repo (lava service 199417 bytes, hash 151265757; rules 10645,
+510712026) and compile. A test player can't win in Studio, so in the Studio copy only every payout counted as a crown
+and `TitleTwists` was 2. After a forced Bouncy round and a forced Slow-Mo round, `LavaTitles` listed "🌀 Twist
+Tamer". Server console clean; test values restored and re-hashed.
+
 ## 104. A cue when your bubble ends
 
 **Why.** Feature loop. Bubbles now matter a lot (first-round, underdog and pickup shields, #83, #87, #91), but the

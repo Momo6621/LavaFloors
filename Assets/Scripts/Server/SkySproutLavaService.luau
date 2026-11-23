@@ -239,7 +239,9 @@ local CFG = {
 		{ Id = "Chests", Need = "Chests", Text = "🎁 Chest Cracker", Color = Color3.fromRGB(255, 200, 90) },
 		{ Id = "Kind", Need = "Gifts", Text = "🍓 Kind Climber", Color = Color3.fromRGB(255, 130, 160) },
 		{ Id = "Buddies", Need = "Buddies", Text = "🐾 Buddy Collector", Color = Color3.fromRGB(175, 115, 255) }, -- every theme buddy found (#98)
+		{ Id = "Twists", Need = "Twists", Text = "🌀 Twist Tamer", Color = Color3.fromRGB(120, 220, 160) }, -- crowned in TitleTwists different twists (#105)
 	},
+	TitleTwists = 5, -- different twists you've been crowned in, for 🌀 Twist Tamer
 	TitleChests = 5, -- Lava Chests opened for 🎁 Chest Cracker (Gem Hunter needs every lava gem)
 	TitleGifts = 5, -- strawberry gifts sent for 🍓 Kind Climber
 
@@ -3278,6 +3280,21 @@ local function payout()
 			end
 			d.Coins = math.min(100000000, d.Coins + coins)
 			logCoins(p, "Gameplay", coins, "RoundPayout")
+			-- 🌀 Twist Tamer (#105): remember each twist you've been crowned in; the TitleTwists-th unlocks the title.
+			if r.crowned then
+				d.TwistWins = d.TwistWins or {}
+				if not d.TwistWins[L.Mutator.Id] then
+					d.TwistWins[L.Mutator.Id] = true
+					local won = 0
+					for _ in d.TwistWins do
+						won += 1
+					end
+					if won == CFG.TitleTwists then
+						applyTitle(p)
+						tell(p, "🏷️ New title: 🌀 Twist Tamer! Pick it with the 🏷️ button in 📋 Challenges.")
+					end
+				end
+			end
 			-- First crown of the day (#101): a flat bonus once per UTC day, added after the round multipliers.
 			if r.crowned and d.FirstCrownDay ~= today() then
 				d.FirstCrownDay = today()
@@ -3499,6 +3516,12 @@ local function titleUnlocked(t: any, d: any, crowns: number): boolean
 		return (tonumber(d.ChestsOpened) or 0) >= CFG.TitleChests
 	elseif t.Need == "Gifts" then
 		return (tonumber(d.GiftsSent) or 0) >= CFG.TitleGifts
+	elseif t.Need == "Twists" then
+		local n = 0
+		for _ in d.TwistWins or {} do
+			n += 1
+		end
+		return n >= CFG.TitleTwists
 	elseif t.Need == "Buddies" then
 		for _, h in GameConfig.Pets or {} do
 			if h.FindIn and not (d.OwnedPets and d.OwnedPets[h.Id]) then
