@@ -3,6 +3,29 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 128. The lobby shop and panels follow the world theme too (owner's request)
+
+**Why.** Following #126 ("the UI color still doesnt match the theme"): the HUD matched the world, but the lobby
+panels didn't. The glove/hat/buddy shop and the daily challenges kept a lava-orange ribbon, lava-brown glass,
+lava-brown item cards and orange buttons, built with LavaFloorsUI's own colours rather than LavaUI's themed helpers.
+
+**Built.**
+- LavaUI: `U.accentFill(bar, mixTop, mixBottom)` for header ribbons: an accent-to-deep gradient that follows the
+  theme. The lava accent keeps its own deep red-orange, so Sunset ribbons look as before.
+- LavaUI: `U.GlassLightTint` for the lighter card glass. Sunset keeps its lava-brown; other themes mix 18 % of the
+  accent into their glass. `U.setThemeColors` recolours `AccentFill` gradients, `ThemeBar` ribbons and
+  `ThemeGlassLight` cards along with the #126 markers.
+- LavaFloorsUI: `corner()` marks panel glass (`ThemeGlass`) and cards (`ThemeGlassLight`) and builds them in the
+  current theme. `ORANGE` is now the lava accent (was 255,122,40, almost the same), so WEAR / CLAIM / emote buttons
+  follow. The shop ribbon and lava-coloured panel bars (Daily Challenges) use `U.accentFill`. Panels with their own
+  colour (Lava Pass purple, VIP gold) keep it.
+
+**Verified.** Lints pass. The Studio copies match the repo (LavaUI 11750 bytes, hash 115087370; LavaFloorsUI 58704,
+392910531) and compile. Studio screenshots of the glove shop in Blue Inferno (blue ribbon, navy glass and cards),
+Candy Crater (pink and berry) and Sunset (unchanged lava look). A first Blue Inferno shot showed the cards still brown,
+which is why the card glass got its own tint before the owner saw it. The owner approved from those screenshots.
+Console clean; the force attribute was cleared.
+
 ## 127. Two-player check of Magnet Hands and knockout credit (one wording fix)
 
 **Why.** #115 (Magnet Hands) and #119 (knockout credit) could only be tested against bots solo. A first 2-player

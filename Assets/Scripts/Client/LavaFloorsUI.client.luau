@@ -21,7 +21,7 @@ local UI = require(RS:WaitForChild("LavaUI")) :: any
 -- Dark glass + lava style (see Shared/LavaUI). CREAM is the panel glass and INK the light text on it.
 local CREAM = UI.Glass
 local INK = UI.Text
-local ORANGE = Color3.fromRGB(255, 122, 40)
+local ORANGE = UI.Lava -- the lava accent, so ORANGE buttons follow the world theme (#128; was 255, 122, 40)
 local GREEN = Color3.fromRGB(70, 200, 90)
 local GOLD = Color3.fromRGB(255, 196, 45)
 local RED = Color3.fromRGB(235, 70, 60)
@@ -42,8 +42,11 @@ local function corner(v: Instance, r: number)
 	if v:IsA("GuiObject") and not v:IsA("GuiButton") then
 		if v.BackgroundColor3 == UI.Glass then
 			v.BackgroundTransparency = UI.GlassTransparency
+			v.BackgroundColor3 = UI.GlassTint -- panel glass follows the world theme (#128)
+			v:SetAttribute("ThemeGlass", true)
 		elseif v.BackgroundColor3 == Color3.new(1, 1, 1) then
-			v.BackgroundColor3 = UI.GlassLight
+			v.BackgroundColor3 = UI.GlassLightTint -- cards follow the world theme (#128)
+			v:SetAttribute("ThemeGlassLight", true)
 			v.BackgroundTransparency = 0.08
 		end
 	end
@@ -223,7 +226,7 @@ corner(shop, 22)
 outline(shop, 4)
 local ribbon = make("Frame", { Position = UDim2.fromOffset(0, 0), Size = UDim2.new(1, 0, 0, 56), BackgroundColor3 = ORANGE }, shop)
 corner(ribbon, 22)
-make("UIGradient", { Rotation = 90, Color = ColorSequence.new(UI.Lava, UI.LavaDeep:Lerp(UI.Glass, 0.3)) }, ribbon)
+UI.accentFill(ribbon, 0, 0.3) -- lava ribbon that follows the world theme (#128)
 local heading = label(ribbon, "🧤 GLOVES", 28, Color3.new(1, 1, 1))
 heading.TextStrokeColor3 = UI.Shadow
 heading.TextStrokeTransparency = 0.2
@@ -586,7 +589,11 @@ local function panel(title: string, top: Color3, bottom: Color3): (Frame, Frame)
 	outline(f, 4)
 	local bar = make("Frame", { Size = UDim2.new(1, 0, 0, 56), BackgroundColor3 = top }, f)
 	corner(bar, 22)
-	make("UIGradient", { Rotation = 90, Color = ColorSequence.new(top:Lerp(UI.Glass, 0.2), bottom:Lerp(UI.Glass, 0.5)) }, bar)
+	if top == UI.Lava then
+		UI.accentFill(bar, 0.2, 0.5) -- lava header bars follow the world theme (#128); other colours stay
+	else
+		make("UIGradient", { Rotation = 90, Color = ColorSequence.new(top:Lerp(UI.Glass, 0.2), bottom:Lerp(UI.Glass, 0.5)) }, bar)
+	end
 	local head = label(bar, title, 28, Color3.new(1, 1, 1))
 	head.TextStrokeColor3 = UI.Shadow
 	head.TextStrokeTransparency = 0.2

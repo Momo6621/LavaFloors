@@ -201,8 +201,10 @@ Look and feel (each change was picked by the owner from a side-by-side preview; 
 - The rest of the HUD follows the theme too (#126): panel glass, glowing borders, notices and the default orange
   buttons turn blue on navy (Blue Inferno), violet on deep purple (Purple Moon), periwinkle on midnight (Starry Night)
   and pink on berry (Candy Crater); Sunset keeps the lava look (`UIAccent`/`UIGlass` in LavaThemes,
-  `U.setThemeColors` in LavaUI). Buttons with their own colour (gold Raise, green, red), the top bar and the lobby
-  shop keep their colours.
+  `U.setThemeColors` in LavaUI). The lobby panels follow as well (#128): the shop and daily-challenge ribbons
+  (`U.accentFill`), panel glass, item cards (a lighter glass with a touch of the accent) and the orange WEAR / CLAIM
+  buttons. Buttons and panels with their own colour (gold Raise, VIP, the purple Lava Pass, green, red) and the top
+  bar keep their colours.
 - Icons: the free Flibpook pack (`Shared/LavaIcons.luau`) instead of emoji in the top bar (shop stall, purple gem,
   crown, checkmark, trophy, heart, lightning, speaker, gear), the coins panel, shop prices, challenge rewards, the
   Raise button, the daily reward card, the Lava Pass and the result card (crown or checkmark beside the title; coin,

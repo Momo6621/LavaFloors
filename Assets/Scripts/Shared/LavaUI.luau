@@ -23,6 +23,7 @@ U.TitleBottom = Color3.fromRGB(255, 150, 50)
 -- green, red) keeps its colour.
 U.Accent = U.Lava
 U.GlassTint = U.Glass
+U.GlassLightTint = U.GlassLight -- the lighter glass of cards inside panels (#128)
 
 local WHITE = Color3.new(1, 1, 1)
 local BLACK = Color3.new(0, 0, 0)
@@ -147,16 +148,46 @@ function U.button(b: GuiButton, accent: Color3)
 	end
 end
 
+-- The deeper shade of an accent for gradients: the lava accent keeps its own deep red-orange.
+local function deepOf(accent: Color3): Color3
+	return if accent == U.Lava then U.LavaDeep else accent:Lerp(BLACK, 0.3)
+end
+
+-- A header bar filled with the accent (#128): a gradient from the accent to its deeper shade, each mixed toward the
+-- glass by mixTop / mixBottom. Follows the theme like the borders.
+function U.accentFill(bar: GuiObject, mixTop: number, mixBottom: number): UIGradient
+	bar.BackgroundColor3 = U.Accent
+	bar:SetAttribute("ThemeBar", true)
+	local g = Instance.new("UIGradient")
+	g.Name = "AccentFill"
+	g.Rotation = 90
+	g:SetAttribute("MixTop", mixTop)
+	g:SetAttribute("MixBottom", mixBottom)
+	g.Color = ColorSequence.new(U.Accent:Lerp(U.GlassTint, mixTop), deepOf(U.Accent):Lerp(U.GlassTint, mixBottom))
+	g.Parent = bar
+	return g
+end
+
 -- Switch the accent and glass to a theme's colours (#126): every lava-accent border, glass panel and lava button
 -- under root is recoloured, and new ones use these colours too.
 function U.setThemeColors(accent: Color3, glass: Color3, root: Instance?)
 	U.Accent, U.GlassTint = accent, glass
+	-- Cards: Sunset keeps its lava-brown; other themes mix a little accent into their glass.
+	local light = if glass == U.Glass then U.GlassLight else glass:Lerp(accent, 0.18)
+	U.GlassLightTint = light
 	if root then
 		for _, d in root:GetDescendants() do
 			if d:IsA("UIGradient") and d.Name == "AccentStroke" then
 				d.Color = ColorSequence.new(accent:Lerp(WHITE, 0.4), accent:Lerp(BLACK, 0.2))
+			elseif d:IsA("UIGradient") and d.Name == "AccentFill" then
+				local top, bottom = d:GetAttribute("MixTop"), d:GetAttribute("MixBottom")
+				d.Color = ColorSequence.new(accent:Lerp(glass, tonumber(top) or 0), deepOf(accent):Lerp(glass, tonumber(bottom) or 0))
 			elseif d:IsA("GuiObject") then
-				if d:GetAttribute("ThemeButton") then
+				if d:GetAttribute("ThemeBar") then
+					d.BackgroundColor3 = accent
+				elseif d:GetAttribute("ThemeGlassLight") then
+					d.BackgroundColor3 = light
+				elseif d:GetAttribute("ThemeButton") then
 					d.BackgroundColor3 = U.tone(accent)
 				elseif d:GetAttribute("ThemeGlass") then
 					d.BackgroundColor3 = glass
