@@ -2644,8 +2644,14 @@ local function enter(p: Player): boolean
 	local at = ((if type(stepIndex) == "number" then tileDelta(stepIndex) else CFrame.identity) * pl.CFrame).Position + Vector3.new(0, 4.5, 0)
 	p.Character:PivotTo(CFrame.lookAt(at, Vector3.new(CFG.Center.X, at.Y, CFG.Center.Z)))
 	local runner = L.Runners[p]
-	if runner and (L.LossStreak[p] or 0) >= CFG.UnderdogAfter and now() >= runner.shieldUntil then
-		grantShield(p, p.Character, runner, at, CFG.UnderdogShield, "🫧 Underdog shield! Tough few rounds, so shoves can't move you for " .. CFG.UnderdogShield .. "s.")
+	-- A brand-new player's first round starts in the same bubble, so nobody is shoved out before they've had a go
+	-- (there are no tutorial tips any more; this teaches by play).
+	local firstRound = p:GetAttribute("Tutorial") == true
+	if runner and (firstRound or (L.LossStreak[p] or 0) >= CFG.UnderdogAfter) and now() >= runner.shieldUntil then
+		local message = if firstRound
+			then "🫧 First-round bubble! Shoves can't move you for " .. CFG.UnderdogShield .. "s."
+			else "🫧 Underdog shield! Tough few rounds, so shoves can't move you for " .. CFG.UnderdogShield .. "s."
+		grantShield(p, p.Character, runner, at, CFG.UnderdogShield, message)
 	end
 	personal(p)
 	return true

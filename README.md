@@ -107,7 +107,8 @@ Progression and live-ops:
 - Server goal: every rise a real player reaches fills one shared bar (top bar pill: a trophy and "12/40"). When it
   fills, everyone who climbed since the last one gets 30 coins and a new bar starts. `GoalRises` / `GoalCoins` in CFG.
 - Underdog shield: knocked out 3 rounds in a row, you start the next round in a 15 s bubble shield (shoves only).
-  Surviving resets it. `UnderdogAfter` / `UnderdogShield` in CFG.
+  Surviving resets it. `UnderdogAfter` / `UnderdogShield` in CFG. A brand-new player's first round starts in the same
+  bubble ("First-round bubble!"), so nobody is shoved out before they've had a go.
 - Away: after 2 minutes with no input you sit out the automatic rounds (so nobody is dropped in to fall off while
   they're gone); any input puts you back in the queue. A manual opt-out is never undone. Set by `AwayAfter` in CFG.
 - Winner cam: if you were watching from above when someone escapes, the camera swings round to the winner for

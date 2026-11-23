@@ -3,6 +3,22 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 83. First-round bubble for new players
+
+**Why.** Party charts are led by shove games right now (e.g. "Knockout!" on Rotrends' Party & Casual list,
+https://rotrends.com/games/TopPartyAndCasual), and the onboarding research in #71 says new players leave when the
+first moments feel unfair. With the tutorial tips gone (#80, owner's call), the worst first moment left is a
+brand-new kid being shoved out by a veteran in the first seconds. This teaches by play, not by text.
+
+**Built.** SkySproutLavaService `enter`: a player whose `Tutorial` attribute is true (their first round hasn't
+finished) starts the round in the same 15 s bubble as the underdog shield, with "🫧 First-round bubble! Shoves can't
+move you for 15s." It also covers a phase-1 drop-back in that round. From the second round on, only the underdog rule
+applies.
+
+**Verified.** Solo Studio playtest: first round (`Tutorial` true), the bubble was on 1 s after the round started,
+with the notice; once the round finished, `Tutorial` was false and the next round had no bubble. The Studio copy
+matches the repo (188226 bytes, hash 297689131); console clean.
+
 ## 82. Two-player smoke test of the shove twists (no change needed)
 
 **Why.** This session changed a lot around shoves and rounds (late-join grace, the shove speed cap, Mega Shoves,
