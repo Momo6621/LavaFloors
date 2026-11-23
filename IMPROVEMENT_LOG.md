@@ -5,7 +5,7 @@ was checked. Newest first.
 
 ## 116. Two twist challenges: survive twist rounds, vote for twists
 
-**Why.** Feature loop. The game now has 17 twists and a Surprise option, but the daily challenges never mention
+**Why.** Feature loop. The game now has 16 twists and a Surprise option, but the daily challenges never mention
 them. Kids who try new twists, and kids who join the vote, should get some credit for it. The pool grows from 11 to
 13, so the same three come round less often.
 
