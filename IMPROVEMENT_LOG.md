@@ -3,6 +3,23 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 117. 👋 Welcome back gift
+
+**Why.** Feature loop. Kids drift away from games for a week or two (school, holidays) and come back. The daily
+streak already pauses instead of resetting, so being away costs nothing; a warm welcome on top makes coming back
+feel good. It's the opposite of fake urgency: nothing is lost by leaving, there's just a small gift for returning.
+
+**Built.** SkySproutShopService `daily`: if your last daily was 7 or more days ago (`WELCOME_BACK_DAYS`), the day's
+reward comes with a flat 100 coins (`WELCOME_BACK_COINS`, no VIP multiplier), logged as the economy event
+"WelcomeBack", plus the notice "👋 Welcome back! We missed you: +100 coins" right after the daily reward notice.
+Brand-new players (`LastDaily` 0) don't get it.
+
+**Verified.** Lints pass. The Studio copy matches the repo (8548 bytes, hash 456575836) and compiles. Tested in a
+temporary Studio-only copy that skipped the "already collected today" check and set the last daily to 8 days ago.
+On joining, "🎁 Day 1 daily reward: +25 coins!" then "👋 Welcome back! We missed you: +100 coins"; coins came to 125
+(Studio starts each session at 0, as the #113 test's 25 shows). The copy was restored and re-hashed. Console clean.
+Not tested: a real 7-day gap on a live server (a plain day subtraction on the saved `LastDaily`).
+
 ## 116. Two twist challenges: survive twist rounds, vote for twists
 
 **Why.** Feature loop. The game now has 16 twists and a Surprise option, but the daily challenges never mention

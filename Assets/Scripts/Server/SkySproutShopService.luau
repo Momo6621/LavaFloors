@@ -129,6 +129,10 @@ function S.ProcessReceipt(receipt: any): Enum.ProductPurchaseDecision
 end
 
 local DAILY = { 25, 50, 75, 100, 150, 200, 300 }
+-- 👋 Welcome back (#117): coming back after this many days away adds a one-time gift to the daily reward. Flat and
+-- the same for everyone; it rewards returning, it never punishes being away.
+local WELCOME_BACK_DAYS = 7
+local WELCOME_BACK_COINS = 100
 
 local function daily(p: Player)
 	local started = os.clock()
@@ -147,6 +151,8 @@ local function daily(p: Player)
 	-- Gentle streak: it counts the days you've collected, up to the top reward. Missing a day only pauses it (kids often
 	-- can't play every day), so there's no "come back or lose it" pressure.
 	local streak = math.min((tonumber(d.DailyStreak) or 0) + 1, #DAILY)
+	local last = tonumber(d.LastDaily) or 0
+	local welcomeBack = last > 0 and today - last >= WELCOME_BACK_DAYS
 	local vipWait = os.clock()
 	while p.Parent == Players and p:GetAttribute("VIP") == nil and os.clock() - vipWait < 10 do
 		task.wait(0.5)
@@ -160,6 +166,13 @@ local function daily(p: Player)
 	task.spawn(pcall, function()
 		game:GetService("AnalyticsService"):LogEconomyEvent(p, Enum.AnalyticsEconomyFlowType.Source, "Coins", reward, dailyBalance, Enum.AnalyticsEconomyTransactionType.TimedReward.Name, "DailyStreak_" .. tostring(streak))
 	end)
+	if welcomeBack then
+		d.Coins = math.min(100000000, d.Coins + WELCOME_BACK_COINS)
+		local backBalance = d.Coins
+		task.spawn(pcall, function()
+			game:GetService("AnalyticsService"):LogEconomyEvent(p, Enum.AnalyticsEconomyFlowType.Source, "Coins", WELCOME_BACK_COINS, backBalance, Enum.AnalyticsEconomyTransactionType.Gameplay.Name, "WelcomeBack")
+		end)
+	end
 	stats(p)
 	task.wait(4)
 	if p.Parent == Players then
@@ -168,6 +181,9 @@ local function daily(p: Player)
 		local remote = game.ReplicatedStorage:FindFirstChild("ArenaEvent")
 		if remote and remote:IsA("RemoteEvent") then
 			remote:FireClient(p, "LavaDaily", { Day = streak, Rewards = DAILY, Multiplier = if isVip and C.Vip then C.Vip.DailyMultiplier else 1 })
+		end
+		if welcomeBack then
+			tell(p, string.format("👋 Welcome back! We missed you: +%d coins", WELCOME_BACK_COINS))
 		end
 	end
 end
