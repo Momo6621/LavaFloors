@@ -92,6 +92,13 @@ local CFG = {
 	BotEase = 0.06,
 	BotEaseMax = 0.3,
 	BotNames = { "Ember", "Magma", "Cinder", "Flare", "Pumice", "Basalt", "Scoria", "Ash", "Obsidian", "Sparky" },
+	-- Theme bot names (#118): in a themed world the bots are named to match; Sunset uses BotNames.
+	BotNamesByTheme = {
+		BlueInferno = { "Frosty", "Blizzard", "Glacier", "Sapphire", "Icicle", "Splash" },
+		PurpleMoon = { "Luna", "Gloom", "Shadow", "Twilight", "Echo", "Violet" },
+		StarryNight = { "Comet", "Nova", "Twinkle", "Orbit", "Stardust", "Meteor" },
+		Candy = { "Gumdrop", "Sprinkles", "Taffy", "Jellybean", "Lolly", "Fudge" },
+	} :: { [string]: { string } },
 
 	-- Anti-cheat: a climber who jumps more than TeleportJump studs in one tick can't grab pickups for a second,
 	-- and one who isn't over the grid for OffGridLimit seconds (hovering/flying) is scorched.
@@ -3931,7 +3938,7 @@ spawnBotsOnly = function()
 	if want == 0 or not tower then
 		return
 	end
-	local names = table.clone(CFG.BotNames)
+	local names = table.clone(CFG.BotNamesByTheme[L.Theme] or CFG.BotNames)
 	local size = CFG.GridSize
 	local spots = {}
 	for row = 1, size do

@@ -3,6 +3,24 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 118. Bots named for the world they're in
+
+**Why.** Feature loop. The five worlds look completely different (mint tiles over pink lava in Candy Crater, icy blue
+in Blue Inferno), but the bots were always called Ember, Magma and Basalt. Matching names make each world feel like
+its own place, and kids get a laugh out of "🤖 Sprinkles got pulled into the lava!". (Planned first: a 2-player
+Magnet Hands check. The Riot Client was running, so no multiplayer test windows this time.)
+
+**Built.** SkySproutLavaService: `CFG.BotNamesByTheme` gives six names each for Blue Inferno (Frosty, Blizzard,
+Glacier…), Purple Moon (Luna, Gloom, Shadow…), Starry Night (Comet, Nova, Twinkle…) and Candy Crater (Gumdrop,
+Sprinkles, Taffy…). `spawnBotsOnly` draws from the round's theme list and falls back to `BotNames` for Sunset. Names
+only: labels, notices and models all use the name as before.
+
+**Verified.** Lints pass. The Studio copy matches the repo (204039 bytes, hash 653612839) and compiles. Solo
+playtest with `StudioForceTheme = "Candy"`: the bots were Bot_Taffy, Bot_Jellybean and Bot_Gumdrop, labelled
+"🤖 Taffy" etc. (screenshot). Forcing Sunset next: the first check read the old tower (the theme switches at the
+countdown, before the new tower is built); the freshly built Sunset tower had Bot_Obsidian, Bot_Ash and Bot_Basalt.
+Console clean; force attributes cleared.
+
 ## 117. 👋 Welcome back gift
 
 **Why.** Feature loop. Kids drift away from games for a week or two (school, holidays) and come back. The daily

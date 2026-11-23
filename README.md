@@ -95,6 +95,8 @@ Round extras:
   fall with the floor or the lava and can be shoved off. If no real climbers are left, standing bots win.
   Every bot win in a row makes them a little clumsier (`BotEase`, up to +0.30 mistake chance); a player win
   sharpens them back up. They never get better than the base `BotMistake`.
+  In the themed worlds the bots are named to match (Candy Crater: Gumdrop, Sprinkles, Taffy…; Starry Night: Comet,
+  Nova…; `BotNamesByTheme`); Sunset keeps the volcano names (`BotNames`).
 - Duos twist: everyone is paired (friends first, then players, then bots); teammates share an outline colour, can't
   shove each other, and the last team standing wins (both teammates are crowned).
 
