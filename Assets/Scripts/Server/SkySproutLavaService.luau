@@ -155,6 +155,7 @@ local CFG = {
 	ShoveLift = 18,
 	MegaShove = 1.6, -- Mega Shoves twist: shoves fly this much further (bots slide one tile further)
 	ShoveMax = 110, -- top horizontal shove speed; the client drops anything over 120 as a bad value
+	BlockedNoticeGap = 6, -- seconds between "bubble shield blocked your shove" notices for the same shover and target
 	JoinGrace = 2, -- seconds nobody can shove a climber who just landed on the grid (joined late or was rescued)
 
 	-- Rewards. Scaled to 0.7x when rounds went from 7 phases to 3: a round cycle is now ~44 s instead of ~63 s, so
@@ -2772,6 +2773,7 @@ end
 -- Fair starts: no shoves during the get-ready seconds before the floor moves (so nobody is out before the round
 -- begins), and a climber who just landed on the grid can't be shoved for JoinGrace seconds. No notice for the first:
 -- tips only come when you're knocked out.
+local blockedTold: { [Player]: { [Player]: number } } = setmetatable({}, { __mode = "k" }) :: any -- shover -> target -> os.clock()
 local function shove(p: Player)
 	local r = L.Runners[p]
 	local me = root(p)
@@ -2807,7 +2809,14 @@ local function shove(p: Player)
 	local target = best and L.Runners[best]
 	if best and target and now() < target.shieldUntil then
 		event:FireClient(p, "LavaFX", { Kind = "Blocked", Position = (root(best) :: BasePart).Position })
-		tell(p, "🛡️ " .. best.DisplayName .. "'s bubble shield blocked your shove!")
+		-- The blue flash shows every time; the words at most every BlockedNoticeGap seconds per target, so shoving a
+		-- shielded kid over and over doesn't flood the notices.
+		local told = blockedTold[p] or setmetatable({}, { __mode = "k" }) :: any
+		blockedTold[p] = told
+		if os.clock() - (told[best] or -math.huge) >= CFG.BlockedNoticeGap then
+			told[best] = os.clock()
+			tell(p, "🛡️ " .. best.DisplayName .. "'s bubble shield blocked your shove!")
+		end
 		return
 	end
 	if best then

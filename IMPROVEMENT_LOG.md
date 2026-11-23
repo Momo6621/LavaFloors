@@ -3,6 +3,18 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 84. Fewer "bubble shield blocked your shove" notices (not playtested yet)
+
+**Why.** With first-round and underdog bubbles common, shoving a shielded kid repeatedly sent the shover the same
+notice every time, against the owner's "less chatter" direction (#80).
+
+**Built.** SkySproutLavaService `shove`: the blue "Blocked" flash still shows every time, but the words come at most
+once every `BlockedNoticeGap` (6 s) per shover and target.
+
+**Verified.** Lint and the local-limit check pass; the Studio copy matches the repo (188852 bytes, hash 960709853)
+and compiles; server console clean. The 2-player throttle test was inconclusive (the target had no bubble when the
+punches landed), so the behaviour itself still needs a playtest.
+
 ## 83. First-round bubble for new players
 
 **Why.** Party charts are led by shove games right now (e.g. "Knockout!" on Rotrends' Party & Casual list,
