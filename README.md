@@ -51,7 +51,8 @@ coins, all earnable; tap again to send it to rest; Reduce Motion keeps it still)
 world theme except Sunset, that theme's lost buddy floats in a bubble on the outer ring (Inferno Berry in Blue
 Inferno, Moon Banana in Purple Moon, Star Buddy in Starry Night, Candy Dragon in Candy Crater), each with its own
 glow. The first climber to grab it keeps it and it starts following them; grabbing one you already own pays 40 coins
-(`BuddyFindCoins`). Their shop cards say where to find them.
+(`BuddyFindCoins`). Their shop cards say where to find them. Finding all four unlocks the title 🐾 Buddy Collector,
+and "Grab 1 lost buddy" is one of the daily challenges.
 
 ![A Strawberry Buddy floating by a player's shoulder in the lobby](Media/fruit-buddy.jpg)
 

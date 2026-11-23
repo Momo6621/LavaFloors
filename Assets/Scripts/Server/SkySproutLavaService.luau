@@ -234,6 +234,7 @@ local CFG = {
 		{ Id = "Gems", Need = "Gems", Text = "🔶 Gem Hunter", Color = Color3.fromRGB(255, 150, 60) },
 		{ Id = "Chests", Need = "Chests", Text = "🎁 Chest Cracker", Color = Color3.fromRGB(255, 200, 90) },
 		{ Id = "Kind", Need = "Gifts", Text = "🍓 Kind Climber", Color = Color3.fromRGB(255, 130, 160) },
+		{ Id = "Buddies", Need = "Buddies", Text = "🐾 Buddy Collector", Color = Color3.fromRGB(175, 115, 255) }, -- every theme buddy found (#98)
 	},
 	TitleChests = 5, -- Lava Chests opened for 🎁 Chest Cracker (Gem Hunter needs every lava gem)
 	TitleGifts = 5, -- strawberry gifts sent for 🍓 Kind Climber
@@ -255,6 +256,7 @@ local CFG = {
 		{ Id = "Berries", Text = "Collect %d strawberries", Goal = 10, Reward = 50 },
 		{ Id = "Phase", Text = "Reach phase %d", Goal = 3, Reward = 60 },
 		{ Id = "Shoves", Text = "Land %d shoves", Goal = 6, Reward = 50 },
+		{ Id = "Buddy", Text = "Grab %d lost buddy", Goal = 1, Reward = 60 }, -- the theme buddy in a bonus round (#98)
 	},
 
 	-- Keep moving
@@ -2058,6 +2060,7 @@ local function makeBuddyFind(parent: Instance, position: Vector3, stepIndex: num
 				return
 			end
 			d.OwnedPets = d.OwnedPets or {}
+			challenge(p, "Buddy", 1)
 			if d.OwnedPets[def.Id] then
 				d.Coins = math.min(100000000, d.Coins + CFG.BuddyFindCoins)
 				logCoins(p, "Gameplay", CFG.BuddyFindCoins, "BuddyFind")
@@ -2068,6 +2071,7 @@ local function makeBuddyFind(parent: Instance, position: Vector3, stepIndex: num
 				d.Pet = def.Id
 				pushStats(p)
 				applyPet(p)
+				applyTitle(p) -- the last one unlocks 🐾 Buddy Collector
 				tell(p, "🐾 You found the " .. def.Name .. "! It follows you now.")
 				logEvent(p, "BuddyFound", def.Id)
 			end
@@ -3475,6 +3479,13 @@ local function titleUnlocked(t: any, d: any, crowns: number): boolean
 		return (tonumber(d.ChestsOpened) or 0) >= CFG.TitleChests
 	elseif t.Need == "Gifts" then
 		return (tonumber(d.GiftsSent) or 0) >= CFG.TitleGifts
+	elseif t.Need == "Buddies" then
+		for _, h in GameConfig.Pets or {} do
+			if h.FindIn and not (d.OwnedPets and d.OwnedPets[h.Id]) then
+				return false
+			end
+		end
+		return true
 	end
 	return false
 end

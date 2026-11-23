@@ -3,6 +3,26 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 98. 🐾 Buddy Collector title and a "lost buddy" daily challenge
+
+**Why.** First feature of the owner's "loop and add a bunch of features" run. The theme buddies (#97) are a set of
+four, and collect-them-all goals with something to show for it keep kids coming back (titles already work that way
+for gems, chests and gifts, see #38).
+
+**Built.** SkySproutLavaService:
+- A new title, 🐾 Buddy Collector (`Need = "Buddies"`): unlocked when a player owns every theme buddy. `applyTitle`
+  runs after each find, so it shows up in the title picker the moment the last one is found.
+- A new daily challenge, "Grab 1 lost buddy" (60 coins). Any lost-buddy grab counts, including one you already own.
+- Note: today's three challenges are a seeded shuffle of the whole pool, so adding one changes which three come up
+  once this is published. Progress is kept per challenge, so nobody loses anything they've earned.
+
+**Verified.** Lints pass. The Studio copy matches the repo (196589 bytes, hash 774401393) and compiles. Solo Studio
+playtest, forcing each theme in turn while a test helper kept the player alive and grabbed the lost buddy once its
+tile grew in: "You found the Moon Banana / Candy Dragon / Inferno Berry / Star Buddy", and after the fourth the
+`LavaTitles` list gained "🐾 Buddy Collector". Today's challenges didn't include the new one, so its progress
+couldn't be watched; the call ran on all four grabs without errors. Server console clean (the only client errors
+came from an early version of my test helper, which kept a stale tower reference). No test attributes left.
+
 ## 97. Theme buddies to find in the bonus rounds (owner's request)
 
 **Why.** Second half of the owner's request in #96: the themed worlds should also drop collectibles, "like a pet that
