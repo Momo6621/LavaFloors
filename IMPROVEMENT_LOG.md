@@ -30,9 +30,11 @@ bubble with Fire and a PointLight. Grabbing it set `OwnsPetInfernoBerry` and `Pe
 buddy followed the player with its fire; a second one the next round paid "🐾 Another Inferno Berry! +40 coins".
 Studio matched the repo for the config, rules and UI scripts. Console clean.
 
-**Not yet verified.** That first test placed the buddy on a start tile, where a player could spawn on it, so it was
-moved to the outer ring. That move was synced to Studio, but Studio disconnected before the re-hash and a playtest of
-the new spot, so both are still to do before publishing.
+**Outer ring, verified after reconnecting.** That first test placed the buddy on a start tile, where a player could
+spawn on it, so it was moved to the outer ring. After Studio reconnected, all 48 scripts matched the repo (lava
+service 196061 bytes, hash 967030495). In a forced Blue Inferno round the lost buddy sat on tile 7,8, ring 3 (start
+tiles are rings 0-2). Once its tile grew in, grabbing it gave "🐾 You found the Inferno Berry! It follows you now.",
+and the buddy followed with its fire and light. Server and client consoles clean; no test attributes left.
 
 ## 96. Bonus rounds: more, and more varied, fruit drops in the themed worlds (owner's request)
 
