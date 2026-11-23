@@ -283,9 +283,12 @@ The free Lava Pass track (20 tiers, XP from playing, surviving, crowns and straw
 
 ## Store art
 
-`Media/store/` has the game thumbnail (1920x1080) and icon (512x512). They're real Studio captures: the Sunset
-theme, Roblox's built-in R15 rigs with default animations, and the game's own crown, with the title set in Fredoka
-One (SIL Open Font License, shipped with Roblox Studio). `tools/compose_store_art.py` rebuilds them from the captures.
+`Media/store/` has the game thumbnail (1920x1080) and icon (512x512), both live on the store page. They're built
+from in-game material only: a Sunset crater screenshot for the background, and Studio captures of Roblox's built-in
+R15 rigs in action poses (a crowned winner, a shoved climber, a leaper) plus the game's own crown and fruit buddies,
+shot on a green screen. The title is set in Luckiest Guy, the game's UI font (Apache 2.0, shipped with Roblox
+Studio). `tools/compose_pop_art.py` rebuilds them from the captures (it needs Pillow); the older calmer set came from
+`tools/compose_store_art.py`.
 
 ## Credits
 

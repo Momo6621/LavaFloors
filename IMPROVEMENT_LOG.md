@@ -3,6 +3,25 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 111. Store icon and thumbnail that pop (owner's request)
+
+**Why.** The owner asked for an icon and thumbnail a kid would pick on sight, with dynamic poses. Kids' game
+thumbnails that do well on Roblox share a look: big, close characters in action, a thick outlined title, bright
+saturated colour and one clear focal point.
+
+**Built.**
+- `tools/compose_pop_art.py`: chroma-keys green-screen Studio captures, adds white sticker outlines and drop
+  shadows, a light burst, sparkles and a lava glow, and sets "LAVA FLOORS" in Luckiest Guy with a white and brown
+  outline and a yellow-to-orange fill.
+- Thumbnail: the crowned winner in the middle, a shoved climber on the left, a leaper on the right, two fruit
+  buddies in the corners, over the Sunset crater. Icon: the winner, a buddy and "LAVA".
+- Uploaded as Open Use images (icon 73026836484929, thumbnail 73147668402610), both approved by moderation, and set
+  as the place icon and first thumbnail through the Assets API. The previous banner stays as the second thumbnail.
+
+**Verified.** The owner approved both images from previews. Reading the place back with
+`readMask=previews,icon` shows the new icon and the new thumbnail first. The place revision didn't change (the
+update only touched metadata). Not checked: how the store page looks on a phone.
+
 ## 110. Jump styles and four more celebrations (owner's request)
 
 **Why.** The owner asked for "different jump animations" and "different celebration animations", taken from sources
