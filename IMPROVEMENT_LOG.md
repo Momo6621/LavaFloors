@@ -3,6 +3,28 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 108. The store is live: 5 passes and 8 products created and wired in (owner's request)
+
+**Why.** The owner asked what's needed to earn money. Every pass and product ID in the game was 0, so the store was
+hidden. The owner asked me to create them ("you got that") once Studio's upload folder allowed the icons.
+
+**Built.**
+- Created over Open Cloud, at the prices the owner approved earlier, each with its icon from Media/store:
+  VIP 299 (2094204889), Lava Pass Premium 199 (2093742988), 2x Lava Coins 149 (2096444986), Aurora Gloves 99
+  (2092939013), Flame Trail 79 (2093340957); coins 100/500/2,000/6,000 at 19/79/249/599 (3735086616, …644, …666,
+  …685); tips 25/100/500/1,000 (3735086772, …785, …798, …811).
+- Passes and coin packs have Price Optimization (managed pricing) on. Tips don't, so each tip costs exactly what it
+  says. Descriptions are honest: coins "can also be earned by playing", the cosmetics are "just a look", and a tip
+  "doesn't give anything in the game".
+- SkySproutConfig: the 13 IDs are filled in (`PassId`, `DoubleLavaPassId`, `LavaPassPremiumId`, `VipPassId`,
+  `TrailPassId`, `ProductIds`).
+
+**Verified.** `MarketplaceService:GetProductInfo` returned the right name and price for all 13, and every pass is for
+sale. The Studio copy of the config matches the repo (6550 bytes, hash 691564689) and compiles. In a Studio playtest
+the shop showed the Aurora Gloves, Flame Trail and 2x cards, the four coin packs (R$ 19/79/249/599), the four tips
+and the VIP panel, with no errors on client or server. The owner's account counts as owning its own passes, so the
+VIP panel read "YOU'RE VIP". Not tested: an actual purchase (no test purchases were made).
+
 ## 107. ⏩ Fast-Forward twist
 
 **Why.** Feature loop. Slow-Mo (#103) gives younger kids an easier round; skilled kids get a matching challenge. It's

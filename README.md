@@ -266,10 +266,9 @@ The free Lava Pass track (20 tiers, XP from playing, surviving, crowns and straw
 
 ## Before publishing
 
-- Create the passes (VIP, Lava Pass Premium, 2x Lava Coins, Aurora Gloves, Flame Trail), the products and, if wanted,
-  the VIP subscription on the Creator Dashboard and paste the IDs into
-  `SkySproutConfig` (anything left at 0 or "" stays hidden in game).
-- Turn on Price Optimization for the passes and products, and set a private server price.
+- Done 2026-11-23: the 5 passes and 8 products exist (created over Open Cloud with the Media/store icons) and their
+  IDs are in `SkySproutConfig`. Passes and coin packs have Price Optimization on; tips don't, so "Tip 25" always
+  costs 25. Still optional: a VIP subscription (`VipSubscriptionId`) and a private server price.
 - Rewarded video ads only start once the game is public and meets Roblox's eligibility rules.
 - Set the badge IDs in `SkySproutConfig`.
 - Set Lighting → Technology to **Future** in Studio.

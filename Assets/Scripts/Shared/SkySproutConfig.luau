@@ -1,11 +1,11 @@
 return {
- Version=8,GameTitle="LAVA Floors",SaveName="SkyboundArena_Player_v1",PassId=0,
- DoubleLavaPassId=0,
- LavaPassPremiumId=0,
- VipPassId=0, -- one-time VIP game pass (preferred over the subscription for a kids' game)
- TrailPassId=0, -- Flame Trail cosmetic
+ Version=8,GameTitle="LAVA Floors",SaveName="SkyboundArena_Player_v1",PassId=2092939013, -- Aurora Gloves (created 2026-11-23)
+ DoubleLavaPassId=2096444986, -- 2x Lava Coins
+ LavaPassPremiumId=2093742988, -- Lava Pass Premium
+ VipPassId=2094204889, -- one-time VIP game pass (preferred over the subscription for a kids' game)
+ TrailPassId=2093340957, -- Flame Trail cosmetic
  VipSubscriptionId="",
- ProductIds={Coins100=0,Coins500=0,Coins2000=0,Coins6000=0,Tip25=0,Tip100=0,Tip500=0,Tip1000=0},
+ ProductIds={Coins100=3735086616,Coins500=3735086644,Coins2000=3735086666,Coins6000=3735086685,Tip25=3735086772,Tip100=3735086785,Tip500=3735086798,Tip1000=3735086811},
  Tips={Tip25=25,Tip100=100,Tip500=500,Tip1000=1000},
  Vip={CoinBonus=0.25,DailyMultiplier=2,Hat="GoldenApple"},
  -- Friend deal: when someone joins from your invite you both get coins (once per friend; the welcome gift once per
