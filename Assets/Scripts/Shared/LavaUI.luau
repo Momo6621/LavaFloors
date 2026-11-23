@@ -14,6 +14,10 @@ U.Gold = Color3.fromRGB(255, 208, 90)
 U.Text = Color3.fromRGB(255, 242, 228)
 U.Muted = Color3.fromRGB(205, 180, 170)
 U.Shadow = Color3.fromRGB(18, 6, 2)
+-- Title text gradient (top, bottom). It follows the round's world theme (#106): LavaFloorsUI calls U.setTitleColors
+-- from LavaThemes' TextTop/TextBottom whenever the theme changes. These are the Sunset colours.
+U.TitleTop = Color3.fromRGB(255, 240, 170)
+U.TitleBottom = Color3.fromRGB(255, 150, 50)
 
 local WHITE = Color3.new(1, 1, 1)
 local BLACK = Color3.new(0, 0, 0)
@@ -86,12 +90,24 @@ function U.text(label: TextLabel | TextButton, kind: string?)
 		local g = Instance.new("UIGradient")
 		g.Name = "TitleGradient"
 		g.Rotation = 90
-		g.Color = ColorSequence.new(Color3.fromRGB(255, 240, 170), Color3.fromRGB(255, 150, 50))
+		g.Color = ColorSequence.new(U.TitleTop, U.TitleBottom)
 		g.Parent = label
 	elseif kind == "muted" then
 		label.TextColor3 = U.Muted
 	else
 		label.TextColor3 = U.Text
+	end
+end
+
+-- Recolour every title (UIGradient named TitleGradient) under root, and use these colours for new titles too.
+function U.setTitleColors(top: Color3, bottom: Color3, root: Instance?)
+	U.TitleTop, U.TitleBottom = top, bottom
+	if root then
+		for _, d in root:GetDescendants() do
+			if d:IsA("UIGradient") and d.Name == "TitleGradient" then
+				d.Color = ColorSequence.new(top, bottom)
+			end
+		end
 	end
 end
 

@@ -3,6 +3,25 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 106. Title colours follow the world theme (owner's request)
+
+**Why.** The owner asked for "the font color [to] match the themes". The HUD titles were always gold-to-orange, so in
+Blue Inferno or Candy Crater they clashed with the world.
+
+**Built.**
+- LavaThemes: each theme has `TextTop` and `TextBottom` colours. Sunset keeps gold-to-orange; Blue Inferno ice to
+  blue; Purple Moon lavender to purple; Starry Night cream to periwinkle; Candy Crater mint to pink.
+- LavaUI: titles take the current `U.TitleTop`/`U.TitleBottom`, and the new `U.setTitleColors(top, bottom, root)`
+  repaints every `TitleGradient` under root.
+- LavaFloorsUI: when `workspace.LavaTheme` changes (each countdown), it repaints the whole PlayerGui. Body text stays
+  light for readability.
+
+**Verified.** The owner approved the look from a Studio preview (one title per theme) before this was committed.
+Lints pass. The Studio copies match the repo (LavaThemes 5247 bytes, hash 279652373; LavaUI 8780, 968646449;
+LavaFloorsUI 55491, 713103016) and compile. Studio playtest: with Blue Inferno forced, all 7 HUD titles were
+(215,240,255)->(80,160,255); after switching to Candy Crater during play, all 7 were (225,255,240)->(255,125,200).
+Consoles clean; force attribute cleared.
+
 ## 108. The store is live: 5 passes and 8 products created and wired in (owner's request)
 
 **Why.** The owner asked what's needed to earn money. Every pass and product ID in the game was 0, so the store was

@@ -175,6 +175,9 @@ Progression and live-ops:
 Look and feel (each change was picked by the owner from a side-by-side preview; see IMPROVEMENT_LOG #57–#67):
 - Font: Luckiest Guy everywhere in the HUD and cards (`U.Font` in LavaUI), with thick dark outlines (3.5 on titles, 2.5
   on body text) so the text pops.
+- Title colours follow the round's world theme (#106): the gold-to-orange title gradient becomes ice-to-blue in Blue
+  Inferno, lavender-to-purple in Purple Moon, cream-to-periwinkle in Starry Night and mint-to-pink in Candy Crater
+  (`TextTop`/`TextBottom` in LavaThemes, `U.setTitleColors` in LavaUI). Body text stays light.
 - Icons: the free Flibpook pack (`Shared/LavaIcons.luau`) instead of emoji in the top bar (shop stall, purple gem,
   crown, checkmark, trophy, heart, lightning, speaker, gear), the coins panel, shop prices, challenge rewards, the
   Raise button, the daily reward card, the Lava Pass and the result card (crown or checkmark beside the title; coin,

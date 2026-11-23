@@ -1324,3 +1324,17 @@ task.spawn(function()
 		task.wait(2)
 	end
 end)
+
+-- Title colours follow the round's world theme (#106): the server sets workspace "LavaTheme" at each countdown, and
+-- every title gradient in the HUD switches to that theme's TextTop/TextBottom (LavaThemes).
+do
+	local Themes = require(RS:WaitForChild("LavaThemes")) :: any
+	local function applyThemeColors()
+		local theme = Themes.Get(workspace:GetAttribute("LavaTheme"))
+		local top = theme and theme.TextTop or Color3.fromRGB(255, 240, 170)
+		local bottom = theme and theme.TextBottom or Color3.fromRGB(255, 150, 50)
+		UI.setTitleColors(top, bottom, player:FindFirstChildOfClass("PlayerGui"))
+	end
+	workspace:GetAttributeChangedSignal("LavaTheme"):Connect(applyThemeColors)
+	applyThemeColors()
+end
