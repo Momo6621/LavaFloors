@@ -3,6 +3,22 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 129. Measure how each twist goes (TwistOutcome analytics)
+
+**Why.** Feature loop. There are now 16 twists plus a Surprise option, and several are new (Magnet Hands,
+Fast-Forward, Bouncy). A twist that knocks most kids out in seconds stops being fun for a 7-year-old, but nothing
+showed the owner which ones those are. Kid-fair balance needs numbers.
+
+**Built.** SkySproutLavaService `payout`: one AnalyticsService custom event per climber per round, `TwistOutcome`,
+with CustomField01 "Twist - <id>", CustomField02 "Outcome - Crowned/Survived/Scorched" and CustomField03
+"World - <theme>". Values follow the Roblox analytics guide's "Key - Value" form. The combinations (17 × 3 × 5 = 255)
+are far under the 8,000 cap, and it's one new event name. No gameplay change.
+
+**Verified.** Lints pass. The Studio copy matches the repo (208070 bytes, hash 989052695) and compiles. Solo
+playtest with a temporary Studio-only print beside the call: two rounds logged "Twist - FastForward, Outcome -
+Scorched, World - BlueInferno" and "Twist - MegaShove, Outcome - Scorched, World - PurpleMoon", each followed by the
+engine's "LogCustomEvent event fired". The print was removed and the copy re-hashed. Console clean.
+
 ## 128. The lobby shop and panels follow the world theme too (owner's request)
 
 **Why.** Following #126 ("the UI color still doesnt match the theme"): the HUD matched the world, but the lobby

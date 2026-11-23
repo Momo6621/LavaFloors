@@ -145,6 +145,9 @@ Progression and live-ops:
   up inside a longer bubble never shortens it. Each climber's round is logged as
   the analytics custom event `CatchUpBubble` ("FirstRound", "Underdog" or "None", then how the round ended), so the
   Creator Dashboard shows how often kids get a bubble and whether it helps them.
+- Twist outcomes: each climber's round is also logged as the custom event `TwistOutcome` ("Twist - …",
+  "Outcome - Crowned/Survived/Scorched", "World - …"), so the Creator Dashboard shows which twists or worlds are
+  hardest for kids.
 - Loaded first: a new player joins the automatic rounds only once their client says the game has loaded
   ("LavaReady", resent until the server confirms), or after 20 s if that never arrives (`ReadyWait` in CFG). A slow
   phone isn't dropped into its first round (and first-round bubble) from the loading screen. Each join logs the

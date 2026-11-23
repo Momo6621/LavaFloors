@@ -3453,6 +3453,16 @@ local function payout()
 			track(function()
 				AnalyticsService:LogCustomEvent(p, "EdgeBerries", edgePicked, { [Enum.AnalyticsCustomFieldKeys.CustomField01.Name] = outcome })
 			end)
+			-- Twist outcomes (#129): how each twist and world went for each climber, so the owner can spot a twist that is
+			-- too hard for kids (share of Crowned / Survived / Scorched by twist). 17 x 3 x 5 values, far under the cap.
+			local twistId, worldId = L.Mutator.Id, L.Theme
+			track(function()
+				AnalyticsService:LogCustomEvent(p, "TwistOutcome", 1, {
+					[Enum.AnalyticsCustomFieldKeys.CustomField01.Name] = "Twist - " .. twistId,
+					[Enum.AnalyticsCustomFieldKeys.CustomField02.Name] = "Outcome - " .. outcome,
+					[Enum.AnalyticsCustomFieldKeys.CustomField03.Name] = "World - " .. worldId,
+				})
+			end)
 			-- Catch-up bubbles (first round, underdog shield): one event per climber per round, split by bubble and
 			-- outcome, so the owner can see how often a struggling kid is unshoveable and whether it helps them.
 			local bubble = r.bubble or "None"
