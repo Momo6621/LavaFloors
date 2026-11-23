@@ -60,7 +60,7 @@ as `EscapeParties`).
 ![A Strawberry Buddy floating by a player's shoulder in the lobby](Media/fruit-buddy.jpg)
 
 Every round also rolls a twist (Low Gravity, Turbo Spin, Hole Party, Speed Rush, Shield Party, Drop Party, Hot Potato,
-Duos, Big Heads, Mega Shoves, Quick Crumble, Bouncy, Shove Frenzy, Slow-Mo, Fast-Forward) and a world theme (Sunset, Blue Inferno, Purple Moon, Starry Night, and the bright daytime Candy Crater: mint tiles
+Duos, Big Heads, Mega Shoves, Quick Crumble, Bouncy, Shove Frenzy, Slow-Mo, Fast-Forward, Magnet Hands) and a world theme (Sunset, Blue Inferno, Purple Moon, Starry Night, and the bright daytime Candy Crater: mint tiles
 over strawberry-pink lava). Big Heads is just a look: every
 climber's head (bots too) grows 1.75x for the round, and speed, jumps and shoves stay the same. Mega Shoves makes shoves fly 1.6x as far
 (`MegaShove`; capped at `ShoveMax` 110 so the showdown boost can't push past the client's 120 limit) and pushes bots one
@@ -69,7 +69,8 @@ of 5.9), and a super-jump pickup still goes higher. Shove Frenzy halves the shov
 of 0.8, `FrenzyShoveCooldown`). Slow-Mo makes each phase last 13 s instead of 10 (`SlowMoPhaseTime`), so the floor
 spins, grows and drops 1.3x slower and the lava keeps pace: a gentler round. Fast-Forward (rarer) does the opposite:
 8 s phases (`FastForwardPhaseTime`), a 24 s round for skilled climbers. Quick Crumble (rarer) makes a tile you stand on crack in 0.6x the time (`QuickCrumble`), so
-keep moving.
+keep moving. Magnet Hands flips every shove into a pull: the other climber flies toward you (often right past
+you), and a shoved bot slides 1.6 tiles your way, so pulling someone across a hole drops them in.
 
 The arena sits inside a volcano crater. The lobby is on the crater floor, a wide gap in the rim faces the town so
 you can walk out onto the island, and the grid climbs the inside of the crater: the last rise lifts it just over the

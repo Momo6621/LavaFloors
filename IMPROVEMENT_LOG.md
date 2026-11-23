@@ -3,6 +3,26 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 115. 🧲 Magnet Hands twist
+
+**Why.** Feature loop. Every shove twist so far changed how far or how often you push. Kids love magnets and
+"yoink!" moments, and pulling flips the usual strategy: instead of staying away from the strongest shover, you stay
+away from anyone standing across a hole from you. It's a vote option, so nobody gets it without the server choosing it.
+
+**Built.** SkySproutLavaService: new twist `Magnet` ("🧲 Magnet Hands", weight 2). In `shove`, the push direction
+is reversed, so the target is launched toward the shover with the usual speed and lift (often flying right past
+them), and the victim's notice reads "🧲 X pulled you!". In `shoveBot` the bot slides 1.6 tiles toward the shover;
+if that lands off the floor it falls ("got pulled into the lava by X!"). Mega Shoves and showdown power are
+unchanged. No client change: the client applies whatever velocity the server sends.
+
+**Verified.** Lints pass. The Studio copy matches the repo (203091 bytes, hash 387547182) and compiles. Solo playtest
+with `StudioForceMutator = "Magnet"`: the countdown said "Twist: 🧲 Magnet Hands!". A client script faced the
+nearest bot, shoved, and compared the hit bot's grid tile with mine. Three clean results: me (2,5), bot (3,5) →
+(1,5); me (5,4), bot (4,4) → (6,4) (both yanked past me), and a bot pulled into the lava with the new notice. An
+earlier position-based attempt was muddied by bots hopping on their own and the floor spinning. Console clean; the
+force attribute was cleared. Not tested: a pull between two real players (the same reversed vector the client
+already applies for shoves).
+
 ## 114. 🤝 Team Player title
 
 **Why.** Feature loop. Titles are the game's collectibles, and kids show them off over their heads. Every title so

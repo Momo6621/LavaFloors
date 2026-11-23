@@ -304,6 +304,7 @@ local MUTATORS: { Mutator } = {
 	{ Id = "ShoveFrenzy", Name = "🎯 Shove Frenzy", Weight = 2 }, -- shove cooldown halved (CFG.FrenzyShoveCooldown, #102)
 	{ Id = "SlowMo", Name = "🐢 Slow-Mo", Weight = 2 }, -- longer phases, a gentler round (CFG.SlowMoPhaseTime, #103)
 	{ Id = "FastForward", Name = "⏩ Fast-Forward", Weight = 1 }, -- shorter phases, a harder round (CFG.FastForwardPhaseTime, #107)
+	{ Id = "Magnet", Name = "🧲 Magnet Hands", Weight = 2 }, -- shoves pull the other climber toward you instead (#115)
 }
 -- Twist vote: when a round ends everyone gets a few twists to pick from; the most votes wins (ties and no votes are
 -- settled at random among the options).
@@ -2992,6 +2993,10 @@ local function shove(p: Player)
 		local them = root(best) :: BasePart
 		local dir = Vector3.new(them.Position.X - me.Position.X, 0, them.Position.Z - me.Position.Z)
 		dir = if dir.Magnitude > 0.1 then dir.Unit else me.CFrame.LookVector
+		local magnet = L.Mutator.Id == "Magnet"
+		if magnet then
+			dir = -dir -- 🧲 Magnet Hands: yank them toward you (and maybe right past you)
+		end
 		local power = (if L.ShowdownAt > 0 then CFG.ShowdownShove else 1) * (if L.Mutator.Id == "MegaShove" then CFG.MegaShove else 1)
 		-- Capped at ShoveMax: the client ignores shoves over 120 studs/s (Mega Shoves in the showdown would pass it).
 		local speed = math.min(CFG.ShoveSpeed * power, CFG.ShoveMax)
@@ -3000,7 +3005,7 @@ local function shove(p: Player)
 			target.shovedBy, target.shovedAt = p.DisplayName, now()
 		end
 		shoveImpact(p, best, them.Position)
-		tell(best, "💥 " .. p.DisplayName .. " shoved you!")
+		tell(best, if magnet then "🧲 " .. p.DisplayName .. " pulled you!" else "💥 " .. p.DisplayName .. " shoved you!")
 		challenge(p, "Shoves", 1)
 		r.shoves += 1
 	end
@@ -4026,6 +4031,10 @@ end
 local function shoveBot(p: Player, b: Bot, dir: Vector3)
 	local towerModel = tower :: Model
 	local from = botPosition(b)
+	local magnet = L.Mutator.Id == "Magnet"
+	if magnet then
+		dir = -dir -- 🧲 Magnet Hands: the bot slides toward you instead
+	end
 	local reach = if L.Mutator.Id == "MegaShove" then 2.6 else 1.6 -- tiles; Mega Shoves pushes a bot one tile further
 	local row, col = Grid.TileAt(towerModel, from + dir * CFG.GridTile * reach + Vector3.new(0, 2, 0), now())
 	shoveImpact(p, nil, from)
@@ -4034,7 +4043,7 @@ local function shoveBot(p: Player, b: Bot, dir: Vector3)
 		setBotTile(b, row, col)
 		b.nextThink = now() + 0.6
 	else
-		killBot(b, "got shoved into the lava by " .. p.DisplayName .. "!")
+		killBot(b, (if magnet then "got pulled into the lava by " else "got shoved into the lava by ") .. p.DisplayName .. "!")
 	end
 end
 
