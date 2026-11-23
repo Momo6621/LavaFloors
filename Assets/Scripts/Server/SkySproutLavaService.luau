@@ -272,6 +272,8 @@ local CFG = {
 		{ Id = "Cheer", Text = "Cheer %d times from the sidelines", Goal = 3, Reward = 30 }, -- (#109)
 		{ Id = "Gift", Text = "Send %d strawberry gift", Goal = 1, Reward = 40 }, -- (#109)
 		{ Id = "Shield", Text = "Grab %d shield orbs", Goal = 2, Reward = 50 }, -- (#109)
+		{ Id = "TwistSurvive", Text = "Survive %d twist rounds", Goal = 2, Reward = 60 }, -- any twist but Classic (#116)
+		{ Id = "Vote", Text = "Vote for the next twist %d times", Goal = 3, Reward = 20 }, -- once per ballot (#116)
 	},
 
 	-- Keep moving
@@ -3263,6 +3265,9 @@ local function payout()
 			challenge(p, "Play", 1)
 			if r.crowned or r.alive then
 				challenge(p, "Survive", 1)
+				if L.Mutator.Id ~= "Classic" then
+					challenge(p, "TwistSurvive", 1)
+				end
 			end
 			L.LossStreak[p] = if r.crowned or r.alive then 0 else (L.LossStreak[p] or 0) + 1
 			if r.crowned then
@@ -4919,6 +4924,9 @@ function L.HandleAction(p: Player, action: unknown, _value: unknown): boolean
 		if v and now() < v.endsAt and type(_value) == "string" then
 			for _, m in v.options do
 				if m.Id == _value then
+					if v.votes[p] == nil then
+						challenge(p, "Vote", 1) -- the first vote on each ballot counts; changing your mind doesn't
+					end
 					v.votes[p] = m.Id
 					logEvent(p, "TwistVote", m.Id)
 					event:FireAllClients("LavaVoteCounts", voteCounts(v))

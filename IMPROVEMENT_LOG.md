@@ -3,6 +3,24 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 116. Two twist challenges: survive twist rounds, vote for twists
+
+**Why.** Feature loop. The game now has 17 twists and a Surprise option, but the daily challenges never mention
+them. Kids who try new twists, and kids who join the vote, should get some credit for it. The pool grows from 11 to
+13, so the same three come round less often.
+
+**Built.** SkySproutLavaService `CFG.Challenges`: "Survive 2 twist rounds" (60 coins, any twist except Classic,
+credited in `payout` next to "Survive") and "Vote for the next twist 3 times" (20 coins, credited on your first vote
+on each ballot, so changing your mind doesn't count twice). Adding to the pool reshuffles which three come up each
+day, as #109 did. Progress is kept by challenge Id, so nothing already earned is lost.
+
+**Verified.** Lints pass. The Studio copy matches the repo (203539 bytes, hash 810844217) and compiles. Solo playtest
+with the twist forced to Bouncy, in a temporary Studio-only copy that showed every challenge and counted every finish
+as survived (a solo player can't survive a round): TwistSurvive went 0 → 1 → 2/2 with "📋 Challenge complete: Survive 2
+twist rounds! +60 coins". On each of 3 ballots the client voted, then changed its vote; Vote went 1 → 2 → 3/3 (one per
+ballot) with its completion notice. The copy was restored and re-hashed; the force attribute was cleared. Console
+clean. Not tested: that a Classic round doesn't count (a plain Id check).
+
 ## 115. 🧲 Magnet Hands twist
 
 **Why.** Feature loop. Every shove twist so far changed how far or how often you push. Kids love magnets and
