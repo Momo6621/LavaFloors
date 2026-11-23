@@ -3,6 +3,23 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 120. Daily challenge: play in 3 different worlds
+
+**Why.** Feature loop. The five world themes are the biggest visual treat in the game (and four of them are bonus
+rounds with extra fruit and a lost buddy), yet no goal pointed kids at them. The world is picked at random and never
+repeats twice in a row, so this is an easy, relaxed challenge: keep playing and you'll see three.
+
+**Built.** SkySproutLavaService `payout`: each player's first round in a world today counts toward "Play in 3
+different worlds" (40 coins). The worlds played are kept in the saved daily state (`Daily.W`), which resets with
+the day like the rest. SkySproutRules cleans `Daily.W` on load (string keys, `true` values, at most 20). Pool: 15
+challenges.
+
+**Verified.** Lints pass. The Studio copies match the repo (lava service 204959 bytes, hash 910693150; Rules 11012,
+104316958) and compile. `R.clean` kept `W = {Candy, Sunset}` and dropped a bad entry. Solo playtest in a temporary
+Studio-only copy that showed every challenge: rounds in Purple Moon, Candy and Starry Night took Worlds 1/3 → 2/3 →
+3/3 with "📋 Challenge complete: Play in 3 different worlds! +40 coins". The copy was restored and re-hashed. Console
+clean. Not tested: a repeated world not counting twice (worlds never repeat back-to-back, so it needs 4+ rounds).
+
 ## 119. Daily challenge: knock 2 climbers off the floor
 
 **Why.** Feature loop. "Land 6 shoves" counts every bump, but the moment kids actually cheer for is sending someone

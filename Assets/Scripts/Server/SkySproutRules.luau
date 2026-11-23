@@ -58,6 +58,7 @@ function R.clean(raw)
   local n=0
   if type(raw.Daily.P)=="table"then for k,v in pairs(raw.Daily.P)do if type(k)=="string"and #k<=24 and type(v)=="number"and v==v and n<20 then p.Daily.P[k]=math.clamp(math.floor(v),0,100000);n+=1 end end end
   if type(raw.Daily.C)=="table"then for k,v in pairs(raw.Daily.C)do if type(k)=="string"and #k<=24 and v==true then p.Daily.C[k]=true end end end
+  if type(raw.Daily.W)=="table"then local w=0;for k,v in pairs(raw.Daily.W)do if type(k)=="string"and #k<=24 and v==true and w<20 then p.Daily.W=p.Daily.W or {};p.Daily.W[k]=true;w+=1 end end end
  end
  if type(raw.Invited)=="table"then for _,id in ipairs(raw.Invited)do if type(id)=="number"and id==id and math.abs(id)<1e15 and #p.Invited<200 then table.insert(p.Invited,math.floor(id))end end end
  if type(raw.InviteDay)=="number"and raw.InviteDay==raw.InviteDay then p.InviteDay=math.clamp(math.floor(raw.InviteDay),0,10000000)end

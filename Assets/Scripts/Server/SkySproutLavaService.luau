@@ -282,6 +282,7 @@ local CFG = {
 		{ Id = "TwistSurvive", Text = "Survive %d twist rounds", Goal = 2, Reward = 60 }, -- any twist but Classic (#116)
 		{ Id = "Vote", Text = "Vote for the next twist %d times", Goal = 3, Reward = 20 }, -- once per ballot (#116)
 		{ Id = "Knockouts", Text = "Knock %d climbers off the floor", Goal = 2, Reward = 50 }, -- bots count too (#119)
+		{ Id = "Worlds", Text = "Play in %d different worlds", Goal = 3, Reward = 40 }, -- world themes played today (#120)
 	},
 
 	-- Keep moving
@@ -3277,6 +3278,13 @@ local function payout()
 				logOnboarding(p, 4, "SecondRoundFinished")
 			end
 			challenge(p, "Play", 1)
+			-- Worlds challenge (#120): remember which world themes you've played in today (saved in Daily.W).
+			local daily = dailyState(d)
+			daily.W = daily.W or {}
+			if not daily.W[L.Theme] then
+				daily.W[L.Theme] = true
+				challenge(p, "Worlds", 1)
+			end
 			if r.crowned or r.alive then
 				challenge(p, "Survive", 1)
 				if L.Mutator.Id ~= "Classic" then
