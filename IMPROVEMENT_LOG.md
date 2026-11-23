@@ -3,6 +3,20 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 107. ⏩ Fast-Forward twist
+
+**Why.** Feature loop. Slow-Mo (#103) gives younger kids an easier round; skilled kids get a matching challenge. It's
+the same for everyone and rarer (weight 1), so it spices things up without making the game harder overall.
+
+**Built.** SkySproutLavaService: a new twist `{ Id = "FastForward", Name = "⏩ Fast-Forward", Weight = 1 }`.
+`buildTower` sets the tower's `PhaseTime` to `FastForwardPhaseTime` (8 s), using the same mechanism as Slow-Mo, so
+the grid, round end and lava all run 1.25x faster (a 24 s round). (#106, theme-coloured titles, is waiting for the
+owner's yes on the look.)
+
+**Verified.** Lints pass. The Studio copy matches the repo (199734 bytes, hash 996108217) and compiles. Solo Studio
+playtest: a forced Fast-Forward round had `PhaseTime` 8 and a 24 s schedule; the next round, forced Classic, had 10
+and 30 s. Server console clean; force attribute cleared.
+
 ## 105. 🌀 Twist Tamer title
 
 **Why.** Feature loop. With 16 twists, there's now a reason to try them all. A collect-them-all title (like Gem

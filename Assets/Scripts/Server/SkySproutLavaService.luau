@@ -38,6 +38,7 @@ local CFG = {
 	GridRise = 23,
 	PhaseTime = 10,
 	SlowMoPhaseTime = 13, -- 🐢 Slow-Mo twist: each phase lasts this long, so the whole floor moves 1.3x slower (#103)
+	FastForwardPhaseTime = 8, -- ⏩ Fast-Forward twist: shorter phases, the whole floor moves 1.25x faster (#107)
 	StartDelay = 3,
 	GridSpins = { 90, -135, 180 },
 	GridGrow = { 2, 0, 0 }, -- 5x5 grows to 9x9 in phase 1
@@ -294,6 +295,7 @@ local MUTATORS: { Mutator } = {
 	{ Id = "Bouncy", Name = "🦘 Bouncy", Weight = 2 }, -- everyone jumps higher (CFG.BouncyJumpPower, #99)
 	{ Id = "ShoveFrenzy", Name = "🎯 Shove Frenzy", Weight = 2 }, -- shove cooldown halved (CFG.FrenzyShoveCooldown, #102)
 	{ Id = "SlowMo", Name = "🐢 Slow-Mo", Weight = 2 }, -- longer phases, a gentler round (CFG.SlowMoPhaseTime, #103)
+	{ Id = "FastForward", Name = "⏩ Fast-Forward", Weight = 1 }, -- shorter phases, a harder round (CFG.FastForwardPhaseTime, #107)
 }
 -- Twist vote: when a round ends everyone gets a few twists to pick from; the most votes wins (ties and no votes are
 -- settled at random among the options).
@@ -2401,7 +2403,10 @@ local function buildTower()
 	end
 	model:SetAttribute("GridSeed", rng:NextInteger(1, 1000000))
 	-- The schedule (grid, round end, lava height) all follows this attribute, on the server and every client.
-	model:SetAttribute("PhaseTime", if L.Mutator.Id == "SlowMo" then CFG.SlowMoPhaseTime else CFG.PhaseTime)
+	model:SetAttribute(
+		"PhaseTime",
+		if L.Mutator.Id == "SlowMo" then CFG.SlowMoPhaseTime elseif L.Mutator.Id == "FastForward" then CFG.FastForwardPhaseTime else CFG.PhaseTime
+	)
 	model:SetAttribute("Phases", #CFG.GridSpins)
 	model:SetAttribute("Size", CFG.GridSize)
 	model:SetAttribute("Tile", CFG.GridTile)
