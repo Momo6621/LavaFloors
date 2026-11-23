@@ -1213,6 +1213,7 @@ do
 	local RunService = game:GetService("RunService")
 	local Grid = require(RS:WaitForChild("LavaGrid")) :: any
 	local HEIGHT, BACK = 78, 30 -- studs above and toward the camera from the floor's centre
+	local AHEAD = 10 -- aim this far past the centre so the floor sits lower on screen, clear of the HUD (#134)
 	local topIcon = Icon.new():setName("TopView"):setLabel("🎥"):align("Right"):setCaption("Top view"):modifyTheme(pill(Color3.fromRGB(120, 200, 255)))
 	local wanted = false
 	local active = false
@@ -1238,8 +1239,11 @@ do
 		if tags[head] then
 			return
 		end
-		local l = make("TextLabel", { AnchorPoint = Vector2.new(0.5, 1), Size = UDim2.fromOffset(170, 30), BackgroundTransparency = 1, Font = FONT, Text = text, TextScaled = true, TextColor3 = if mine then UI.Gold else Color3.new(1, 1, 1), TextStrokeColor3 = UI.Shadow, TextStrokeTransparency = 0, ZIndex = if mine then 2 else 1 }, names)
-		make("UITextSizeConstraint", { MaxTextSize = 24 }, l)
+		-- Sized to the screen (#134): 30 px tall on a desktop window, about 18 px on a phone in landscape.
+		local cam = workspace.CurrentCamera
+		local h = math.clamp(math.floor((cam and cam.ViewportSize.Y or 560) * 0.045), 18, 30)
+		local l = make("TextLabel", { AnchorPoint = Vector2.new(0.5, 1), Size = UDim2.fromOffset(h * 5.7, h), BackgroundTransparency = 1, Font = FONT, Text = text, TextScaled = true, TextColor3 = if mine then UI.Gold else Color3.new(1, 1, 1), TextStrokeColor3 = UI.Shadow, TextStrokeTransparency = 0, ZIndex = if mine then 2 else 1 }, names)
+		make("UITextSizeConstraint", { MaxTextSize = math.floor(h * 0.8) }, l)
 		tags[head] = l
 	end
 
@@ -1302,7 +1306,9 @@ do
 		local _, y = Grid.Pose(t, workspace:GetServerTimeNow())
 		local centre = Vector3.new(cx, y, cz)
 		cam.CameraType = Enum.CameraType.Scriptable
-		cam.CFrame = CFrame.lookAt(centre + Vector3.new(0, HEIGHT, BACK), centre)
+		-- Phones (short landscape screens) back off a bit: their HUD covers more of the height (#134).
+		local far = if cam.ViewportSize.Y < 500 then 1.3 else 1
+		cam.CFrame = CFrame.lookAt(centre + Vector3.new(0, HEIGHT * far, BACK * far), centre - Vector3.new(0, 0, AHEAD))
 		for head, l in tags do
 			local pos, onScreen = cam:WorldToViewportPoint(head.Position + Vector3.new(0, 2.5, 0))
 			l.Visible = onScreen

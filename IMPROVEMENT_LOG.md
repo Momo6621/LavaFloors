@@ -3,6 +3,30 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 134. Top view fits phones (Device Simulator check)
+
+**Why.** #132 was only checked in a desktop-sized window. Most Roblox kids play on phones, where the screen is short
+and the HUD takes a bigger share of it.
+
+**Found.** Studio's Device Simulator as an iPhone 17 Pro (750×381 viewport, landscape):
+- The top bar fits, with 🎥 in the ⚙️ More dropdown as planned. Studio's mouse tool couldn't open that dropdown while
+  the simulator scaled the viewport; it's the same icon and handlers as on desktop, so top view was switched on
+  through the saved-choice attribute (#133) instead.
+- In top view, the far part of the floor sat under the timer panel and phase pill.
+- The fixed 170×30 px names covered much of the small screen and piled up.
+
+**Fixed.** LavaFloorsUI top view:
+- The camera aims 10 studs past the floor's centre (`AHEAD`), so the floor sits lower on every screen.
+- On screens under 500 px tall it backs off 1.3× (camera about 114 studs up instead of 91).
+- Names are sized from the viewport height: h = 4.5 % of the height, 18–30 px, width 5.7 h. That's 171×30 on desktop
+  as before, and 102×18 on the phone.
+
+**Verified.** Lints pass. The Studio copy matches the repo (LavaFloorsUI 65918 bytes, hash 390856313) and compiles.
+iPhone 17 Pro playtest: the whole floor sits below the HUD with smaller names (before/after screenshots). During a
+round the bots' own labels read Enabled=false, so the hiding works; faint doubles in one shot were caught just after
+the bots spawned. Desktop playtest after stopping the simulator: same name size, camera 91 studs up, floor below the
+HUD panels (screenshot). The owner approved from the screenshots. Console clean; Studio's viewport reset to default.
+
 ## 133. The 🎥 top view choice is saved
 
 **Why.** Follow-up to #132: the top view reset every visit, so a kid who prefers it had to find the 🎥 button again
