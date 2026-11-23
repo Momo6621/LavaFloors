@@ -188,15 +188,32 @@ local toastText = label(toast, "", 18)
 toastText.AutomaticSize = Enum.AutomaticSize.X
 toastText.Size = UDim2.fromScale(0, 1)
 local toastToken = 0
+-- Toasts queue up (#125), like the HUD notice: each stays at least TOAST_MIN seconds while others wait, the last one
+-- TOAST_HOLD, and a flood keeps only the newest TOAST_MAX.
+local TOAST_MIN, TOAST_HOLD, TOAST_MAX = 1.8, 3.6, 5
+local toastQueue: { string } = {}
+local toastBusy = false
 local function notify(text: string)
-	toastToken += 1
-	local token = toastToken
-	toastText.Text = text
-	toast.Visible = true
-	task.delay(3.6, function()
-		if toastToken == token then
-			toast.Visible = false
+	table.insert(toastQueue, text)
+	while #toastQueue > TOAST_MAX do
+		table.remove(toastQueue, 1)
+	end
+	if toastBusy then
+		return
+	end
+	toastBusy = true
+	task.spawn(function()
+		while #toastQueue > 0 do
+			toastToken += 1
+			toastText.Text = table.remove(toastQueue, 1) :: string
+			toast.Visible = true
+			local shown = os.clock()
+			while os.clock() - shown < TOAST_HOLD and not (#toastQueue > 0 and os.clock() - shown >= TOAST_MIN) do
+				task.wait(0.1)
+			end
 		end
+		toast.Visible = false
+		toastBusy = false
 	end)
 end
 

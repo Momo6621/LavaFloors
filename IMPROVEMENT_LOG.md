@@ -3,6 +3,26 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 125. Fix: notices that arrive together all get shown
+
+**Why.** Found while looking for this iteration's feature. A notice replaced the one on screen instantly, so notices
+sent in the same moment collapsed to the last. That happens a lot: being knocked out sends "🔥 SCORCHED!" and the
+"why you fell" tip together, and a round's end can bring a first crown, an escape party (#113), a new title
+(#114/#123), a milestone gift (#124) and challenge completions (#116/#119/#120) at once. Kids were missing rewards
+they'd earned, and the knockout tip hid the SCORCHED line.
+
+**Built.** LavaFloorsUI `notify` (the toast players see) now queues. Each toast stays at least 1.8 s while others
+wait, the last one stays the usual 3.6 s, and a flood keeps only the newest 5 (worst case about 9 s behind). The old
+SkySproutClient `notice` (the SkySproutHUD line, not in the party-mode UI) got the same queue so the two behave alike.
+No change to how a notice looks.
+
+**Verified.** Lints pass. The Studio copies match the repo (SkySproutClient 15010 bytes, hash 523588432;
+LavaFloorsUI 58125, 564540274) and compile. Playtest: the server sent three notices in one frame, and a client
+watcher on the toast label recorded "QTEST 1 of 3" at 9.1 s, "2 of 3" at 10.9 s, "3 of 3" at 12.8 s and hidden at
+16.5 s (before the fix only "3 of 3" would have shown). The party-mode PlayerGui has no SkySproutHUD, so that copy
+can't be watched there. Console clean; the one "infinite yield" warning came from my own test script looking for
+that HUD.
+
 ## 124. Round milestones: a thank-you at 10, 25, 50, 100… rounds
 
 **Why.** Feature loop. Kids love round numbers and being noticed for sticking with a game. Every reward so far is

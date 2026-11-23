@@ -13,9 +13,24 @@ local attackUntil=0;local dodgeUntil=0;local uiTime=0;local resultToken=0
 local normalColors={Punch=Color3.fromRGB(240,70,80),Heavy=Color3.fromRGB(255,140,40),Block=Color3.fromRGB(50,150,255),Dash=Color3.fromRGB(150,90,255)}
 local PARTY=C.PartyMode==true
 local function send(a,v)if not PARTY and(a=="Punch"or a=="Heavy")then require(RS.SkySproutTargeting).Assist()end;event:FireServer(a,v)end
+-- Notices queue up (#125): several can arrive at once (a round's end can bring a crown, a challenge and a gift), so
+-- each stays at least NOTICE_MIN seconds while others wait, the last one stays NOTICE_HOLD, and a flood keeps only the
+-- newest NOTICE_MAX.
+local NOTICE_MIN,NOTICE_HOLD,NOTICE_MAX=1.8,4,5
+local noticeQueue={};local noticeBusy=false
 local function notice(t)
- noticeToken+=1;local token=noticeToken;gui.Notice.Text=t
- task.delay(4,function()if noticeToken==token then gui.Notice.Text=""end end)
+ table.insert(noticeQueue,t)
+ while #noticeQueue>NOTICE_MAX do table.remove(noticeQueue,1)end
+ if noticeBusy then return end
+ noticeBusy=true
+ task.spawn(function()
+  while #noticeQueue>0 do
+   noticeToken+=1;gui.Notice.Text=table.remove(noticeQueue,1)
+   local shown=os.clock()
+   while os.clock()-shown<NOTICE_HOLD and not(#noticeQueue>0 and os.clock()-shown>=NOTICE_MIN)do task.wait(0.1)end
+  end
+  gui.Notice.Text="";noticeBusy=false
+ end)
 end
 local function dash()
  local h=p.Character and p.Character:FindFirstChildOfClass("Humanoid")
