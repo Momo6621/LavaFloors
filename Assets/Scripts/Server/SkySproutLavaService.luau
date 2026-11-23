@@ -203,6 +203,8 @@ local CFG = {
 
 	-- Drops
 	DropEvery = 20, -- was 14: about two fruit drops a round instead of three
+	-- Bonus rounds (owner, 2026-11-23): every world theme except Sunset drops fruit this often, about 3-4 a round.
+	ThemeDropEvery = 12,
 	DropPartyEvery = 6,
 	DropFirstAt = 14,
 	DropMaxLive = 1,
@@ -2003,6 +2005,7 @@ local BOOSTS: { Boost } = {
 	{ Id = "Embers", Name = "🔥 Ember Bag", Icon = "🔥", Color = Color3.fromRGB(255, 170, 60), Weight = 2, Fruit = "Watermelon" },
 }
 local drops: { Model } = {}
+local lastBoostId: string? = nil -- variety: the next drop is never the same fruit as the last one
 
 local function pickBoost(): Boost
 	if Run:IsStudio() then
@@ -2010,19 +2013,25 @@ local function pickBoost(): Boost
 		for _, b in BOOSTS do
 			if b.Id == forced then
 				workspace:SetAttribute("StudioNextDrop", nil)
+				lastBoostId = b.Id
 				return b
 			end
 		end
 	end
 	local total = 0
 	for _, b in BOOSTS do
-		total += b.Weight
+		if b.Id ~= lastBoostId then
+			total += b.Weight
+		end
 	end
 	local roll = math.random() * total
 	for _, b in BOOSTS do
-		roll -= b.Weight
-		if roll <= 0 then
-			return b
+		if b.Id ~= lastBoostId then
+			roll -= b.Weight
+			if roll <= 0 then
+				lastBoostId = b.Id
+				return b
+			end
 		end
 	end
 	return BOOSTS[1]
@@ -3886,7 +3895,7 @@ local function runRound()
 	local lastBroadcast = 0
 	clearDrops()
 	resetBomb()
-	local dropEvery = if L.Mutator.Id == "DropParty" then CFG.DropPartyEvery else CFG.DropEvery
+	local dropEvery = if L.Mutator.Id == "DropParty" then CFG.DropPartyEvery elseif L.Theme ~= "Sunset" then CFG.ThemeDropEvery else CFG.DropEvery
 	local nextDrop = started + CFG.DropFirstAt
 	local lastPhase = 0
 	local starters = 0

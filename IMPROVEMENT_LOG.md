@@ -3,6 +3,24 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 96. Bonus rounds: more, and more varied, fruit drops in the themed worlds (owner's request)
+
+**Why.** The owner asked for the coloured worlds to drop more items and collectibles: "every theme except Sunset
+drops pickups in variety", with fruit drops and a collectible buddy (the buddy is the next part, #97). Until now every
+theme dropped the same: a fruit supply drop every 20 s, about two a round.
+
+**Built.** SkySproutLavaService:
+- `ThemeDropEvery = 12`: in Blue Inferno, Purple Moon, Starry Night and Candy Crater, supply drops come every 12 s
+  (about 3-4 a round). Sunset keeps 20 s, and Drop Party keeps its own 6 s.
+- Variety: `pickBoost` never picks the same fruit as the previous drop (in every round). Drops still vanish after 8 s,
+  so there is never more than one on the floor.
+
+**Verified.** Lints pass. The Studio copy matches the repo (192534 bytes, hash 357133158) and compiles. Solo Studio
+playtest with the timings shortened in the Studio copy only (theme 3 s, normal 5 s, first drop at 1 s, lifetime
+1.5 s) so a short round shows several drops: forced Blue Inferno rounds dropped every 3.0 s, a forced Sunset round
+every 5.0 s, and in 39 drops no fruit came twice in a row. Console clean. Timings restored and re-hashed; no test
+attributes left.
+
 ## 95. Name sweep: settings and attributes (no change needed)
 
 **Why.** The message check in #93/#94 found a real gap, so I ran the same kind of name check on the other things
