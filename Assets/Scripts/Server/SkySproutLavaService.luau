@@ -342,6 +342,7 @@ type Runner = {
 	lastRow: number?,
 	lastCol: number?,
 	lastTileAt: number?,
+	bubble: string?, -- "FirstRound" or "Underdog" if a catch-up bubble started this round (CatchUpBubble analytics)
 }
 
 type Phase = "Idle" | "Countdown" | "Round" | "Results"
@@ -2630,6 +2631,7 @@ local function enter(p: Player): boolean
 		jumpUntil = 0,
 		rescue = if existing then existing.rescue else false,
 		nextLift = if existing then existing.nextLift else 0,
+		bubble = if existing then existing.bubble else nil,
 	}
 	logOnboarding(p, 2, "FirstRoundStarted")
 	logRound(p, 1, "Entered")
@@ -2653,6 +2655,7 @@ local function enter(p: Player): boolean
 			then "🫧 First-round bubble! Shoves can't move you for " .. CFG.UnderdogShield .. "s."
 			else "🫧 Underdog shield! Tough few rounds, so shoves can't move you for " .. CFG.UnderdogShield .. "s."
 		grantShield(p, p.Character, runner, at, CFG.UnderdogShield, message)
+		runner.bubble = if firstRound then "FirstRound" else "Underdog"
 	end
 	personal(p)
 	return true
@@ -3173,6 +3176,12 @@ local function payout()
 			local edgePicked = r.edgePicked or 0
 			track(function()
 				AnalyticsService:LogCustomEvent(p, "EdgeBerries", edgePicked, { [Enum.AnalyticsCustomFieldKeys.CustomField01.Name] = outcome })
+			end)
+			-- Catch-up bubbles (first round, underdog shield): one event per climber per round, split by bubble and
+			-- outcome, so the owner can see how often a struggling kid is unshoveable and whether it helps them.
+			local bubble = r.bubble or "None"
+			track(function()
+				AnalyticsService:LogCustomEvent(p, "CatchUpBubble", 1, { [Enum.AnalyticsCustomFieldKeys.CustomField01.Name] = bubble .. " - " .. outcome })
 			end)
 			event:FireClient(p, "LavaResult", {
 				AskFun = askFun,

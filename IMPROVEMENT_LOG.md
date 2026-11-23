@@ -3,6 +3,23 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 85. Measure the catch-up bubbles (CatchUpBubble analytics)
+
+**Why.** The two-player test in #82 found that, with bots winning most rounds, a struggling kid had the underdog
+shield nearly every round, so they were unshoveable for half of it. The note said to watch real play data before
+changing anything. With the game now live, this event collects that data; it starts with the next publish after
+version 130.
+
+**Built.** SkySproutLavaService: `enter` records which bubble a climber started the round in ("FirstRound" or
+"Underdog"). At payout every climber logs one `CatchUpBubble` custom event, with field 1 set to the bubble ("None" if
+there wasn't one) and how the round ended, for example "Underdog - Survived". No player-facing change.
+
+**Verified.** Lint and the local-limit check pass. The Studio copy matches the repo (189508 bytes, hash 214978859)
+and compiles. Solo Studio playtest with `UnderdogAfter` temporarily set to 2 and a temporary print, both in the
+Studio copy only: three rounds logged "FirstRound - Scorched", "None - Scorched" and "Underdog - Scorched", each with
+"LogCustomEvent event fired" and no errors. The test edits were then removed and the hash re-checked; no test
+attributes are left in the place.
+
 ## 84. Fewer "bubble shield blocked your shove" notices
 
 **Why.** With first-round and underdog bubbles common, shoving a shielded kid repeatedly sent the shover the same

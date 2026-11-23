@@ -108,7 +108,9 @@ Progression and live-ops:
   fills, everyone who climbed since the last one gets 30 coins and a new bar starts. `GoalRises` / `GoalCoins` in CFG.
 - Underdog shield: knocked out 3 rounds in a row, you start the next round in a 15 s bubble shield (shoves only).
   Surviving resets it. `UnderdogAfter` / `UnderdogShield` in CFG. A brand-new player's first round starts in the same
-  bubble ("First-round bubble!"), so nobody is shoved out before they've had a go.
+  bubble ("First-round bubble!"), so nobody is shoved out before they've had a go. Each climber's round is logged as
+  the analytics custom event `CatchUpBubble` ("FirstRound", "Underdog" or "None", then how the round ended), so the
+  Creator Dashboard shows how often kids get a bubble and whether it helps them.
 - Away: after 2 minutes with no input you sit out the automatic rounds (so nobody is dropped in to fall off while
   they're gone); any input puts you back in the queue. A manual opt-out is never undone. Set by `AwayAfter` in CFG.
 - Winner cam: if you were watching from above when someone escapes, the camera swings round to the winner for
