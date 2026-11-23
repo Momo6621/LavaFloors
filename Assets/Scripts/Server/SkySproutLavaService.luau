@@ -1891,6 +1891,12 @@ end
 
 local function grantShield(p: Player, character: Model, r: Runner, position: Vector3, seconds: number?, message: string?)
 	local lasts = seconds or CFG.ShieldTime
+	-- A shield never cuts a longer one short: a shield orb picked up inside a 15 s underdog or first-round bubble
+	-- keeps the bubble (and says nothing, since nothing changed).
+	if now() + lasts <= r.shieldUntil then
+		event:FireClient(p, "LavaFX", { Kind = "Shield", Position = position })
+		return
+	end
 	r.shieldUntil = now() + lasts
 	local old = character:FindFirstChild("LavaBubble")
 	if old then

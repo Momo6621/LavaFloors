@@ -3,6 +3,29 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 87. Fix: a shield orb cut the underdog bubble short
+
+**Why.** Found in a Studio playtest while trying to check the open "not verified" items from #12 and #14. In a
+🛡️ Shield Party round, a kid in the 15 s underdog bubble picked up a shield orb and got a second notice ("Bubble
+shield! ... 7s") at the same moment. Worse, the orb replaced the bubble: `grantShield` always set the shield to end
+7 s from the pickup, so the catch-up bubble (underdog or first-round) ended about 8 s early. Blueberry supply drops
+did the same.
+
+**Built.** SkySproutLavaService `grantShield`: if the new shield would end no later than the one already running,
+the pickup only plays its effect. The longer bubble stays and there's no notice. A pickup that does extend the
+shield works and reads exactly as before.
+
+**Verified.** Lint and the local-limit check pass. The Studio copy matches the repo (189812 bytes, hash 311102475)
+and compiles. Solo Studio playtest with `UnderdogAfter` temporarily set to 1 (Studio copy only) and Shield Party
+forced: the player got the underdog bubble and moved onto a shield orb. The pickup 1.3 s later showed the effect
+with no notice. The bubble was still on at +9 s and +12 s (the old code ended it at about +8.3 s) and gone by
++16 s. Console clean. Test edits removed and re-hashed; no test attributes left.
+
+**Still not verified (#12, #14).** That surviving resets the underdog count and that a real player's win makes bots
+sharper again. Three tries at a client-side survival driver kept the test player alive through phase 1 but not
+phase 2 (they slipped off an edge as the floor rose), so I stopped there. The same run did confirm the bots' ease
+rises 0.06 per bot win and stops at the 0.30 cap.
+
 ## 86. Phones feel shoves and cracking tiles too (HapticEffect)
 
 **Why.** The two buzzes in the game (being shoved, #39, and your own tile about to break, #20) used
