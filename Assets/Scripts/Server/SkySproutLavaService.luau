@@ -14,6 +14,8 @@ local applyHat: (Player) -> ()
 local applyPet: (Player) -> ()
 local applyTitle: (Player) -> ()
 local wear: { [number]: number } = {}
+local decaying: { [number]: boolean } = {} -- tiles crumbling on their own (#136)
+local nextDecay = 0
 local tileColour: (any, number, boolean) -> Color3
 
 local CFG = {
@@ -292,6 +294,13 @@ local CFG = {
 	CampTime = 4,
 	CampRespawn = 6,
 	QuickCrumble = 0.6, -- Quick Crumble twist: tiles wear out in this share of CampTime, so keep moving
+	-- Random decay (#136, owner's request): every DecayEvery seconds of a round some random solid tiles start to
+	-- crack (the same darken/crack/shake warning as standing still) and crumble after DecayWarn, then come back after
+	-- CampRespawn. Phase n decays n tiles at a time, at most DecayMax at once, from DecayGrace seconds in.
+	DecayEvery = 3,
+	DecayWarn = 2.5,
+	DecayMax = 4,
+	DecayGrace = 4,
 
 	-- Raise
 	LiftCost = 40,
@@ -2458,6 +2467,8 @@ local function buildTower()
 	model:SetAttribute("PillarTop", CFG.PillarHeight + 0.8) -- cap height above the tile; LavaGrid.TileAt uses it
 
 	table.clear(wear)
+	table.clear(decaying)
+	nextDecay = 0
 	local size = CFG.GridSize
 	for row = 1, size do
 		for col = 1, size do
@@ -2867,6 +2878,9 @@ local function knockoutReason(r: Runner): string
 		local tile = platforms[index]
 		local campFall = tile and tile:GetAttribute("CampFall")
 		if type(campFall) == "number" and t - campFall < CFG.ReasonWindow then
+			if tile:GetAttribute("DecayFall") == campFall then
+				return "🪨 That tile crumbled on its own. Hop off when a tile starts cracking!"
+			end
 			return "🪨 Your tile crumbled from standing still. Keep moving!"
 		end
 		local state = Grid.TileState(grid, r.lastRow, r.lastCol, t)
@@ -3525,14 +3539,39 @@ local function updateWear(occupied: { [number]: boolean }, dt: number)
 		return
 	end
 	local t = now()
-	local started = Grid.Phase(grid, t) >= 0
+	local phase = Grid.Phase(grid, t)
+	local started = phase >= 0
 	local campTime = CFG.CampTime * (if L.Mutator.Id == "QuickCrumble" then CFG.QuickCrumble else 1)
+	-- Random decay (#136): pick a few solid tiles to start crumbling on their own.
+	local start = grid:GetAttribute("Start")
+	if started and type(start) == "number" and t >= start + CFG.DecayGrace and t >= nextDecay then
+		nextDecay = t + CFG.DecayEvery
+		local busy = 0
+		for _ in decaying do
+			busy += 1
+		end
+		local pool = {}
+		for index, tile in platforms do
+			local row, col = tile:GetAttribute("Row"), tile:GetAttribute("Col")
+			local back = tile:GetAttribute("CampBack")
+			if not decaying[index] and Grid.TileState(grid, row, col, t) == "Still" and Grid.Lift(grid, row, col, t) <= 0
+				and not Grid.IsPillar(grid, row, col) and not (type(back) == "number" and back > t) then
+				table.insert(pool, index)
+			end
+		end
+		for _ = 1, math.min(phase + 1, CFG.DecayMax - busy, #pool) do
+			decaying[table.remove(pool, math.random(#pool))] = true
+		end
+	end
 	for index, tile in platforms do
 		local row, col = tile:GetAttribute("Row"), tile:GetAttribute("Col")
 		local w = wear[index] or 0
 		local state = Grid.TileState(grid, row, col, t)
 		if not started or state ~= "Still" or Grid.Lift(grid, row, col, t) > 0 then
 			w = if state == "Still" then math.max(0, w - dt / campTime) else 0
+			decaying[index] = nil
+		elseif decaying[index] then
+			w += dt / CFG.DecayWarn
 		elseif occupied[index] then
 			w += dt / campTime
 		else
@@ -3543,6 +3582,8 @@ local function updateWear(occupied: { [number]: boolean }, dt: number)
 			tile:SetAttribute("CampWarn", t)
 			tile:SetAttribute("CampFall", t + 0.15)
 			tile:SetAttribute("CampBack", t + 0.75 + CFG.CampRespawn)
+			tile:SetAttribute("DecayFall", if decaying[index] then t + 0.15 else nil) -- for the "why you fell" line
+			decaying[index] = nil
 		end
 		wear[index] = w
 		local shown = math.floor(w * 20 + 0.5) / 20

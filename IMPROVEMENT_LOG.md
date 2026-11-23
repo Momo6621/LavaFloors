@@ -3,6 +3,28 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 136. Tiles decay at random (owner's request)
+
+**Why.** The owner: "tiles should be able to randomly decay making the game on your feet fun". Until now a tile only
+wore out under someone standing still, so a kid could stand anywhere they kept stepping. Random decay means the
+whole floor stays alive: you watch for cracks and hop away, all round.
+
+**Built.** SkySproutLavaService `updateWear`:
+- From `DecayGrace` (4 s) after the floor starts moving, every `DecayEvery` (3 s) it picks phase+1 random tiles
+  (1, 2, then 3), keeping at most `DecayMax` (4) decaying at once. Eligible tiles are solid, not raised, not the
+  pillar and not already down.
+- A picked tile wears over `DecayWarn` (2.5 s) with the existing darken/crack/shake warning, then crumbles and comes
+  back after `CampRespawn`, exactly like a camped tile. No new visuals, no client change.
+- It also sets "DecayFall", so the knockout tip says "🪨 That tile crumbled on its own. Hop off when a tile starts
+  cracking!" instead of the standing-still line.
+- Same for every twist; Quick Crumble still speeds up only the standing-still wear.
+
+**Verified.** Lints pass. The Studio copy matches the repo (210248 bytes, hash 235354655) and compiles. Solo
+playtest over 5 rounds with a client watching DecayFall on every tile: in each round the first random fall came at
++6.0 to +6.7 s (grace plus warning), the next about 3 s later. In phase 2 two fell together (Tile24 at +11.9 s and
+Tile1 at +12.7 s). Console clean. Not tested: the new knockout tip (a test player can't be placed on a decaying tile
+reliably), and how it feels with real players (worth watching in TwistOutcome analytics, #129).
+
 ## 134. Top view fits phones (Device Simulator check)
 
 **Why.** #132 was only checked in a desktop-sized window. Most Roblox kids play on phones, where the screen is short

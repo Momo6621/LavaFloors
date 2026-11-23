@@ -23,6 +23,9 @@ anywhere else, so nobody can camp it.
 Don't camp: any tile you stand on starts wearing out, and after about 6 seconds it cracks under you. You can
 spend 40 coins (earned in rounds) to **raise** your tile for 10 seconds (E, Y on a controller, or the RAISE
 button). A raised tile doesn't wear.
+Tiles also decay at random (#136): from 4 s in, every 3 s a solid tile somewhere starts to crack and crumbles 2.5 s
+later (two at a time in phase 2, three in phase 3, at most four at once), then comes back. Watch for cracking tiles
+and hop off (`DecayEvery`, `DecayWarn`, `DecayMax`, `DecayGrace` in CFG).
 
 Jumps are forgiving: a jump pressed up to 0.2 s after your tile drops away (or you step off) still jumps, and one
 pressed up to 0.12 s before you land jumps as soon as you touch down. One jump per landing, and not right after a
