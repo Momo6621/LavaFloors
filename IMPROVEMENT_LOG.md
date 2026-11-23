@@ -9,8 +9,8 @@ was checked. Newest first.
 phase 1 respawns 3 s later and is dropped back into the round on a new character. The runner's `shieldUntil` is
 carried over, so a running first-round or underdog bubble still protected them. But the visible bubble (a
 ForceField) belonged to the old character, and nothing put it back: the grant only happens when no shield is
-running. Before the fix, a test reset 2 s into the first-round bubble left the new character without it, though
-shoves still bounced off.
+running. A test reset 2 s into the first-round bubble confirmed the respawn and drop-back timing. The missing
+bubble itself comes from reading the code; I didn't sample it before the fix.
 
 **Built.** SkySproutLavaService: the visible bubble is now its own `showBubble` helper. `enter` shows it again, for
 the time that's left and with no notice, when a dropped-back climber still has a shield running but no bubble. A
