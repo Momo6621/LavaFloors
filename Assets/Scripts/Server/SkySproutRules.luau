@@ -47,6 +47,7 @@ function R.clean(raw)
  if type(raw.Redeemed)=="table"then local n=0;for k,v in pairs(raw.Redeemed)do if type(k)=="string"and #k<=24 and v==true and n<200 then p.Redeemed[k]=true;n+=1 end end end
  if type(raw.Title)=="string"and #raw.Title<=24 then p.Title=raw.Title end
  if raw.MusicOff==true then p.MusicOff=true end
+ if raw.TopView==true then p.TopView=true end
  if type(raw.WinEmote)=="string"and #raw.WinEmote<=12 then p.WinEmote=raw.WinEmote end
  if type(raw.GiftsSent)=="number"and raw.GiftsSent==raw.GiftsSent then p.GiftsSent=math.clamp(math.floor(raw.GiftsSent),0,10000000)end
  if type(raw.EscapeParties)=="number"and raw.EscapeParties==raw.EscapeParties then p.EscapeParties=math.clamp(math.floor(raw.EscapeParties),0,10000000)end

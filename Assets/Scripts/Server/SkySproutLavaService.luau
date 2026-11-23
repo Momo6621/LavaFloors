@@ -4921,6 +4921,15 @@ function L.HandleAction(p: Player, action: unknown, _value: unknown): boolean
 		end
 		return true
 	end
+	if action == "LavaTopView" then
+		-- The 🎥 top view button (#132): saved so the camera mode stays the way you left it next time you join (#133).
+		local d = data(p)
+		if d and type(_value) == "boolean" then
+			d.TopView = _value
+			p:SetAttribute("TopView", _value)
+		end
+		return true
+	end
 	if action == "LavaWinEmote" then
 		-- Pick the emote played when you win: one of CFG.WinEmotes (all free).
 		local d = data(p)
@@ -5528,6 +5537,7 @@ function L.Start(arena: any, remote: RemoteEvent, stats: (Player) -> (), notice:
 				p:SetAttribute("BestHeight", tonumber(d.BestHeight) or 0) -- the 🏅 marker on the climb meter
 				p:SetAttribute("WinEmote", table.find(CFG.WinEmotes, d.WinEmote) and d.WinEmote or "Cheer")
 				p:SetAttribute("MusicOff", d.MusicOff == true)
+				p:SetAttribute("TopView", d.TopView == true)
 				logOnboarding(p, 1, "Joined")
 			end
 		end)
@@ -5541,6 +5551,7 @@ function L.Start(arena: any, remote: RemoteEvent, stats: (Player) -> (), notice:
 				p:SetAttribute("BestHeight", tonumber(d.BestHeight) or 0)
 				p:SetAttribute("WinEmote", table.find(CFG.WinEmotes, d.WinEmote) and d.WinEmote or "Cheer")
 				p:SetAttribute("MusicOff", d.MusicOff == true)
+				p:SetAttribute("TopView", d.TopView == true)
 			end
 		end)
 	end

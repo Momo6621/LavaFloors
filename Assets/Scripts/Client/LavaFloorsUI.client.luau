@@ -1346,17 +1346,37 @@ do
 		end
 	end
 
+	-- The choice is saved with your profile (the "TopView" attribute, #133), like the music button. A click that changes
+	-- it tells the server; restoring the saved choice on join does neither the notice nor the message.
 	topIcon:bindEvent("selected", function()
 		wanted = true
 		update()
-		notify("🎥 Top view on: rounds are shown from above")
+		if player:GetAttribute("TopView") ~= true then
+			notify("🎥 Top view on: rounds are shown from above")
+			event:FireServer("LavaTopView", true)
+		end
 	end)
 	topIcon:bindEvent("deselected", function()
 		wanted = false
 		update()
-		notify("🎥 Top view off")
+		if player:GetAttribute("TopView") == true then
+			notify("🎥 Top view off")
+			event:FireServer("LavaTopView", false)
+		end
 	end)
 	player:GetAttributeChangedSignal("ArenaMode"):Connect(update)
+	local function applySaved()
+		local on = player:GetAttribute("TopView") == true
+		if on ~= wanted then
+			if on then
+				topIcon:select()
+			else
+				topIcon:deselect()
+			end
+		end
+	end
+	applySaved()
+	player:GetAttributeChangedSignal("TopView"):Connect(applySaved)
 end
 
 -- Phones and small tablets: Roblox's own buttons take the first ~216 px, so not every button fits. Below MORE_WIDTH the

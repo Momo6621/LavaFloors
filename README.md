@@ -162,7 +162,8 @@ Progression and live-ops:
 - 🎥 Top view: a top bar toggle (in the ☰ menu on narrow screens) for a camera that looks down on the whole floor
   during your rounds, tilted a little so W still moves up the screen, rising with the floor. A big name floats over
   every climber (yours is a gold "⭐ YOU", bots "🤖 Name"; the bots' small labels hide meanwhile). The names are a
-  screen layer placed over each head every frame. Outside a round the camera is normal; the choice lasts the visit.
+  screen layer placed over each head every frame. Outside a round the camera is normal. The choice is saved with your
+  profile like the music button ("LavaTopView", saved as `TopView`, #133).
 - 👀 Watch: while a round is on, anyone in the lobby gets a 👀 Watch button in the top bar (sitting out, joined
   mid-round, or walked off after being knocked out). It opens the overhead spectate view with ◀ ▶ to follow a
   climber; 🚶 Back (or any move key) returns to your character, and it hides when the round ends.

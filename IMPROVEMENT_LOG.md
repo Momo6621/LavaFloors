@@ -3,6 +3,31 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 133. The 🎥 top view choice is saved
+
+**Why.** Follow-up to #132: the top view reset every visit, so a kid who prefers it had to find the 🎥 button again
+each time. The music button already remembers its setting; the camera should too.
+
+**Built.**
+- SkySproutLavaService: a "LavaTopView" message (boolean only) saves `d.TopView` and sets the player's "TopView"
+  attribute. Both join paths set the attribute from the profile, next to "MusicOff".
+- SkySproutRules: `TopView` is kept on load only when it's `true`.
+- LavaFloorsUI: a click that changes the choice shows the notice and tells the server. When the "TopView" attribute
+  arrives or changes, the 🎥 icon is selected or deselected to match, without a notice or a message (the handlers
+  compare against the saved value).
+
+**Verified.** Lints pass, including check_remotes (the new message has a handler). The Studio copies match the repo
+(lava service 208463 bytes, hash 276584430; Rules 11415, 689801806; LavaFloorsUI 65366, 495550401) and compile.
+`R.clean` keeps `TopView = true` and drops "x". A `replace_all` sync edit silently didn't apply in Studio; the hash
+check caught it, and it was redone as two edits. Playtest:
+- Clicking 🎥 made the server set TopView false → true.
+- With the server setting the attribute as a join would, false then true, top view came back on in a round (names
+  layer on, camera scriptable).
+- Setting it false switched it off mid-round (camera back to Custom).
+- No "Top view" notice appeared during those restores. Console clean.
+
+Not tested: a real rejoin on a live server (Studio doesn't keep profiles between sessions).
+
 ## 132. 🎥 Top view camera with names (owner's request)
 
 **Why.** The owner: "add a different camera mode where it shows the characters from above … but displays their
