@@ -792,7 +792,12 @@ local function challenge(p: Player, id: string, amount: number, best: boolean?)
 				logCoins(p, "Gameplay", c.Reward, "Challenge_" .. id)
 				pushStats(p)
 				event:FireClient(p, "LavaFX", { Kind = "Invite", Text = "📋 Challenge done!", Coins = c.Reward })
-				tell(p, "📋 Challenge complete: " .. string.format(c.Text, c.Goal) .. "! +" .. c.Reward .. " coins")
+				-- Lava Pass XP for each challenge (#121), so the daily goals also move the pass along.
+				local passXP = if A and A.Season and GameConfig.LavaPass then tonumber(GameConfig.LavaPass.XP.Challenge) or 0 else 0
+				tell(p, "📋 Challenge complete: " .. string.format(c.Text, c.Goal) .. "! +" .. c.Reward .. " coins" .. (if passXP > 0 then " · +" .. passXP .. " pass XP" else ""))
+				if passXP > 0 then
+					A.Season.AddXP(p, passXP)
+				end
 			end
 			pushChallenges(p)
 			return

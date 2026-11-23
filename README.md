@@ -281,7 +281,8 @@ VIP comfort perks. Nothing is random and there are no fake timers.
 | 💖 Tips: 25 / 100 / 500 / 1,000 Robux, shown on the Top Supporters board | Developer products | `ProductIds.Tip*` |
 | 📺 Watch an ad for 100 coins (only shown when Roblox has an ad for that player) | Rewarded video | uses `ProductIds.Coins100` |
 
-The free Lava Pass track (20 tiers, XP from playing, surviving, crowns and strawberries) is free for everyone.
+The free Lava Pass track (20 tiers, XP from playing, surviving, crowns, strawberries and daily challenges, 10 XP
+each) is free for everyone.
 
 ## Before publishing
 

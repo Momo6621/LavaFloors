@@ -3,6 +3,23 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 121. Daily challenges give Lava Pass XP too
+
+**Why.** Feature loop. The daily challenges and the Lava Pass were two separate tracks, so finishing a challenge only
+paid coins. Kids love seeing a progress bar move, and the free track (hats at tiers 3, 9 and 16) is the main
+long-term goal for players who never buy anything. Now the daily goals push it along too.
+
+**Built.** SkySproutConfig `LavaPass.XP.Challenge = 10` (about one round's worth). SkySproutLavaService `challenge`:
+on completion it adds that XP through `A.Season.AddXP`, the same call rounds use (it announces any tier unlock), and
+the notice now ends "· +10 pass XP". Everyone gets the same XP; the premium pass only changes which rewards you can
+claim, as before.
+
+**Verified.** Lints pass. The Studio copies match the repo (lava service 205298 bytes, hash 650364571; Config 6642,
+950957537) and compile. Solo playtest in a temporary Studio-only copy that showed every challenge: "📋 Challenge
+complete: Play in 3 different worlds! +40 coins · +10 pass XP" and the same for "Vote for the next twist 3 times".
+PassXP ended at 62 = 3 scorched rounds × 14 + 2 challenges × 10. (Reading it right at each notice showed no change,
+because the attribute replicates before the notice arrives.) The copy was restored and re-hashed. Console clean.
+
 ## 120. Daily challenge: play in 3 different worlds
 
 **Why.** Feature loop. The five world themes are the biggest visual treat in the game (and four of them are bonus

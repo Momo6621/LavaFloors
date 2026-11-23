@@ -65,7 +65,8 @@ return {
  LavaPass={
  Season=1,XPPerTier=100,
  -- Per-round XP, scaled 0.7x for 3-phase rounds (~44 s instead of ~63 s) so the pass fills at the old pace per minute (was 20/30/50/5).
- XP={Played=14,Survived=21,Crowned=35,Berry=4},
+ -- Challenge: each completed daily challenge (#121), about one round's worth.
+ XP={Played=14,Survived=21,Crowned=35,Berry=4,Challenge=10},
  Tiers={
  {Free={Coins=50},Premium={Coins=100}},
  {Free={Coins=60},Premium={Coins=120}},
