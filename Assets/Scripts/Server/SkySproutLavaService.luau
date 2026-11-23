@@ -252,6 +252,7 @@ local CFG = {
 	-- Keep moving
 	CampTime = 4,
 	CampRespawn = 6,
+	QuickCrumble = 0.6, -- Quick Crumble twist: tiles wear out in this share of CampTime, so keep moving
 
 	-- Raise
 	LiftCost = 40,
@@ -273,6 +274,7 @@ local MUTATORS: { Mutator } = {
 	{ Id = "Duos", Name = "👥 Duos", Weight = 2 },
 	{ Id = "BigHeads", Name = "🎈 Big Heads", Weight = 2 },
 	{ Id = "MegaShove", Name = "💥 Mega Shoves", Weight = 2 },
+	{ Id = "QuickCrumble", Name = "⚡ Quick Crumble", Weight = 1 },
 }
 -- Twist vote: when a round ends everyone gets a few twists to pick from; the most votes wins (ties and no votes are
 -- settled at random among the options).
@@ -3214,16 +3216,17 @@ local function updateWear(occupied: { [number]: boolean }, dt: number)
 	end
 	local t = now()
 	local started = Grid.Phase(grid, t) >= 0
+	local campTime = CFG.CampTime * (if L.Mutator.Id == "QuickCrumble" then CFG.QuickCrumble else 1)
 	for index, tile in platforms do
 		local row, col = tile:GetAttribute("Row"), tile:GetAttribute("Col")
 		local w = wear[index] or 0
 		local state = Grid.TileState(grid, row, col, t)
 		if not started or state ~= "Still" or Grid.Lift(grid, row, col, t) > 0 then
-			w = if state == "Still" then math.max(0, w - dt / CFG.CampTime) else 0
+			w = if state == "Still" then math.max(0, w - dt / campTime) else 0
 		elseif occupied[index] then
-			w += dt / CFG.CampTime
+			w += dt / campTime
 		else
-			w = math.max(0, w - dt / (CFG.CampTime * 1.5))
+			w = math.max(0, w - dt / (campTime * 1.5))
 		end
 		if w >= 1 then
 			w = 0

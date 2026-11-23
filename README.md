@@ -51,11 +51,12 @@ coins, all earnable; tap again to send it to rest; Reduce Motion keeps it still)
 ![A Strawberry Buddy floating by a player's shoulder in the lobby](Media/fruit-buddy.jpg)
 
 Every round also rolls a twist (Low Gravity, Turbo Spin, Hole Party, Speed Rush, Shield Party, Drop Party, Hot Potato,
-Duos, Big Heads, Mega Shoves) and a world theme (Sunset, Blue Inferno, Purple Moon, Starry Night, and the bright daytime Candy Crater: mint tiles
+Duos, Big Heads, Mega Shoves, Quick Crumble) and a world theme (Sunset, Blue Inferno, Purple Moon, Starry Night, and the bright daytime Candy Crater: mint tiles
 over strawberry-pink lava). Big Heads is just a look: every
 climber's head (bots too) grows 1.75x for the round, and speed, jumps and shoves stay the same. Mega Shoves makes shoves fly 1.6x as far
 (`MegaShove`; capped at `ShoveMax` 110 so the showdown boost can't push past the client's 120 limit) and pushes bots one
-tile further.
+tile further. Quick Crumble (rarer) makes a tile you stand on crack in 0.6x the time (`QuickCrumble`), so
+keep moving.
 
 The arena sits inside a volcano crater. The lobby is on the crater floor, a wide gap in the rim faces the town so
 you can walk out onto the island, and the grid climbs the inside of the crater: the last rise lifts it just over the

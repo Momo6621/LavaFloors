@@ -3,6 +3,21 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 81. ⚡ Quick Crumble twist
+
+**Why.** Variety through rare modes: Grow a Garden's "Sheckle Rain" shows kids love a rare surprise round
+(https://www.sportskeeda.com/roblox-news/grow-garden-sheckle-rain-guide). A "Berry Rain" twist was the first idea
+but would undo the owner's call to keep strawberries scarce, so it's parked for the owner. Quick Crumble is
+server-only and touches no economy.
+
+**Built.** SkySproutLavaService: an eleventh twist, `QuickCrumble` ("⚡ Quick Crumble", weight 1, so rarer). While
+it runs, `updateWear` uses `CampTime` x `QuickCrumble` (0.6): a tile you stand on cracks after about 2.4 s instead
+of 4, and empty tiles recover at the same faster rate. The crack, shake and warning plates are unchanged.
+
+**Verified.** Solo Studio playtest, standing still on a start-ring tile right after the floor moved: with the twist
+forced it cracked 2.76 s after landing; with Classic forced, 4.24 s (both include the landing and the 0.25 s wear
+tick). Studio copy matches the repo (187838 bytes, hash 533737701); console clean; forced twist attribute cleared.
+
 ## 80. Tips only when you lose (owner's request)
 
 **Why.** The owner asked for fewer tips, shown only when a player loses.
