@@ -17,7 +17,7 @@ each round would add up.
 - Client: workspace stayed between 3973 and 4029 and PlayerGui at 1994–1996, also with no HapticEffect left.
 - Studio's total memory stayed between 2096 and 2110 MB (shared by the server and client in one process), with no
   trend.
-- Bot and community DataStore reads are within budget: the weekly board and the supporters board each read once a
+- Leaderboard DataStore calls are within budget: the weekly board and the supporters board each read once a
   minute, and writes happen only on a crown or a tip.
 - No deprecated APIs (legacy wait/delay/spawn, Body movers, Humanoid:LoadAnimation) anywhere in the scripts.
 
