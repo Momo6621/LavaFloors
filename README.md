@@ -92,8 +92,10 @@ Progression and live-ops:
   total crowns; 🔶 Gem Hunter (every lava gem), 🎁 Chest Cracker (5 Lava Chests) and 🍓 Kind Climber (5 strawberry
   gifts) unlock with other achievements. The 🏷️ button in the Challenges panel picks which unlocked title to show
   (or Auto for the best crown title, or none). Saved as `Title` in the profile.
-- Music that builds: the background track plays 5% faster with each lava phase, a little louder in the last one, and
-  eases back in the lobby (also when a round ends early). Climbers and watchers hear the same build-up. The 🎵 / 🔇 button is saved with your profile (`MusicOff`),
+- Music: two free tracks Roblox licenses for experiences (APM Music, Creator Store): the island tune "Hawaiian
+  Parkour (b)" in the lobby and driving drums, "Natural Disaster" (climax), for the climb. The drums start from the
+  top every round, play 5% faster with each lava phase and a little louder in the last one, then fade back to the
+  lobby tune (also when a round ends early). Climbers and watchers hear the same build-up. The 🎵 / 🔇 button is saved with your profile (`MusicOff`),
   so muted music stays muted the next time you join.
 - Victory emote: the 🏆 "When I win" button in the 😀 Emotes panel cycles through the six free emotes and previews
   each one; your pick plays when you're crowned (Cheer by default). Saved as `WinEmote` (CFG.WinEmotes).

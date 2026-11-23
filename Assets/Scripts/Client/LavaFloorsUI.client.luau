@@ -997,14 +997,21 @@ Icon.new()
 		end
 	end)
 
-local music = make("Sound", { Name = "LavaFloorsMusic", SoundId = "rbxassetid://1837768107", Looped = true, Volume = 0.22 }, game:GetService("SoundService"))
+-- Music: free tracks Roblox licenses for experiences (APM Music, from the Creator Store). An island tune in the lobby
+-- ("Hawaiian Parkour (b)") and driving drums for the climb ("Natural Disaster", climax version). Both sit in one
+-- SoundGroup, so 🔇 mutes them together.
+local musicGroup: SoundGroup = make("SoundGroup", { Name = "LavaFloorsMusic", Volume = 1 }, game:GetService("SoundService"))
+local music = make("Sound", { Name = "LobbyMusic", SoundId = "rbxassetid://1837792555", Looped = true, Volume = 0.22, SoundGroup = musicGroup }, musicGroup)
 music:Play()
--- The music builds with the round: a little faster each lava phase and a bit louder in the last one, then back to
--- normal in the lobby. Everyone hears it, climbers and watchers alike.
+-- The climb has its own track: it starts from the top when a round starts, plays a little faster each lava phase and a
+-- bit louder in the last one, then fades back to the lobby tune. Everyone hears it, climbers and watchers alike.
 do
 	local Grid = require(RS:WaitForChild("LavaGrid")) :: any
 	local TweenService = game:GetService("TweenService")
-	local BASE_VOLUME, FINAL_VOLUME, SPEED_STEP = 0.22, 0.3, 0.05
+	local roundMusic = make("Sound", { Name = "RoundMusic", SoundId = "rbxassetid://9045720005", Looped = true, Volume = 0, SoundGroup = musicGroup }, musicGroup)
+	roundMusic:Play()
+	-- The drums are ~1.8x as loud as the island tune (PlaybackLoudness 222 vs 123), so the round plays quieter.
+	local LOBBY_VOLUME, ROUND_VOLUME, FINAL_VOLUME, SPEED_STEP = 0.22, 0.14, 0.19, 0.05
 	local lastPhase = -2
 	local roundPhase: string? = nil -- from LavaState; a round can end early (everyone out) while the tower stays up
 	event.OnClientEvent:Connect(function(kind: string, v: any)
@@ -1023,13 +1030,21 @@ do
 				phase = -1 -- the round is over
 			end
 			if phase ~= lastPhase then
+				local starting = phase >= 0 and lastPhase < 0
 				lastPhase = phase
 				local final = phase >= 0 and phase == phases - 1
-				local goal = {
-					PlaybackSpeed = if phase >= 0 then 1 + SPEED_STEP * phase else 1,
-					Volume = if final then FINAL_VOLUME else BASE_VOLUME,
-				}
-				TweenService:Create(music, TweenInfo.new(1.5), goal):Play()
+				local fade = TweenInfo.new(1.5)
+				if phase >= 0 then
+					if starting then
+						roundMusic.TimePosition = 0 -- the drums build from the top every round
+					end
+					local goal = { PlaybackSpeed = 1 + SPEED_STEP * phase, Volume = if final then FINAL_VOLUME else ROUND_VOLUME }
+					TweenService:Create(roundMusic, fade, goal):Play()
+					TweenService:Create(music, fade, { Volume = 0 }):Play()
+				else
+					TweenService:Create(roundMusic, fade, { Volume = 0, PlaybackSpeed = 1 }):Play()
+					TweenService:Create(music, fade, { Volume = LOBBY_VOLUME }):Play()
+				end
 				music:SetAttribute("Phase", phase)
 			end
 			task.wait(0.5)
@@ -1137,17 +1152,16 @@ Icon.new()
 local musicIcon = Icon.new():setName("Music"):setImage(Icons.SoundOn):setLabel(""):align("Right"):oneClick():modifyTheme(pill(Color3.fromRGB(150, 90, 255)))
 -- Your choice is saved with your profile (the "MusicOff" attribute), so 🔇 stays off the next time you join.
 local musicWords = false -- true inside the ☰ dropdown on narrow screens, where there's room for words
+local function musicOn(): boolean
+	return musicGroup.Volume > 0
+end
 local function setMusic(on: boolean)
-	if on and not music.Playing then
-		music:Resume()
-	elseif not on and music.Playing then
-		music:Pause()
-	end
+	musicGroup.Volume = if on then 1 else 0 -- both tracks keep their place; muting just silences the group
 	musicIcon:setImage(if on then Icons.SoundOn else Icons.SoundOff)
 	musicIcon:setLabel(if musicWords then (if on then "Music on" else "Music off") else "")
 end
 musicIcon:bindEvent("selected", function()
-	local on = not music.Playing
+	local on = not musicOn()
 	setMusic(on)
 	event:FireServer("LavaMusic", not on)
 end)
@@ -1183,7 +1197,7 @@ if workspace.CurrentCamera.ViewportSize.X < MORE_WIDTH then
 		end
 	end
 	musicWords = true
-	setMusic(music.Playing)
+	setMusic(musicOn())
 end
 for _, name in { "Gloves", "LavaPass", "Vip", "Challenges", "ServerGoal", "Invite", "Music", "More" } do
 	local icon = Icon.getIcon(name)

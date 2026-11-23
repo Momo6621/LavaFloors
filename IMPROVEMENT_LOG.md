@@ -3,6 +3,27 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 79. Music that fits the volcano (owner's request)
+
+**Why.** The owner asked for free, licensed, public music that fits the theme. The old track, APM's "Take Me Higher
+(c)", was licensed but generic.
+
+**Built.** Two tracks from the music Roblox licenses for experiences (APM Music in the Creator Store, free to use):
+- Lobby: "Hawaiian Parkour (b)" (asset 1837792555, 71.8 s), an island tune for the volcano island. (The full
+  "Hawaiian Parkour" is only 31 s, so it would loop too often.)
+- Rounds: "Natural Disaster", the climax version (9045720005, 76.8 s, APM's description: driving cinematic
+  percussion with an accelerating, anxious back end). It starts from the top when a round starts, keeps the old
+  build-up (5% faster each phase, louder in the last), and crossfades back to the lobby tune when the round ends.
+- Both sit in one SoundGroup, so 🔇 (saved as `MusicOff`) mutes both. The drums are ~1.8x as loud as the island
+  tune (PlaybackLoudness 222 vs 123 at the same volume), so they play at 0.14 (0.19 in the last phase) against the
+  lobby's 0.22.
+
+**Verified.** Solo Studio playtest: lobby track plays at 0.22 with the round track silent; once the floor moves, the
+lobby fades to 0 and the drums play from the top; phase 1 speeds them up (x1.04); after the round, back to the
+lobby at 0.22. Mute through the saved setting: group volume 0 with `MusicOff` true, then back to 1. The Studio copy
+matches the repo (54127 bytes, hash 321511382); console clean. Not checked by ear: how the tracks sound together.
+Listen: https://create.roblox.com/store/asset/1837792555 and https://create.roblox.com/store/asset/9045720005
+
 ## 78. 💥 Mega Shoves twist
 
 **Why.** Same research as #77 (variety through modifiers). Shoving is the part kids play with most, so a twist that
