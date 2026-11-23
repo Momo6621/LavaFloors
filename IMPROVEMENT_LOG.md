@@ -3,6 +3,28 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 77. 🧊 Slippery Floor twist: tried, not shipped (owner's call needed)
+
+**Why.** DevForum minigame feedback asks for variety through modifiers
+(https://devforum.roblox.com/t/suggestions-for-elimination-based-minigames/737856), and icy floors are a kid
+favourite in obbies. A physics-only twist would need no new look.
+
+**Tried (four approaches, none kept).** Tests used real W key presses in Studio, measuring speed after release.
+1. Low tile friction (0.03, weight 100): Roblox's Humanoid ignores floor friction (same stop as normal ground).
+2. Blending the root's velocity each Heartbeat: the humanoid resets velocity every physics step (18.5 to 0.3 in
+   0.1 s).
+3. Smoothing `Humanoid:Move` from `MoveDirection`: reads back its own output, so on ice you couldn't walk at all.
+4. Smoothing `Humanoid:Move` from the controls' `MoveAction` (this place runs the Input Action System
+   PlayerModule under StarterPlayer) in PreSimulation: the default controls' own Move still wins. A test hook
+   connected later did win, so it depends on connection order, which isn't reliable.
+
+Per the 3-attempts rule this stops here for the owner. Untried: switching the default controls off while on ice
+(`ControlModule.Enabled`) and moving and jumping from `MoveAction` / `JumpAction` directly. Repo and Studio are back
+to the last commit (hashes checked); the attempt is saved outside the repo.
+
+**Verified.** None shipped. Repo and Studio match the previous commit (lava service 187656 / 118038813, client
+126349 / 347076022), and the forced twist attribute is cleared.
+
 ## 76. Two-player check: the late-join shove grace (no change needed)
 
 **Why.** #71's 2 s `JoinGrace` (nobody can shove a climber who just landed) was only untested because it needs two
