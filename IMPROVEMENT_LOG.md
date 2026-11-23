@@ -3,6 +3,20 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 102. 🎯 Shove Frenzy twist
+
+**Why.** Feature loop. Shoving is the game's core interaction (#39) and the party-game charts are led by shove games
+(#83). A twist where everyone can shove twice as often makes for chaotic, readable rounds. It's fair because the rule
+is the same for every climber, and bubbles and the late-join grace still protect as usual.
+
+**Built.** SkySproutLavaService: a new twist `{ Id = "ShoveFrenzy", Name = "🎯 Shove Frenzy", Weight = 2 }`. `shove`
+uses `FrenzyShoveCooldown` (0.4 s) in that twist and `ShoveCooldown` (0.8 s) otherwise. Server only; the client has no
+cooldown of its own.
+
+**Verified.** Lints pass. The Studio copy matches the repo (198033 bytes, hash 396690927) and compiles. Solo Studio
+playtest, counting the "Swing" replies (sent only for accepted presses, #93) to 8 presses 0.5 s apart: in a confirmed
+Shove Frenzy round all 8 were accepted, and in a Classic round 4 of 8. Consoles clean; force attribute cleared.
+
 ## 101. 👑 First crown of the day bonus
 
 **Why.** Feature loop. A small daily goal gives kids a reason to come back, and a crown is the game's real

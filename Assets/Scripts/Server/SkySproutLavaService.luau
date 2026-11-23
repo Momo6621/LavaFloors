@@ -157,6 +157,7 @@ local CFG = {
 	-- Shove
 	ShoveRange = 9,
 	ShoveCooldown = 0.8,
+	FrenzyShoveCooldown = 0.4, -- 🎯 Shove Frenzy twist: everyone can shove twice as often (#102)
 	ShoveSpeed = 66,
 	ShoveLift = 18,
 	MegaShove = 1.6, -- Mega Shoves twist: shoves fly this much further (bots slide one tile further)
@@ -288,6 +289,7 @@ local MUTATORS: { Mutator } = {
 	{ Id = "MegaShove", Name = "💥 Mega Shoves", Weight = 2 },
 	{ Id = "QuickCrumble", Name = "⚡ Quick Crumble", Weight = 1 },
 	{ Id = "Bouncy", Name = "🦘 Bouncy", Weight = 2 }, -- everyone jumps higher (CFG.BouncyJumpPower, #99)
+	{ Id = "ShoveFrenzy", Name = "🎯 Shove Frenzy", Weight = 2 }, -- shove cooldown halved (CFG.FrenzyShoveCooldown, #102)
 }
 -- Twist vote: when a round ends everyone gets a few twists to pick from; the most votes wins (ties and no votes are
 -- settled at random among the options).
@@ -2931,7 +2933,7 @@ local function shove(p: Player)
 	if t < r.nextShove then
 		return
 	end
-	r.nextShove = t + CFG.ShoveCooldown
+	r.nextShove = t + (if L.Mutator.Id == "ShoveFrenzy" then CFG.FrenzyShoveCooldown else CFG.ShoveCooldown)
 	local best: Player? = nil
 	local bestDist = CFG.ShoveRange
 	for other, o in L.Runners do
