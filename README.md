@@ -99,7 +99,8 @@ Round extras:
   In the themed worlds the bots are named to match (Candy Crater: Gumdrop, Sprinkles, Taffy…; Starry Night: Comet,
   Nova…; `BotNamesByTheme`); Sunset keeps the volcano names (`BotNames`).
 - Duos twist: everyone is paired (friends first, then players, then bots); teammates share an outline colour, can't
-  shove each other, and the last team standing wins (both teammates are crowned).
+  shove each other, and the last team standing wins (both teammates are crowned). Each team has a name that matches
+  its colour (💧 Team Splash, 🌸 Team Blossom, 🐸 Team Froggy, ⚡ Team Zap, 🔮 Team Wizard, 🦊 Team Fox).
 
 Progression and live-ops:
 - Daily reward: coins once a day on joining, climbing 25 → 300 over 7 days you play (`DAILY` in

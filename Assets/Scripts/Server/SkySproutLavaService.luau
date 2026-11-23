@@ -2941,6 +2941,11 @@ local TEAM_COLOURS = {
 	Color3.fromRGB(80, 200, 255), Color3.fromRGB(255, 120, 200), Color3.fromRGB(120, 255, 140),
 	Color3.fromRGB(255, 210, 70), Color3.fromRGB(190, 130, 255), Color3.fromRGB(255, 140, 70),
 }
+-- Duos team names (#122), one per outline colour above: blue, pink, green, yellow, purple, orange.
+local TEAM_NAMES = { "💧 Team Splash", "🌸 Team Blossom", "🐸 Team Froggy", "⚡ Team Zap", "🔮 Team Wizard", "🦊 Team Fox" }
+local function teamName(team: number): string
+	return TEAM_NAMES[(team - 1) % #TEAM_NAMES + 1]
+end
 local function sameTeam(a: any, b: any): boolean
 	local ta, tb = teamOf[a], teamOf[b]
 	return ta ~= nil and ta == tb
@@ -3925,7 +3930,7 @@ local function assignTeams()
 			local mate = pair[3 - i]
 			if typeof(member) == "Instance" then
 				local mateName = if mate == nil then nil elseif typeof(mate) == "Instance" then mate.DisplayName else "🤖 " .. mate.name
-				tell(member, if mateName then "👥 DUOS! Your teammate: " .. mateName .. " — last team standing wins!" else "👥 DUOS! You're solo this round — good luck!")
+				tell(member, if mateName then "👥 DUOS! You're " .. teamName(team) .. " with " .. mateName .. ". Last team standing wins!" else "👥 DUOS! You're " .. teamName(team) .. ", solo this round. Good luck!")
 			end
 		end
 	end
@@ -4289,7 +4294,7 @@ local function runRound()
 				end
 				for other in L.Runners do
 					if other.Parent then
-						tell(other, "👥 Team " .. table.concat(names, " & ") .. " wins!")
+						tell(other, "👥 " .. teamName(winner) .. " wins! (" .. table.concat(names, " & ") .. ")")
 					end
 				end
 				break

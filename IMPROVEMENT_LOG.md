@@ -3,6 +3,23 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 122. Duos teams get names
+
+**Why.** Feature loop. In Duos you could only tell your team by its outline colour, and the win line read "Team Ann &
+Bob wins!". Kids love belonging to a named team, and a name tied to the colour ("I'm Team Froggy, the green one!")
+makes it easier to spot your teammate.
+
+**Built.** SkySproutLavaService: `TEAM_NAMES`, one per outline colour (💧 Team Splash blue, 🌸 Team Blossom pink,
+🐸 Team Froggy green, ⚡ Team Zap yellow, 🔮 Team Wizard purple, 🦊 Team Fox orange). The pairing notice now says
+"👥 DUOS! You're 💧 Team Splash with X. Last team standing wins!" (or "…, solo this round. Good luck!"). The win
+notice says "👥 🐸 Team Froggy wins! (Ann & Bob)". Text only; the outlines are unchanged.
+
+**Verified.** Lints pass. The Studio copy matches the repo (205699 bytes, hash 860972176) and compiles. Solo
+playtest with Duos forced: "👥 DUOS! You're 💧 Team Splash with 🤖 Fudge. Last team standing wins!", then with 🤖
+Gloom the next round. The screenshot shows the notice on one line with 💧 rendered, and the player's blue outline
+matching. Console clean; the force attribute was cleared. Not tested: the win notice (with one real player, a
+knockout ends the round before a team can win), a plain string change.
+
 ## 121. Daily challenges give Lava Pass XP too
 
 **Why.** Feature loop. The daily challenges and the Lava Pass were two separate tracks, so finishing a challenge only
