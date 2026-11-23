@@ -3,6 +3,27 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 110. Jump styles and four more celebrations (owner's request)
+
+**Why.** The owner asked for "different jump animations" and "different celebration animations", taken from sources
+that allow it. Roblox only plays an animation in a game its owner has given access to, so animations ripped from
+other games wouldn't load anyway. Roblox's own animations (its default emotes and its free animation packs) work in
+every game. Every ID was checked with `MarketplaceService:GetProductInfo` (creator Roblox, Animation type) before use.
+
+**Built.**
+- LavaFloorsUI, jump styles: on every landing the client sets the default Animate script's `JumpAnim` to one of 12
+  Roblox pack jumps at random (Cartoony, Ninja, Superhero, Stylish, Toy, Bubbly, Astronaut, Levitation, Rthro, Robot,
+  Mage, Knight); all 12 are preloaded. Just a look: no change to jump height or timing.
+- LavaFloorsUI, emotes: Shuffle (R15 dance 3), Clap (EmoteClap), Happy (emote_happy) and Bop ("Keeping Time") join
+  the panel, which is now 4 rows tall. SkySproutLavaService `WinEmotes` accepts them as victory emotes. Five catalog
+  emotes (Salute, Shrug, Hello, Stadium, Tilt) turned out to hold only face animations, so they weren't used.
+
+**Verified.** Lints pass. The Studio copies match the repo (LavaFloorsUI 57500 bytes, hash 521041655; lava service
+200120, 809650616) and compile. Studio playtest: 6 jumps played 6 different pack jumps (Bubbly, Stylish, Mage,
+Stylish, Robot, Cartoony); all four new emotes loaded and played (lengths 1.9, 3.0, 5.4 and 3.4 s). The emote panel
+showed all 10 buttons; the owner approved it from that screenshot. The Shuffle icon was changed from 🪩 (not
+rendered by Roblox's font) to 🎉. Consoles clean. A 30 s gameplay video was recorded for the owner.
+
 ## 109. Three new daily challenges: cheer, gift, shield orbs
 
 **Why.** Feature loop. The daily pool had 8 challenges, so the same three came round often, and none rewarded

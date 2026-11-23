@@ -111,8 +111,12 @@ Progression and live-ops:
   top every round, play 5% faster with each lava phase and a little louder in the last one, then fade back to the
   lobby tune (also when a round ends early). Climbers and watchers hear the same build-up. The 🎵 / 🔇 button is saved with your profile (`MusicOff`),
   so muted music stays muted the next time you join.
-- Victory emote: the 🏆 "When I win" button in the 😀 Emotes panel cycles through the six free emotes and previews
-  each one; your pick plays when you're crowned (Cheer by default). Saved as `WinEmote` (CFG.WinEmotes).
+- Victory emote: the 🏆 "When I win" button in the 😀 Emotes panel cycles through the ten free emotes (Wave, Cheer,
+  Laugh, Point, Dance, Groove, Shuffle, Clap, Happy, Bop; all Roblox-owned animations) and previews each one; your
+  pick plays when you're crowned (Cheer by default). Saved as `WinEmote` (CFG.WinEmotes).
+- Jump styles: each jump plays one of the jumps from Roblox's own animation packs (Cartoony, Ninja, Superhero,
+  Stylish, Toy, Bubbly, Astronaut, Levitation, Rthro, Robot, Mage, Knight), picked at random each time you land.
+  Just a look: jump height and timing don't change.
 - First crown of the day: your first crown each day (UTC) pays 50 coins on top ("👑 First crown today!"), the same
   for everyone, after VIP and 2x multipliers. `FirstCrownCoins` in CFG, saved as `FirstCrownDay`.
 - Lava Chest: every round fills a bar on the result card (12 for playing, up to 30 for height, +15 survive, +30 crown).

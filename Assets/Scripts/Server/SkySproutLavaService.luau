@@ -225,7 +225,7 @@ local CFG = {
 	EmberBag = 3,
 
 	-- The emote your avatar plays when you win a round (picked in the 😀 Emotes panel, saved with your profile).
-	WinEmotes = { "Wave", "Cheer", "Laugh", "Point", "Dance", "Groove" },
+	WinEmotes = { "Wave", "Cheer", "Laugh", "Point", "Dance", "Groove", "Shuffle", "Clap", "Happy", "Bop" },
 
 	-- Titles shown over your head. Crown titles unlock with total crowns; the others with another achievement (Need).
 	-- Players pick which unlocked title to show (the 🏷️ button in the Challenges panel); "Auto" shows the best crown

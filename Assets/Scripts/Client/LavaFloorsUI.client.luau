@@ -1054,8 +1054,8 @@ do
 		end
 	end)
 end
--- Emotes: six free emotes (Roblox's own default animations) from a top bar button, so kids can wave, cheer and
--- dance without typing. Dances loop until you move; winning the crown plays your victory emote.
+-- Emotes: ten free emotes (Roblox's own animations, so they load in any game) from a top bar button, so kids can wave,
+-- cheer and dance without typing. Dances loop until you move; winning the crown plays your victory emote.
 local EMOTES = {
 	{ Icon = "👋", Name = "Wave", Id = "rbxassetid://507770239", Loop = false },
 	{ Icon = "🙌", Name = "Cheer", Id = "rbxassetid://507770677", Loop = false },
@@ -1063,6 +1063,10 @@ local EMOTES = {
 	{ Icon = "👉", Name = "Point", Id = "rbxassetid://507770453", Loop = false },
 	{ Icon = "💃", Name = "Dance", Id = "rbxassetid://507771019", Loop = true },
 	{ Icon = "🕺", Name = "Groove", Id = "rbxassetid://507776043", Loop = true },
+	{ Icon = "🎉", Name = "Shuffle", Id = "rbxassetid://507777268", Loop = true }, -- R15Dance3A (#110)
+	{ Icon = "👏", Name = "Clap", Id = "rbxassetid://5915693819", Loop = false }, -- EmoteClap
+	{ Icon = "😄", Name = "Happy", Id = "rbxassetid://4841405708", Loop = false }, -- emote_happy
+	{ Icon = "🎶", Name = "Bop", Id = "rbxassetid://4555808220", Loop = true }, -- "Keeping Time"
 }
 local emoteTrack: AnimationTrack? = nil
 local function playEmote(id: string, loop: boolean)
@@ -1096,12 +1100,12 @@ game:GetService("RunService").Heartbeat:Connect(function()
 		emoteTrack = nil
 	end
 end)
-local emotePanel = make("Frame", { Name = "EmotePanel", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -96), Size = UDim2.fromOffset(312, 178), BackgroundColor3 = CREAM, Visible = false }, gui)
+local emotePanel = make("Frame", { Name = "EmotePanel", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -96), Size = UDim2.fromOffset(312, 290), BackgroundColor3 = CREAM, Visible = false }, gui)
 corner(emotePanel, 18)
 outline(emotePanel, 2)
 make("UIPadding", { PaddingTop = UDim.new(0, 10), PaddingBottom = UDim.new(0, 10), PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10) }, emotePanel)
 local emoteGrid = make("Frame", { Name = "Grid", Size = UDim2.new(1, 0, 1, -46), BackgroundTransparency = 1 }, emotePanel)
-make("UIGridLayout", { CellSize = UDim2.new(1 / 3, -8, 0.5, -5), CellPadding = UDim2.fromOffset(8, 8), SortOrder = Enum.SortOrder.LayoutOrder }, emoteGrid)
+make("UIGridLayout", { CellSize = UDim2.new(1 / 3, -8, 0.25, -6), CellPadding = UDim2.fromOffset(8, 8), SortOrder = Enum.SortOrder.LayoutOrder }, emoteGrid)
 -- Victory emote: the server saves your pick (the "WinEmote" attribute); a tap cycles to the next one and previews it.
 local function winEmote()
 	local name = player:GetAttribute("WinEmote")
@@ -1337,4 +1341,47 @@ do
 	end
 	workspace:GetAttributeChangedSignal("LavaTheme"):Connect(applyThemeColors)
 	applyThemeColors()
+end
+
+-- Jump styles (#110): each jump plays one of the jumps from Roblox's own animation packs, picked at random when you
+-- land (Cartoony, Ninja, Superhero, Stylish, Toy, Bubbly, Astronaut, Levitation, Rthro, Robot, Mage, Knight). They're
+-- Roblox-owned, so they load in any game. Just a look: jump height and timing don't change. The default Animate script
+-- reloads its jump whenever the JumpAnim's AnimationId changes.
+do
+	local JUMPS = { 742637942, 656117878, 616115533, 616139451, 782847020, 910016857, 891627522, 616008936, 2510197830, 616090535, 707853694, 658409194 }
+	local function hook(character: Model)
+		local animate = character:WaitForChild("Animate", 10)
+		local jumpValue = animate and animate:WaitForChild("jump", 5)
+		local anim = jumpValue and jumpValue:FindFirstChildOfClass("Animation")
+		local hum = character:WaitForChild("Humanoid", 10)
+		if not anim or not hum or not hum:IsA("Humanoid") then
+			return
+		end
+		task.spawn(function()
+			local list = {}
+			for _, id in JUMPS do
+				local a = Instance.new("Animation")
+				a.AnimationId = "rbxassetid://" .. id
+				table.insert(list, a)
+			end
+			pcall(function()
+				game:GetService("ContentProvider"):PreloadAsync(list)
+			end)
+		end)
+		local function pick()
+			anim.AnimationId = "rbxassetid://" .. JUMPS[math.random(#JUMPS)]
+		end
+		pick()
+		hum.StateChanged:Connect(function(_, new)
+			if new == Enum.HumanoidStateType.Landed then
+				pick()
+			end
+		end)
+	end
+	if player.Character then
+		task.spawn(hook, player.Character)
+	end
+	player.CharacterAdded:Connect(function(character)
+		task.spawn(hook, character)
+	end)
 end
