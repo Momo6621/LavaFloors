@@ -3,6 +3,21 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 130. Top bar pills take the world's glass tint (owner's request, follows #126/#128)
+
+**Why.** After #126 and #128 the TopbarPlus pills were the last UI still on the fixed lava-brown glass in every world.
+
+**Built.** LavaFloorsUI theme hook: on every theme change, each TopbarPlus icon (`Icon.getIcons()`, which includes
+the ones SkySproutLavaClient makes) gets `modifyTheme({ {"IconButton", "BackgroundColor3", UIGlass} }, "ThemeGlass")`.
+The fixed modification id makes each theme replace the last one, and TopbarPlus keeps it through hover and
+selection. Icons and their label colours are unchanged. Sunset keeps its glass. Icons created later in a round pick
+the tint up at the next theme change.
+
+**Verified.** Lints pass. The Studio copy matches the repo (LavaFloorsUI 59100 bytes, hash 484705108) and compiles.
+Playtest: all 13 visible IconButtons read 12,20,38 in Blue Inferno and 58,22,48 in Candy Crater (screenshots of
+both). The tint is dark and the pills see-through, so the change is subtle; the owner was shown that and chose to
+ship it as is rather than add accent outlines. Console clean; the force attribute was cleared.
+
 ## 129. Measure how each twist goes (TwistOutcome analytics)
 
 **Why.** Feature loop. There are now 16 twists plus a Surprise option, and several are new (Magnet Hands,

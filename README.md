@@ -206,8 +206,9 @@ Look and feel (each change was picked by the owner from a side-by-side preview; 
   and pink on berry (Candy Crater); Sunset keeps the lava look (`UIAccent`/`UIGlass` in LavaThemes,
   `U.setThemeColors` in LavaUI). The lobby panels follow as well (#128): the shop and daily-challenge ribbons
   (`U.accentFill`), panel glass, item cards (a lighter glass with a touch of the accent) and the orange WEAR / CLAIM
-  buttons. Buttons and panels with their own colour (gold Raise, VIP, the purple Lava Pass, green, red) and the top
-  bar keep their colours.
+  buttons. Buttons and panels with their own colour (gold Raise, VIP, the purple Lava Pass, green, red) keep their
+  colours. The top bar pills take the theme's glass tint too (#130; a TopbarPlus theme modification with the fixed id
+  "ThemeGlass"); their icons and label colours stay.
 - Icons: the free Flibpook pack (`Shared/LavaIcons.luau`) instead of emoji in the top bar (shop stall, purple gem,
   crown, checkmark, trophy, heart, lightning, speaker, gear), the coins panel, shop prices, challenge rewards, the
   Raise button, the daily reward card, the Lava Pass and the result card (crown or checkmark beside the title; coin,

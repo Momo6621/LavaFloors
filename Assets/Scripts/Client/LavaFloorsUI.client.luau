@@ -1364,6 +1364,14 @@ do
 		UI.setTitleColors(top, bottom, player:FindFirstChildOfClass("PlayerGui"))
 		-- Borders, panels and lava buttons follow the theme too (#126).
 		UI.setThemeColors(theme and theme.UIAccent or UI.Lava, theme and theme.UIGlass or UI.Glass, player:FindFirstChildOfClass("PlayerGui"))
+		-- Top bar pills follow the theme too (#130): each icon's pill glass, under one fixed modification id so the next
+		-- theme replaces this one. Label colours stay (each icon has its own).
+		local glass = theme and theme.UIGlass or UI.Glass
+		for _, icon in Icon.getIcons() do
+			pcall(function()
+				icon:modifyTheme({ { "IconButton", "BackgroundColor3", glass } }, "ThemeGlass")
+			end)
+		end
 	end
 	workspace:GetAttributeChangedSignal("LavaTheme"):Connect(applyThemeColors)
 	applyThemeColors()
