@@ -3,6 +3,24 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 91. Fix: the bubble vanished after a reset in phase 1
+
+**Why.** Found while checking the edge cases around #87. A kid who resets (or otherwise loses their character) in
+phase 1 respawns 3 s later and is dropped back into the round on a new character. The runner's `shieldUntil` is
+carried over, so a running first-round or underdog bubble still protected them. But the visible bubble (a
+ForceField) belonged to the old character, and nothing put it back: the grant only happens when no shield is
+running. Before the fix, a test reset 2 s into the first-round bubble left the new character without it, though
+shoves still bounced off.
+
+**Built.** SkySproutLavaService: the visible bubble is now its own `showBubble` helper. `enter` shows it again, for
+the time that's left and with no notice, when a dropped-back climber still has a shield running but no bubble. A
+pickup that doesn't extend the shield (#87) also puts the bubble back if it's missing.
+
+**Verified.** Lint and the local-limit check pass. The Studio copy matches the repo (192126 bytes, hash 179621785)
+and compiles. Solo Studio playtest: first-round bubble on, then the character was killed 2 s later. The new
+character spawned at +5.4 s and was dropped back in at +7.3 s. The bubble was on it at +9 s, +12 s and +14 s, and
+gone by +16 s (the 15 s bubble had ended). Console clean; no test attributes left.
+
 ## 90. Leak check after this session's changes (no change needed)
 
 **Why.** Since the last leak check (#22) a lot of per-round code has changed: haptic effects created per shove and

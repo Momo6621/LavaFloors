@@ -1894,15 +1894,8 @@ end
 
 -- Boosts
 
-local function grantShield(p: Player, character: Model, r: Runner, position: Vector3, seconds: number?, message: string?)
-	local lasts = seconds or CFG.ShieldTime
-	-- A shield never cuts a longer one short: a shield orb picked up inside a 15 s underdog or first-round bubble
-	-- keeps the bubble (and says nothing, since nothing changed).
-	if now() + lasts <= r.shieldUntil then
-		event:FireClient(p, "LavaFX", { Kind = "Shield", Position = position })
-		return
-	end
-	r.shieldUntil = now() + lasts
+-- The bubble you can see; the protection itself is the runner's shieldUntil.
+local function showBubble(character: Model, seconds: number)
 	local old = character:FindFirstChild("LavaBubble")
 	if old then
 		old:Destroy()
@@ -1911,11 +1904,26 @@ local function grantShield(p: Player, character: Model, r: Runner, position: Vec
 	bubble.Name = "LavaBubble"
 	bubble.Visible = true
 	bubble.Parent = character
-	task.delay(lasts, function()
+	task.delay(seconds, function()
 		if bubble.Parent then
 			bubble:Destroy()
 		end
 	end)
+end
+
+local function grantShield(p: Player, character: Model, r: Runner, position: Vector3, seconds: number?, message: string?)
+	local lasts = seconds or CFG.ShieldTime
+	-- A shield never cuts a longer one short: a shield orb picked up inside a 15 s underdog or first-round bubble
+	-- keeps the bubble (and says nothing, since nothing changed).
+	if now() + lasts <= r.shieldUntil then
+		if not character:FindFirstChild("LavaBubble") then
+			showBubble(character, r.shieldUntil - now())
+		end
+		event:FireClient(p, "LavaFX", { Kind = "Shield", Position = position })
+		return
+	end
+	r.shieldUntil = now() + lasts
+	showBubble(character, lasts)
 	event:FireClient(p, "LavaFX", { Kind = "Shield", Position = position })
 	tell(p, message or ("🛡️ Bubble shield! Shoves can't move you for " .. lasts .. "s."))
 end
@@ -2667,6 +2675,9 @@ local function enter(p: Player): boolean
 			else "🫧 Underdog shield! Tough few rounds, so shoves can't move you for " .. CFG.UnderdogShield .. "s."
 		grantShield(p, p.Character, runner, at, CFG.UnderdogShield, message)
 		runner.bubble = if firstRound then "FirstRound" else "Underdog"
+	elseif runner and now() < runner.shieldUntil and not p.Character:FindFirstChild("LavaBubble") then
+		-- Dropped back in on a new character (after a reset) while a bubble is still running: show it again.
+		showBubble(p.Character, runner.shieldUntil - now())
 	end
 	personal(p)
 	return true
