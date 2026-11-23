@@ -1205,6 +1205,160 @@ end
 applySavedMusic()
 player:GetAttributeChangedSignal("MusicOff"):Connect(applySavedMusic)
 
+-- 🎥 Top view (#132): an optional camera for rounds, picked with the 🎥 button. It looks down on the whole floor from
+-- above (tilted a little so W still moves up the screen), follows the floor as it rises, and puts a big name over
+-- every climber (yours in gold) so you can see who is where. Outside a round the camera is normal. The names are
+-- drawn on a screen layer and placed over each head every frame.
+do
+	local RunService = game:GetService("RunService")
+	local Grid = require(RS:WaitForChild("LavaGrid")) :: any
+	local HEIGHT, BACK = 78, 30 -- studs above and toward the camera from the floor's centre
+	local topIcon = Icon.new():setName("TopView"):setLabel("🎥"):align("Right"):setCaption("Top view"):modifyTheme(pill(Color3.fromRGB(120, 200, 255)))
+	local wanted = false
+	local active = false
+	local towerRef: Model? = nil
+	local names = make("ScreenGui", { Name = "TopViewNames", ResetOnSpawn = false, IgnoreGuiInset = true, DisplayOrder = -1, Enabled = false }, player:WaitForChild("PlayerGui"))
+	local tags: { [BasePart]: TextLabel } = {}
+	local hidden: { [BillboardGui]: boolean } = {} -- bots' own small labels hidden while top view is on
+
+	local function getTower(): Model?
+		if towerRef and towerRef.Parent then
+			return towerRef
+		end
+		local rush = workspace:FindFirstChild("SkySprout")
+		rush = rush and rush:FindFirstChild("Floors")
+		rush = rush and rush:FindFirstChild("Floor_1")
+		rush = rush and rush:FindFirstChild("LavaRush")
+		local t = rush and rush:FindFirstChild("LavaRushTower")
+		towerRef = if t and t:IsA("Model") then t else nil
+		return towerRef
+	end
+
+	local function tag(head: BasePart, text: string, mine: boolean)
+		if tags[head] then
+			return
+		end
+		local l = make("TextLabel", { AnchorPoint = Vector2.new(0.5, 1), Size = UDim2.fromOffset(170, 30), BackgroundTransparency = 1, Font = FONT, Text = text, TextScaled = true, TextColor3 = if mine then UI.Gold else Color3.new(1, 1, 1), TextStrokeColor3 = UI.Shadow, TextStrokeTransparency = 0, ZIndex = if mine then 2 else 1 }, names)
+		make("UITextSizeConstraint", { MaxTextSize = 24 }, l)
+		tags[head] = l
+	end
+
+	local function refreshTags()
+		local seen: { [BasePart]: boolean } = {}
+		for _, p in Players:GetPlayers() do
+			local head = p.Character and p.Character:FindFirstChild("Head")
+			if head and head:IsA("BasePart") and p:GetAttribute("ArenaMode") == "LavaRush" then
+				seen[head] = true
+				tag(head, if p == player then "⭐ YOU" else p.DisplayName, p == player)
+			end
+		end
+		local t = getTower()
+		if t then
+			for _, m in t:GetChildren() do
+				local head = m:IsA("Model") and string.sub(m.Name, 1, 4) == "Bot_" and m:FindFirstChild("Head")
+				if head and head:IsA("BasePart") then
+					local root = m.PrimaryPart
+					if not (root and root:GetAttribute("BotFalling")) then
+						seen[head] = true
+						tag(head, "🤖 " .. string.sub(m.Name, 5), false)
+						local own = head:FindFirstChildOfClass("BillboardGui")
+						if own and own.Enabled then
+							own.Enabled = false -- the big top-view name replaces the bot's small label (on this screen only)
+							hidden[own] = true
+						end
+					end
+				end
+			end
+		end
+		for head, l in tags do
+			if not seen[head] or not head.Parent then
+				l:Destroy()
+				tags[head] = nil
+			end
+		end
+	end
+
+	local function clearTags()
+		for head, l in tags do
+			l:Destroy()
+			tags[head] = nil
+		end
+		for own in hidden do
+			own.Enabled = true
+			hidden[own] = nil
+		end
+	end
+
+	local function step()
+		local t = getTower()
+		local cam = workspace.CurrentCamera
+		if not t or not cam then
+			return
+		end
+		local cx, cz = t:GetAttribute("CenterX"), t:GetAttribute("CenterZ")
+		if type(cx) ~= "number" or type(cz) ~= "number" then
+			return
+		end
+		local _, y = Grid.Pose(t, workspace:GetServerTimeNow())
+		local centre = Vector3.new(cx, y, cz)
+		cam.CameraType = Enum.CameraType.Scriptable
+		cam.CFrame = CFrame.lookAt(centre + Vector3.new(0, HEIGHT, BACK), centre)
+		for head, l in tags do
+			local pos, onScreen = cam:WorldToViewportPoint(head.Position + Vector3.new(0, 2.5, 0))
+			l.Visible = onScreen
+			l.Position = UDim2.fromOffset(pos.X, pos.Y)
+		end
+	end
+
+	local function update()
+		local should = wanted and player:GetAttribute("ArenaMode") == "LavaRush"
+		if should == active then
+			return
+		end
+		active = should
+		names.Enabled = active
+		if active then
+			RunService:BindToRenderStep("LavaTopView", Enum.RenderPriority.Camera.Value + 1, step)
+			task.spawn(function()
+				while active do
+					refreshTags()
+					task.wait(0.3)
+				end
+				clearTags()
+			end)
+		else
+			RunService:UnbindFromRenderStep("LavaTopView")
+			-- Hand the camera back to your character, behind it, as at the start of a round.
+			local cam = workspace.CurrentCamera
+			local character = player.Character
+			local hum = character and character:FindFirstChildOfClass("Humanoid")
+			local r = character and character:FindFirstChild("HumanoidRootPart")
+			if cam then
+				cam.CameraType = Enum.CameraType.Custom
+				if hum then
+					cam.CameraSubject = hum
+				end
+				if r and r:IsA("BasePart") then
+					local look = r.CFrame.LookVector
+					cam.CFrame = CFrame.lookAt(r.Position - look * 12 + Vector3.new(0, 5, 0), r.Position + look * 20 + Vector3.new(0, 8, 0))
+				end
+			end
+		end
+	end
+
+	topIcon:bindEvent("selected", function()
+		wanted = true
+		update()
+		notify("🎥 Top view on: rounds are shown from above")
+	end)
+	topIcon:bindEvent("deselected", function()
+		wanted = false
+		update()
+		notify("🎥 Top view off")
+	end)
+	player:GetAttributeChangedSignal("ArenaMode"):Connect(update)
+end
+
 -- Phones and small tablets: Roblox's own buttons take the first ~216 px, so not every button fits. Below MORE_WIDTH the
 -- extras (Pass, VIP, the event pill, Invite, Music) go into one ☰ dropdown; the play buttons (Lava Rush, 👀 Watch),
 -- Gloves, Challenges, Emotes and the server goal stay on the bar. Measured to fit a 666 px iPhone 7.
@@ -1212,7 +1366,7 @@ local MORE_WIDTH = 900
 UI.isCompact() -- waits for the real viewport size
 if workspace.CurrentCamera.ViewportSize.X < MORE_WIDTH then
 	local extras = {}
-	for _, name in { "LavaPass", "Vip", "Event", "Invite", "Music" } do
+	for _, name in { "LavaPass", "Vip", "Event", "Invite", "Music", "TopView" } do
 		local icon = Icon.getIcon(name)
 		if icon then
 			table.insert(extras, icon)
@@ -1220,7 +1374,7 @@ if workspace.CurrentCamera.ViewportSize.X < MORE_WIDTH then
 	end
 	Icon.new():setName("More"):setImage(Icons.Gear):setLabel(""):align("Left"):setCaption("Pass, VIP, invite and music"):modifyTheme(pill(Color3.fromRGB(120, 110, 140))):setDropdown(extras)
 	-- The dropdown has room for words, so its items say what they are.
-	local words = { LavaPass = "Lava Pass", Vip = "VIP", Invite = "Invite +" .. tostring(FRIEND_DEAL.InviteCoins) .. "💰" }
+	local words = { LavaPass = "Lava Pass", Vip = "VIP", Invite = "Invite +" .. tostring(FRIEND_DEAL.InviteCoins) .. "💰", TopView = "🎥 Top view" }
 	for name, text in words do
 		local icon = Icon.getIcon(name)
 		if icon then

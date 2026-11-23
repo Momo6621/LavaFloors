@@ -3,6 +3,33 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 132. 🎥 Top view camera with names (owner's request)
+
+**Why.** The owner: "add a different camera mode where it shows the characters from above … but displays their
+names". From behind your character you only see a slice of the floor. From above you see the whole grid, where the
+holes are opening and who is near you, and names tell you who is who.
+
+**Built.** LavaFloorsUI:
+- A 🎥 TopbarPlus toggle ("TopView", right side; in the ☰ dropdown as "🎥 Top view" below 900 px).
+- While it's on and you're in a round, a RenderStep binding after the default camera sets a scriptable camera 78
+  studs above and 30 toward you from the floor's centre, using `LavaGrid.Pose` so it rises with the floor.
+- Every 0.3 s it tracks the climbers' heads: players in the round, and bots that aren't falling. Each frame a
+  TextLabel on the "TopViewNames" ScreenGui is placed over each head with `WorldToViewportPoint`: "⭐ YOU" in gold,
+  other players' display names, "🤖 Name" for bots. The bots' own small labels are hidden while it runs, and only
+  those are re-enabled after.
+- Leaving the round unbinds, puts the camera back on Custom with your humanoid as subject, and places it behind you.
+
+**Verified.** Lints pass. The Studio copy matches the repo (LavaFloorsUI 64684 bytes, hash 128139469) and compiles.
+Playtest (the 🎥 button clicked with Studio's mouse input):
+- In a round the camera went Scriptable, about 91 studs up, with the whole floor in view.
+- Names: "⭐ YOU" plus "🤖 Glacier / Splash / Icicle", all on screen, no doubled bot labels (screenshots).
+- After a Duos round the camera returned to Custom, 12 studs behind the player, and the name layer turned off.
+
+Found along the way: a first version used BillboardGuis (in PlayerGui, then in the head), but they never showed in
+the screenshots, even a plain red test tag. They were replaced by the screen layer, which does show. The owner approved
+from the screenshots. Console clean. Not tested: phone-sized screens, and keeping the choice between visits (it
+resets when you leave).
+
 ## 131. Pre-publish smoke test: every twist in one session (no change needed)
 
 **Why.** #109–#130 hadn't been published, and each was tested on its own. Before the owner publishes them together,
