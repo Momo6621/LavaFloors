@@ -538,60 +538,6 @@ UI.text(bannerAwards, "body")
 local showWinnerCam: (names: { any }, positions: { any }) -> () = function() end -- set in the Spectate section
 
 -- Final showdown announcement: a big glass card in the middle of the screen for a few seconds.
--- First-round coach cards: a new player's first round walks them through the basics, one tip every few seconds.
-local coachCard: Frame = make("Frame", {
-	AnchorPoint = Vector2.new(0.5, 0.5),
-	Position = UDim2.fromScale(0.5, 0.7),
-	Size = UDim2.new(0.9, 0, 0, 74),
-	Visible = false,
-	ZIndex = 5,
-}, gui)
-make("UISizeConstraint", { MaxSize = Vector2.new(560, 74) }, coachCard)
-local coachStep: TextLabel = make("TextLabel", { BackgroundTransparency = 1, Position = UDim2.fromOffset(12, 4), Size = UDim2.new(1, -24, 0, 22), Font = FONT, TextScaled = true, Text = "", ZIndex = 6 }, coachCard)
-local coachText: TextLabel = make("TextLabel", { BackgroundTransparency = 1, Position = UDim2.fromOffset(12, 28), Size = UDim2.new(1, -24, 0, 40), Font = FONT, TextScaled = true, TextWrapped = true, Text = "", ZIndex = 6 }, coachCard)
-UI.glass(coachCard, 18, UI.Gold)
-UI.text(coachStep, "title")
-UI.text(coachText, "body")
-if UI.isCompact() then
-	-- Phones: keep the coach card between the thumbstick (bottom left) and the Raise / Shove buttons (right).
-	coachCard.Position = UDim2.fromScale(0.425, 0.7)
-	coachCard.Size = UDim2.new(0.45, 0, 0, 74)
-end
-local coachRunning = false
-local function runCoach()
-	if coachRunning or player:GetAttribute("Tutorial") ~= true then
-		return
-	end
-	coachRunning = true
-	local touch = game:GetService("UserInputService").TouchEnabled
-	local tips = {
-		"🌋 Climb out of the volcano! Stay on the floor while the lava rises below.",
-		"🔴 Tiles that glow red or crack are about to fall. Keep moving!",
-		if touch then "💥 Tap SHOVE to push rivals toward the edge." else "🖱️ Click to shove rivals toward the edge.",
-		"🍍 Jump into floating fruit for power-ups!",
-		"🗿 Climb the pillar's ledges to grab the strawberry on top!",
-		"👑 Be the last one standing to win the crown!",
-	}
-	task.spawn(function()
-		for i, tip in tips do
-			if player:GetAttribute("Tutorial") ~= true or (state.Phase ~= "Countdown" and state.Phase ~= "Round") then
-				break
-			end
-			coachStep.Text = string.format("NEW HERE? TIP %d / %d", i, #tips)
-			coachText.Text = tip
-			coachCard.Visible = true
-			local bounce = coachCard:FindFirstChild("Pop") or Instance.new("UIScale") -- pop() is declared further down
-			bounce.Name = "Pop"
-			bounce.Parent = coachCard;
-			(bounce :: UIScale).Scale = 1.15
-			TweenService:Create(bounce, TweenInfo.new(0.3, Enum.EasingStyle.Back), { Scale = 1 }):Play()
-			task.wait(5)
-		end
-		coachCard.Visible = false
-		coachRunning = false
-	end)
-end
-
 local showdownCard: Frame = make("Frame", {
 	AnchorPoint = Vector2.new(0.5, 0.5),
 	Position = UDim2.fromScale(0.5, 0.42), -- low enough to clear the notice toast under the top bar
@@ -899,9 +845,6 @@ event.OnClientEvent:Connect(function(kind: string, v: any)
 	if kind == "LavaState" then
 		local wasPhase = state.Phase
 		state = v
-		if state.Phase == "Countdown" or state.Phase == "Round" then
-			runCoach()
-		end
 		refreshPredict()
 		if state.Phase == "Round" and wasPhase ~= "Round" and (me.Queued or me.Running) then
 			play("Beep", 1.5)
@@ -1132,7 +1075,6 @@ event.OnClientEvent:Connect(function(kind: string, v: any)
 	elseif kind == "LavaWinners" then
 		-- The round is over: clear mid-round cards so they don't sit on top of the winner banner and result card.
 		showdownCard.Visible = false
-		coachCard.Visible = false
 		local names = if type(v.Names) == "table" then v.Names else {}
 		local onlyBots = #names > 0
 		for _, n in names do
@@ -1314,9 +1256,8 @@ Run.RenderStepped:Connect(function(dt)
 			local secs = math.ceil(left)
 			local twist = state.Mutator
 			title.Text = if twist and twist ~= "Classic" then string.format("%s IN %d", string.upper(twist), secs) else string.format("🔥 LAVA RUSH STARTS IN %d", secs)
-			local shoveTip = if game:GetService("UserInputService").TouchEnabled then "💥 Tap SHOVE to push rivals" else "🖱️ Click to SHOVE rivals"
-			local tips = { shoveTip,"🌀 The floor spins, grows, then rises — stay on!", "🛡️ Blue bubbles block shoves", "🔴 Red tiles fall or get left behind — move!", "🍉 Stay on one tile too long and it cracks!", "⬆️ Press E or tap RAISE to pop your tile up (40 coins)", "🏆 Get to the middle and survive every phase!", "🎁 Grab falling crates for boosts!", "💣 Hot Potato: touch someone to pass the bomb!" }
-			info.Text = string.format("%s%d climber%s ready  •  %s", if state.Theme then state.Theme .. "  •  " else "", state.Queued, if state.Queued == 1 then "" else "s", tips[math.floor(t / 2.5) % #tips + 1])
+			-- No rotating tips here: tips only come when you're knocked out (the "why you fell" line).
+			info.Text = string.format("%s%d climber%s ready", if state.Theme then state.Theme .. "  •  " else "", state.Queued, if state.Queued == 1 then "" else "s")
 			if secs <= 3 and secs > 0 and secs ~= lastBeep then
 				lastBeep = secs
 				play("Beep")

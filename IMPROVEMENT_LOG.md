@@ -3,6 +3,26 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 80. Tips only when you lose (owner's request)
+
+**Why.** The owner asked for fewer tips, shown only when a player loses.
+
+**Removed.**
+- First-round coach cards ("NEW HERE? TIP 1 / 6", one every 5 s through a new player's first round).
+- The rotating tips on the lobby countdown line (shove, spin, bubbles, red tiles, raise, crates, hot potato). The
+  line now reads just the world and "N climbers ready".
+- "⏳ Shoves start when the floor moves!" (#71). Early shoves are still blocked, just silently.
+- The lava gems hint 25 s after joining (`GemHintAfter`).
+
+**Kept.** The "why you fell" line on every knockout (it already says how to avoid it next time), and direct replies
+to something you did (e.g. "Stand on a solid tile to raise it"). The `Tutorial` attribute still marks a player's
+first round, for the onboarding funnel.
+
+**Verified.** Solo Studio playtest, every notice logged for 75 s across three rounds: the countdown line showed no
+tips, a punch 2.9 s before the floor moved gave no notice, no gem hint, and each knockout gave one tip ("Your tile
+crumbled from standing still. Keep moving!"). Studio copies match the repo (client 123216 / 175067866, service
+187584 / 622346687); console clean.
+
 ## 79. Music that fits the volcano (owner's request)
 
 **Why.** The owner asked for free, licensed, public music that fits the theme. The old track, APM's "Take Me Higher

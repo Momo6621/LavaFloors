@@ -28,7 +28,8 @@ Jumps are forgiving: a jump pressed up to 0.2 s after your tile drops away (or y
 pressed up to 0.12 s before you land jumps as soon as you touch down. One jump per landing, and not right after a
 shove, so shoves still land (`COYOTE` / `BUFFER` in SkySproutLavaClient).
 
-When you fall, a short line says why and how to avoid it next time (shoved, your tile crumbled from standing still,
+Tips only come when you lose (owner's call): there are no coach cards, lobby tips or hint pop-ups. When you fall, a
+short line says why and how to avoid it next time (shoved, your tile crumbled from standing still,
 a tile dropped away, the edge was left behind, the hot potato, or you slipped). If you fall while others are still going, the camera swings out to spectate the floor until the round ends; the
 ◀ ▶ buttons switch to following any climber still in the round, players or bots. On a controller, L1 / R1 switch
 who you follow and X sends the strawberry gift; when the twist vote opens, the selection starts on the first option
@@ -119,8 +120,7 @@ Progression and live-ops:
   a round pillar, a fork where one stone is cracked (⚠, it drops a moment after you land), a narrow beam, a step
   up and a second fork. Falling in sends you back to the start; the finish sign shows the server's fastest run. No coins.
 - Lava gems: 5 glowing gems are hidden around the lobby, the Warm-up Hop and the island. Each pays 25 coins once per
-  account, and the last one pays 100 more. A hint comes about 25 s after joining, and gems you've found disappear
-  for you. Saved as `Gems` in the profile; positions and coins are `Gems*` in CFG.
+  account, and the last one pays 100 more. Gems you've found disappear for you. Saved as `Gems` in the profile; positions and coins are `Gems*` in CFG.
 - 📸 Share: after you escape or survive, a Share pill on the result card takes a screenshot and opens Roblox's own
   share sheet with an invite link to the game (CaptureService). It's hidden for players whose settings don't allow
   content sharing, and the card stays up 8 s so there's time to tap it.

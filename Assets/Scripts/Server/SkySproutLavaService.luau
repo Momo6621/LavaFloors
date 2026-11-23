@@ -132,7 +132,6 @@ local CFG = {
 	GemCoins = 25,
 	GemAllCoins = 100,
 	GemRadius = 5, -- studs from your root to the gem centre
-	GemHintAfter = 25, -- seconds after joining, one hint that gems are hidden (skipped once all are found)
 	-- Backdrop volcano models (Creator Store) ship heavy emitters: one far cone ran 500 fire particles a second. They
 	-- sit 400+ studs away, mostly behind the crater wall, so each emitter is capped at this many live particles
 	-- (rate x lifetime) to spare low-end phones.
@@ -2763,8 +2762,8 @@ local function shoveImpact(p: Player, victim: Player?, at: Vector3)
 end
 
 -- Fair starts: no shoves during the get-ready seconds before the floor moves (so nobody is out before the round
--- begins), and a climber who just landed on the grid can't be shoved for JoinGrace seconds.
-local toldNoShove: { [Player]: number } = setmetatable({}, { __mode = "k" }) :: any -- RoundId we last told them in
+-- begins), and a climber who just landed on the grid can't be shoved for JoinGrace seconds. No notice for the first:
+-- tips only come when you're knocked out.
 local function shove(p: Player)
 	local r = L.Runners[p]
 	local me = root(p)
@@ -2773,10 +2772,6 @@ local function shove(p: Player)
 	end
 	local start = tower and tower:GetAttribute("Start")
 	if type(start) == "number" and now() < start then
-		if toldNoShove[p] ~= L.RoundId then
-			toldNoShove[p] = L.RoundId
-			tell(p, "⏳ Shoves start when the floor moves!")
-		end
 		return
 	end
 	local t = os.clock()
@@ -4717,7 +4712,6 @@ local function gemList(d: any): (string, number)
 end
 
 local function gemLoop()
-	local seen: { [Player]: number } = setmetatable({}, { __mode = "k" }) :: any
 	while true do
 		task.wait(0.25)
 		for _, p in Players:GetPlayers() do
@@ -4728,14 +4722,6 @@ local function gemLoop()
 				local list, found = gemList(d)
 				if p:GetAttribute("LavaGems") == nil then
 					p:SetAttribute("LavaGems", list)
-				end
-				if not seen[p] then
-					seen[p] = os.clock()
-				elseif seen[p] > 0 and os.clock() - seen[p] >= CFG.GemHintAfter then
-					seen[p] = 0
-					if found < #CFG.Gems then
-						tell(p, string.format("💎 %d lava gems are hidden around the volcano and the island. Can you find them all?", #CFG.Gems - found))
-					end
 				end
 				for i, at in CFG.Gems do
 					local id = "G" .. i
@@ -5133,7 +5119,7 @@ function L.Start(arena: any, remote: RemoteEvent, stats: (Player) -> (), notice:
 			local d = waitData(p)
 			if d then
 				pushChallenges(p)
-				p:SetAttribute("Tutorial", d.TutorialDone ~= true) -- first-round coach cards for new players
+				p:SetAttribute("Tutorial", d.TutorialDone ~= true) -- still in their first round (no coach cards any more)
 				p:SetAttribute("BestHeight", tonumber(d.BestHeight) or 0) -- the 🏅 marker on the climb meter
 				p:SetAttribute("WinEmote", table.find(CFG.WinEmotes, d.WinEmote) and d.WinEmote or "Cheer")
 				p:SetAttribute("MusicOff", d.MusicOff == true)
