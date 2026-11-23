@@ -2856,6 +2856,9 @@ local function knockoutReason(r: Runner): string
 		return "💣 The hot potato blew up on you. Pass it on quickly!"
 	end
 	if r.shovedAt and t - r.shovedAt < CFG.ReasonWindow then
+		if L.Mutator.Id == "Magnet" then -- 🧲 Magnet Hands (#115): shoves pull, so say so (#127)
+			return "🧲 " .. (r.shovedBy or "Someone") .. " pulled you off. Keep away from the edges!"
+		end
 		return "💥 " .. (r.shovedBy or "Someone") .. " shoved you off. Keep away from the edges!"
 	end
 	local grid = tower

@@ -3,6 +3,26 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 127. Two-player check of Magnet Hands and knockout credit (one wording fix)
+
+**Why.** #115 (Magnet Hands) and #119 (knockout credit) could only be tested against bots solo. A first 2-player
+attempt failed: every Studio test player counts as new, so the first-round bubble shield (#83) blocked the shove.
+
+**Checked.** A 2-player Studio test with Magnet Hands forced and a temporary Studio-only copy showing every
+challenge. Player1's client waited until Player2's bubble was gone, stood 3.5 studs away facing them, and shoved.
+Player2's client logged the shove it received, then dropped itself into the lava to test the credit.
+- Pull: Player2 was launched straight toward Player1 (direction match 1.00, 66 studs/s), with "🧲 Player1 pulled you!".
+- Credit: Player1's "Knock 2 climbers off the floor" went 0 → 1 when Player2 was scorched right after the pull.
+- Found: Player2's "why you fell" tip said "💥 Player1 shoved you off" in a Magnet round.
+
+**Fixed.** SkySproutLavaService `knockoutReason`: in a Magnet Hands round the shove reason reads "🧲 X pulled you off.
+Keep away from the edges!". Re-run of the same 2-player test: the tip showed the new wording, and the credit went 0 → 1
+again.
+
+**Verified.** Lints pass. The Studio copy matches the repo (207452 bytes, hash 111693336) and compiles, with the
+temporary copy restored and the force attribute cleared. Server console clean in both runs. Still untested: an escape
+party with three real crowned players (#113).
+
 ## 126. The whole HUD follows the world theme, not just the titles (owner's request)
 
 **Why.** The owner: "the UI color still doesnt match the theme". #106 only recoloured the title text. The panel
