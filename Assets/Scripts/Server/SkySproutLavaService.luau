@@ -54,6 +54,7 @@ local CFG = {
 	PetOffset = Vector3.new(2, 1.5, 0.8),
 	RoundWalkSpeed = 24,
 	SpeedRushWalkSpeed = 30,
+	BouncyJumpPower = 58, -- 🦘 Bouncy twist: everyone's round jump (about 8.6 studs instead of 5.9; #99)
 	BigHeadScale = 1.75, -- Big Heads twist: head size multiplier (just a look; bodies, speed and jumps stay the same)
 
 	-- Lava
@@ -285,6 +286,7 @@ local MUTATORS: { Mutator } = {
 	{ Id = "BigHeads", Name = "🎈 Big Heads", Weight = 2 },
 	{ Id = "MegaShove", Name = "💥 Mega Shoves", Weight = 2 },
 	{ Id = "QuickCrumble", Name = "⚡ Quick Crumble", Weight = 1 },
+	{ Id = "Bouncy", Name = "🦘 Bouncy", Weight = 2 }, -- everyone jumps higher (CFG.BouncyJumpPower, #99)
 }
 -- Twist vote: when a round ends everyone gets a few twists to pick from; the most votes wins (ties and no votes are
 -- settled at random among the options).
@@ -1937,6 +1939,10 @@ local function baseWalkSpeed(): number
 	return if L.Mutator.Id == "SpeedRush" then CFG.SpeedRushWalkSpeed else CFG.RoundWalkSpeed
 end
 
+local function baseJumpPower(): number
+	return if L.Mutator.Id == "Bouncy" then CFG.BouncyJumpPower else CFG.RoundJumpPower
+end
+
 local function restoreJump(hum: Humanoid)
 	local base = hum:GetAttribute("LavaBaseJump")
 	if type(base) == "number" then
@@ -2148,14 +2154,14 @@ local function applyBoost(p: Player, r: Runner, boost: Boost, at: Vector3)
 		tell(p, "⚡ SPEED BOOST for " .. CFG.SpeedTime .. "s, go go go!")
 	elseif boost.Id == "Jump" and hum then
 		r.jumpUntil = now() + CFG.JumpTime
-		setJump(hum, CFG.JumpBoostPower)
+		setJump(hum, math.max(CFG.JumpBoostPower, baseJumpPower() + 12)) -- still a boost in a Bouncy round
 		local jumpUntil = r.jumpUntil
 		hum:SetAttribute("LavaJumpUntil", jumpUntil)
 		task.delay(CFG.JumpTime, function()
 			if hum.Parent and hum:GetAttribute("LavaJumpUntil") == jumpUntil then
 				hum:SetAttribute("LavaJumpUntil", nil)
 				if p:GetAttribute("ArenaMode") == "LavaRush" then
-					setJump(hum, CFG.RoundJumpPower)
+					setJump(hum, baseJumpPower())
 				else
 					restoreJump(hum)
 				end
@@ -2739,7 +2745,7 @@ local function enter(p: Player): boolean
 	local hum = p.Character and p.Character:FindFirstChildOfClass("Humanoid")
 	if hum then
 		hum.WalkSpeed = baseWalkSpeed()
-		setJump(hum, CFG.RoundJumpPower)
+		setJump(hum, baseJumpPower())
 	end
 	if L.Mutator.Id == "BigHeads" then
 		setBigHead(p, true)

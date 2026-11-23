@@ -3,6 +3,22 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 99. 🦘 Bouncy twist
+
+**Why.** Feature loop, second feature. Twists are the game's main source of round-to-round variety, and the twist
+vote works best with plenty to choose from. Big bouncy jumps are an easy, readable thrill for kids, with no new art
+and no unfairness: everyone gets the same jump.
+
+**Built.** SkySproutLavaService: a new twist `{ Id = "Bouncy", Name = "🦘 Bouncy", Weight = 2 }`. A new
+`baseJumpPower()` returns `BouncyJumpPower` (58, about 8.6 studs) in Bouncy rounds and `RoundJumpPower` (48, about 5.9)
+otherwise. `enter` and the end of a super-jump boost use it, and the boost itself is now
+`max(JumpBoostPower, baseJumpPower() + 12)`, so a super-jump pickup still lifts you higher in a Bouncy round (70).
+
+**Verified.** Lints pass. The Studio copy matches the repo (196990 bytes, hash 377645468) and compiles. Solo Studio
+playtest with Bouncy forced: across 7 round entries (including phase-1 drop-backs) the climber's JumpPower was 58,
+and it was back to the lobby's 40 after each knockout. Server and client consoles clean; no test attributes left.
+Not tested: the super-jump pickup in a Bouncy round (the 70 comes from the one-line max above).
+
 ## 98. 🐾 Buddy Collector title and a "lost buddy" daily challenge
 
 **Why.** First feature of the owner's "loop and add a bunch of features" run. The theme buddies (#97) are a set of
