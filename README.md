@@ -87,7 +87,8 @@ the workspace attribute `StudioFakeFriends` makes every test player a friend, an
 
 Round extras:
 - Final showdown: when two climbers (or two Duos teams) are left the lava surges and shoves hit harder.
-- Twist vote: at the end of a round everyone votes on one of three twists for the next round.
+- Twist vote: at the end of a round everyone votes on one of three twists for the next round. Half the time the third
+  choice is 🎲 Surprise!: if it wins, the next twist is one that wasn't on the ballot, kept secret until the countdown.
 - Bots fill rounds that start with 1-3 real climbers (up to 4, labelled with a robot); they hop between safe tiles,
   fall with the floor or the lava and can be shoved off. If no real climbers are left, standing bots win.
   Every bot win in a row makes them a little clumsier (`BotEase`, up to +0.30 mistake chance); a player win

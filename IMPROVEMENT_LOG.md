@@ -3,6 +3,25 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 112. 🎲 Surprise! in the twist vote
+
+**Why.** Feature loop. Kids love a mystery box. The vote always showed three named twists, so the twists nobody
+picks (Shield Party, Quick Crumble) rarely came up, and there was no thrill of the unknown. A surprise option adds
+that thrill at no cost to fairness: everyone gets the same twist, and it's revealed before the round starts.
+
+**Built.** SkySproutLavaService: with CFG.SurpriseChance (0.5) the last of the three vote slots becomes "🎲 Surprise!".
+If it wins, the next twist is drawn from the twists that weren't on the ballot, never Classic or the twist just
+played. The "Next twist" notice says "🎲 Surprise!", and the countdown reveals it ("🎲 Surprise twist: 🕳️ Hole
+Party!"). If nobody is ready and the round waits, the surprise wording carries over. No client change: the vote
+card already draws whatever options the server sends, and TwistVote analytics log "Surprise" like any twist.
+
+**Verified.** Lints pass. The Studio copy matches the repo (201343 bytes, hash 629341067) and compiles. Solo
+playtest: the first 4 ballots had no Surprise (about 1 in 16 at 0.5), then 2 of the next 3 did. Voting it gave
+"🗳️ Next twist: 🎲 Surprise! (1 vote)" and then "🌅 Sunset · 🎲 Surprise twist: 🕳️ Hole Party!" and "🍭 Candy
+Crater · 🐾 Bonus round · 🎲 Surprise twist: 🕳️ Hole Party!", both twists off the ballot. The screenshot shows the
+die emoji rendering on the vote button. Console clean. Side note: the test player was opted out by the existing away
+check after idle rounds; I cleared it by hand (not a bug).
+
 ## 111. Store icon and thumbnail that pop (owner's request)
 
 **Why.** The owner asked for an icon and thumbnail a kid would pick on sight, with dynamic poses. Kids' game

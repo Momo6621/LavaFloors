@@ -26,6 +26,7 @@ local CFG = {
 	ResultsTime = 3,
 	VoteTime = 7, -- vote for the next twist, counted from when results show
 	VoteOptions = 3,
+	SurpriseChance = 0.5, -- chance the last vote slot is 🎲 Surprise! (a secret twist not on the ballot, #112)
 
 	-- Grid
 	GridSize = 9,
@@ -305,6 +306,10 @@ local MUTATORS: { Mutator } = {
 type Vote = { options: { Mutator }, votes: { [Player]: string }, endsAt: number }
 local vote: Vote? = nil
 local votedNext: Mutator? = nil
+-- 🎲 Surprise! (#112): a vote-only option. If it wins, the next twist is drawn from the ones that weren't on the
+-- ballot and stays secret until the countdown.
+local SURPRISE: Mutator = { Id = "Surprise", Name = "🎲 Surprise!", Weight = 0 }
+local surpriseNext = false
 
 local function voteCounts(v: Vote): { [string]: number }
 	local counts = {}
@@ -4385,8 +4390,10 @@ local function loop()
 			task.wait(0.5)
 		end
 		local wasVoted = votedNext ~= nil
+		local wasSurprise = surpriseNext and wasVoted
 		L.Mutator = if votedNext then votedNext else pickMutator(L.Mutator)
 		votedNext = nil
+		surpriseNext = false
 		local forcedTwist = if Run:IsStudio() then workspace:GetAttribute("StudioForceMutator") else nil
 		for _, m in MUTATORS do
 			if m.Id == forcedTwist then
@@ -4412,7 +4419,7 @@ local function loop()
 		-- so in the same notice (no extra pop-up).
 		local bonus = if theme.Id ~= "Sunset" then " · 🐾 Bonus round" else ""
 		for p in L.Queue do
-			tell(p, theme.Name .. bonus .. (if L.Mutator.Id == "Classic" then " · Lava Rush in " .. CFG.Countdown .. "s!" else " · Twist: " .. L.Mutator.Name .. "!"))
+			tell(p, theme.Name .. bonus .. (if L.Mutator.Id == "Classic" then " · Lava Rush in " .. CFG.Countdown .. "s!" else (if wasSurprise then " · 🎲 Surprise twist: " else " · Twist: ") .. L.Mutator.Name .. "!"))
 		end
 		while now() < L.EndsAt do
 			autoQueue()
@@ -4426,6 +4433,7 @@ local function loop()
 		if next(L.Queue) == nil then
 			if wasVoted then
 				votedNext = L.Mutator -- nobody was ready this time: keep the voted twist for the next round that starts
+				surpriseNext = wasSurprise
 			end
 			continue
 		end
@@ -4447,6 +4455,10 @@ local function loop()
 			local options = {}
 			while #options < CFG.VoteOptions and #pool > 0 do
 				table.insert(options, table.remove(pool, math.random(#pool)))
+			end
+			if #options == CFG.VoteOptions and #pool > 0 and math.random() < CFG.SurpriseChance then
+				table.insert(pool, options[#options]) -- the twist it replaces can still be the surprise
+				options[#options] = SURPRISE
 			end
 			local v: Vote = { options = options, votes = {}, endsAt = now() + CFG.VoteTime }
 			vote = v
@@ -4482,12 +4494,24 @@ local function loop()
 					table.insert(best, m)
 				end
 			end
-			votedNext = if #best > 0 then best[math.random(#best)] else nil
+			local winner = if #best > 0 then best[math.random(#best)] else nil
+			votedNext = winner
+			if winner == SURPRISE then
+				-- Draw the secret twist from the ones that weren't on the ballot (never Classic or this round's twist).
+				local secret = {}
+				for _, m in MUTATORS do
+					if m.Id ~= "Classic" and m.Id ~= L.Mutator.Id and not table.find(v.options, m) then
+						table.insert(secret, m)
+					end
+				end
+				votedNext = if #secret > 0 then secret[math.random(#secret)] else pickMutator(L.Mutator)
+				surpriseNext = true
+			end
 			vote = nil
-			event:FireAllClients("LavaVoteResult", { Id = votedNext and votedNext.Id, Name = votedNext and votedNext.Name, Votes = bestCount })
-			if votedNext then
+			event:FireAllClients("LavaVoteResult", { Id = winner and winner.Id, Name = winner and winner.Name, Votes = bestCount })
+			if winner then
 				for _, p in Players:GetPlayers() do
-					tell(p, "🗳️ Next twist: " .. votedNext.Name .. (if bestCount > 0 then " (" .. bestCount .. " vote" .. (if bestCount == 1 then "" else "s") .. ")" else ""))
+					tell(p, "🗳️ Next twist: " .. winner.Name .. (if bestCount > 0 then " (" .. bestCount .. " vote" .. (if bestCount == 1 then "" else "s") .. ")" else ""))
 				end
 			end
 		end
