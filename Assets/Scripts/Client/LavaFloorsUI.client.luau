@@ -1308,3 +1308,16 @@ event.OnClientEvent:Connect(function(kind: string, v: any)
 	end
 end)
 event:FireServer("Sync")
+-- Tell the server the game has loaded here, so it doesn't drop a slow phone into a round from the loading screen
+-- (CFG.ReadyWait). Resent until the server sets LavaReady, since a message sent before your save loads is ignored.
+task.spawn(function()
+	if not game:IsLoaded() then
+		game.Loaded:Wait()
+	end
+	local tries = 0
+	while not player:GetAttribute("LavaReady") and tries < 30 do
+		event:FireServer("LavaReady")
+		tries += 1
+		task.wait(2)
+	end
+end)

@@ -3,6 +3,32 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 88. Loaded first: no round until the game has loaded for you
+
+**Why.** The game is live now, and most kids play on phones, where loading can take many seconds. The server
+auto-queued a player as soon as their save loaded, and with one player a round starts after a 4 s countdown. So a
+kid on a slow phone could be placed in their first round while still on Roblox's loading screen. They'd lose it to
+the crumbling tiles before seeing anything, use up the first-round bubble (#83) and start a loss streak. There was no
+loading gate anywhere (no ReplicatedFirst screen, no ready signal).
+
+**Built.**
+- LavaFloorsUI: once `game:IsLoaded()`, the client sends "LavaReady", resending every 2 s (up to 30 times) until the
+  server confirms by setting the player's `LavaReady` attribute. A message sent before the save loads is ignored by
+  the arena's handler, hence the resend.
+- SkySproutLavaService: `autoQueue` needs `LavaReady`. A fallback sets it `ReadyWait` (20 s) after joining, also for
+  players already in the server when the service starts, so nobody can get stuck out. Joining by hand is unchanged.
+
+**Verified.** Lints pass. The Studio copies match the repo (lava service 190621 bytes, hash 242487548; LavaFloorsUI
+54583 bytes, hash 75811917) and compile. Solo Studio playtests:
+- Normal: `LavaReady` was set 0.1 s into the check and the player entered a round 4.3 s later.
+- Gate: with `LavaReady` cleared on the server, the player sat out the next 20 s (no round started); once it was set
+  again they were in a round 5.0 s later.
+- Fallback: with the client's send temporarily disabled (Studio copy only), `LavaReady` came from the fallback
+  17.6 s after the check began (about 20 s after joining) and the round followed at 22.5 s.
+Console clean. Test edits removed and re-hashed; no test attributes left.
+
+**Not tested:** a real slow phone. Studio loads instantly, so the real-world wait is unmeasured.
+
 ## 87. Fix: a shield orb cut the underdog bubble short
 
 **Why.** Found in a Studio playtest while trying to check the open "not verified" items from #12 and #14. In a

@@ -139,6 +139,10 @@ local CFG = {
 	-- Away: seconds without any input before a player sits out the automatic rounds (published as the workspace
 	-- attribute LavaAwayAfter for the client). Any input brings them back.
 	AwayAfter = 120,
+	-- Loaded first: a new player joins the automatic rounds only once their client says the game has loaded
+	-- ("LavaReady"), or after ReadyWait seconds if that never arrives, so a slow phone isn't dropped into a round
+	-- (and its first-round bubble) while it's still on the loading screen.
+	ReadyWait = 20,
 	-- Underdog shield: knocked out UnderdogAfter rounds in a row (in this server), you start the next round in a
 	-- bubble shield for UnderdogShield seconds. A small catch-up for kids who are still learning; resets when you survive.
 	UnderdogAfter = 3,
@@ -4183,7 +4187,7 @@ local function autoQueue()
 	end
 	for _, p in Players:GetPlayers() do
 		local r = L.Runners[p]
-		if not L.Queue[p] and not (r and r.alive) and not p:GetAttribute("LavaOptOut") and data(p) and free(p) then
+		if not L.Queue[p] and not (r and r.alive) and not p:GetAttribute("LavaOptOut") and p:GetAttribute("LavaReady") and data(p) and free(p) then
 			L.Queue[p] = true
 			personal(p)
 		end
@@ -4473,6 +4477,10 @@ end
 -- Public
 
 function L.HandleAction(p: Player, action: unknown, _value: unknown): boolean
+	if action == "LavaReady" then
+		p:SetAttribute("LavaReady", true) -- see CFG.ReadyWait
+		return true
+	end
 	if action == "LavaJoin" then
 		p:SetAttribute("LavaAway", nil)
 		toggleJoin(p)
@@ -4982,13 +4990,25 @@ function L.Start(arena: any, remote: RemoteEvent, stats: (Player) -> (), notice:
 		L.Queue[p] = nil
 		L.Runners[p] = nil
 	end)
+	-- Fallback for CFG.ReadyWait: join the rounds anyway if the client's "LavaReady" never arrives.
+	local function readyLater(p: Player)
+		task.delay(CFG.ReadyWait, function()
+			if p.Parent and not p:GetAttribute("LavaReady") then
+				p:SetAttribute("LavaReady", true)
+			end
+		end)
+	end
 	Players.PlayerAdded:Connect(function(p)
 		task.delay(3, function()
 			if p.Parent then
 				broadcast()
 			end
 		end)
+		readyLater(p)
 	end)
+	for _, p in Players:GetPlayers() do
+		readyLater(p)
+	end
 
 	-- Friend deal. Roblox fills Player:GetJoinData().ReferredByPlayerId when someone joins from an invite (the server
 	-- reads it, so clients can't fake it). The new player gets a one-time welcome gift; the inviter gets coins once
