@@ -264,6 +264,9 @@ local CFG = {
 		{ Id = "Phase", Text = "Reach phase %d", Goal = 3, Reward = 60 },
 		{ Id = "Shoves", Text = "Land %d shoves", Goal = 6, Reward = 50 },
 		{ Id = "Buddy", Text = "Grab %d lost buddy", Goal = 1, Reward = 60 }, -- the theme buddy in a bonus round (#98)
+		{ Id = "Cheer", Text = "Cheer %d times from the sidelines", Goal = 3, Reward = 30 }, -- (#109)
+		{ Id = "Gift", Text = "Send %d strawberry gift", Goal = 1, Reward = 40 }, -- (#109)
+		{ Id = "Shield", Text = "Grab %d shield orbs", Goal = 2, Reward = 50 }, -- (#109)
 	},
 
 	-- Keep moving
@@ -2007,6 +2010,7 @@ local function makeShield(parent: Instance, position: Vector3, stepIndex: number
 		take = function(p: Player, r: any)
 			local at = pickupPosition(orb)
 			orb:Destroy()
+			challenge(p, "Shield", 1)
 			if p.Character then
 				grantShield(p, p.Character, r, at)
 			end
@@ -4744,6 +4748,7 @@ function L.HandleAction(p: Player, action: unknown, _value: unknown): boolean
 		local emoji = if i and i % 1 == 0 then CFG.Cheers[i] else nil
 		if L.Phase == "Round" and not stillIn and emoji and now() >= (L.LastCheer[p] or 0) + CFG.CheerCooldown then
 			L.LastCheer[p] = now()
+			challenge(p, "Cheer", 1)
 			for _, other in Players:GetPlayers() do
 				event:FireClient(other, "LavaCheer", { Name = p.DisplayName, Emoji = emoji })
 			end
@@ -4812,6 +4817,7 @@ function L.HandleAction(p: Player, action: unknown, _value: unknown): boolean
 		local tr = if target then L.Runners[target] else nil
 		if L.Phase == "Round" and not stillIn and not L.Gifted[p] and target and target ~= p and tr and tr.alive and not tr.crowned and target:GetAttribute("ArenaMode") == "LavaRush" then
 			L.Gifted[p] = true
+			challenge(p, "Gift", 1)
 			tr.embers += CFG.GiftBerries
 			local gd = data(p)
 			if gd then

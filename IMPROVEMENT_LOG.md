@@ -3,6 +3,21 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 109. Three new daily challenges: cheer, gift, shield orbs
+
+**Why.** Feature loop. The daily pool had 8 challenges, so the same three came round often, and none rewarded
+the kind, social things knocked-out kids can do. Cheering and gifting give them something to do on the sidelines.
+
+**Built.** SkySproutLavaService `Challenges`: "Cheer %d times from the sidelines" (3, 30 coins), "Send %d strawberry
+gift" (1, 40) and "Grab %d shield orbs" (2, 50). They're counted where cheers are sent (after the cheer cooldown),
+where a gift goes through, and where a shield orb is picked up. The pool is now 11; three a day as before.
+
+**Verified.** Lints pass. The Studio copy matches the repo (200085 bytes, hash 725752901) and compiles. 2-player
+Studio test with all 11 challenges active (`ChallengesPerDay` 11 in the Studio copy only) and Shield Party forced:
+Player1 grabbed two shield orbs ("Challenge complete: Grab 2 shield orbs! +50"), sat out the next round, cheered three
+times ("Cheer 3 times … +30") and sent Player2 a strawberry ("Send 1 strawberry gift! +40"; "🍓 Sent to Player2!").
+Server console clean; test ended; test value restored and re-hashed.
+
 ## 106. Title colours follow the world theme (owner's request)
 
 **Why.** The owner asked for "the font color [to] match the themes". The HUD titles were always gold-to-orange, so in
