@@ -53,7 +53,8 @@ Inferno, Moon Banana in Purple Moon, Star Buddy in Starry Night, Candy Dragon in
 glow. The first climber to grab it keeps it and it starts following them; grabbing one you already own pays 40 coins
 (`BuddyFindCoins`). Their shop cards say where to find them. Finding all four unlocks the title 🐾 Buddy Collector,
 and "Grab 1 lost buddy" is one of the daily challenges (so are "Cheer 3 times from the sidelines", "Send 1 strawberry
-gift", "Grab 2 shield orbs", "Survive 2 twist rounds" and "Vote for the next twist 3 times"). Being crowned in 5 different twists unlocks 🌀 Twist Tamer
+gift", "Grab 2 shield orbs", "Survive 2 twist rounds", "Vote for the next twist 3 times" and "Knock 2 climbers off the floor", where
+bots count too). Being crowned in 5 different twists unlocks 🌀 Twist Tamer
 (`TitleTwists`, saved as `TwistWins`), and being part of 3 escape parties unlocks 🤝 Team Player (`TitleParties`, saved
 as `EscapeParties`).
 

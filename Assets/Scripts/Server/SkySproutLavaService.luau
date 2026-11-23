@@ -281,6 +281,7 @@ local CFG = {
 		{ Id = "Shield", Text = "Grab %d shield orbs", Goal = 2, Reward = 50 }, -- (#109)
 		{ Id = "TwistSurvive", Text = "Survive %d twist rounds", Goal = 2, Reward = 60 }, -- any twist but Classic (#116)
 		{ Id = "Vote", Text = "Vote for the next twist %d times", Goal = 3, Reward = 20 }, -- once per ballot (#116)
+		{ Id = "Knockouts", Text = "Knock %d climbers off the floor", Goal = 2, Reward = 50 }, -- bots count too (#119)
 	},
 
 	-- Keep moving
@@ -379,6 +380,7 @@ type Runner = {
 	offGridSince: number?,
 	-- What last happened to this climber, for the "why you fell" line (knockoutReason).
 	shovedBy: string?,
+	shovedByPlayer: Player?, -- who to credit for the "Knockouts" challenge (#119)
 	shovedAt: number?,
 	blastAt: number?,
 	lastRow: number?,
@@ -2873,6 +2875,11 @@ local function scorch(p: Player, r: Runner)
 	event:FireClient(p, "LavaFX", { Kind = "Scorched" })
 	tell(p, if lost > 0 then string.format("🔥 SCORCHED! You dropped %d ember%s.", lost, if lost == 1 then "" else "s") else "🔥 SCORCHED! Watch the lava…")
 	tell(p, knockoutReason(r))
+	-- Knockouts challenge (#119): credit whoever shoved this climber, if it was recent enough to be why they fell.
+	local shover = r.shovedByPlayer
+	if shover and shover ~= p and shover.Parent and r.shovedAt and now() - r.shovedAt < CFG.ReasonWindow then
+		challenge(shover, "Knockouts", 1)
+	end
 	if p:GetAttribute("ArenaMode") == "LavaRush" then
 		p:SetAttribute("ArenaMode", "Lobby")
 		-- Back to lobby movement, as release() does at round end; a phase-1 drop-back sets round values again.
@@ -3011,7 +3018,7 @@ local function shove(p: Player)
 		local speed = math.min(CFG.ShoveSpeed * power, CFG.ShoveMax)
 		event:FireClient(best, "LavaShove", dir * speed + Vector3.new(0, CFG.ShoveLift, 0))
 		if target then
-			target.shovedBy, target.shovedAt = p.DisplayName, now()
+			target.shovedBy, target.shovedByPlayer, target.shovedAt = p.DisplayName, p, now()
 		end
 		shoveImpact(p, best, them.Position)
 		tell(best, if magnet then "🧲 " .. p.DisplayName .. " pulled you!" else "💥 " .. p.DisplayName .. " shoved you!")
@@ -4056,6 +4063,7 @@ local function shoveBot(p: Player, b: Bot, dir: Vector3)
 		b.nextThink = now() + 0.6
 	else
 		killBot(b, (if magnet then "got pulled into the lava by " else "got shoved into the lava by ") .. p.DisplayName .. "!")
+		challenge(p, "Knockouts", 1)
 	end
 end
 

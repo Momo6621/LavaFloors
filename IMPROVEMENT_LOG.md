@@ -3,6 +3,23 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 119. Daily challenge: knock 2 climbers off the floor
+
+**Why.** Feature loop. "Land 6 shoves" counts every bump, but the moment kids actually cheer for is sending someone
+into the lava. Bots count, so a kid can finish it without ever knocking out a friend.
+
+**Built.** SkySproutLavaService: the challenge "Knock 2 climbers off the floor" (50 coins). A bot shoved or pulled
+straight into the lava (`shoveBot`) counts for the shover. For players, `shove` now also remembers who shoved you
+(`shovedByPlayer`), and `scorch` credits them when you go out within `ReasonWindow` of the shove: the same window
+that makes the "why you fell" line say "X shoved you off". Pool: 14 challenges.
+
+**Verified.** Lints pass. The Studio copy matches the repo (204584 bytes, hash 510709179) and compiles. Solo
+playtest with Mega Shoves forced, in a temporary Studio-only copy that showed every challenge: a client script
+shoved the nearest bot repeatedly. "🤖 Ember got shoved into the lava" took Knockouts to 1/2; "🤖 Comet got shoved
+into the lava" took it to 2/2 with "📋 Challenge complete: Knock 2 climbers off the floor! +50 coins". The copy was
+restored and re-hashed; the force attribute was cleared. Console clean. Not tested: the player-vs-player credit, which
+needs two players. Multiplayer windows were skipped again because the Riot Client was running.
+
 ## 118. Bots named for the world they're in
 
 **Why.** Feature loop. The five worlds look completely different (mint tiles over pink lava in Candy Crater, icy blue
