@@ -3,7 +3,7 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
-## 84. Fewer "bubble shield blocked your shove" notices (not playtested yet)
+## 84. Fewer "bubble shield blocked your shove" notices
 
 **Why.** With first-round and underdog bubbles common, shoving a shielded kid repeatedly sent the shover the same
 notice every time, against the owner's "less chatter" direction (#80).
@@ -12,8 +12,9 @@ notice every time, against the owner's "less chatter" direction (#80).
 once every `BlockedNoticeGap` (6 s) per shover and target.
 
 **Verified.** Lint and the local-limit check pass; the Studio copy matches the repo (188852 bytes, hash 960709853)
-and compiles; server console clean. The 2-player throttle test was inconclusive (the target had no bubble when the
-punches landed), so the behaviour itself still needs a playtest.
+and compiles; server console clean. The first 2-player test was inconclusive (the target had no bubble when the
+punches landed). Retest: Player2 got the first-round bubble for a fresh round; Player1 shoved them 9 times in 9 s:
+8 blue "Blocked" flashes, and the notice only at 1.1 s and 7.3 s (6 s apart). Server console clean.
 
 ## 83. First-round bubble for new players
 
