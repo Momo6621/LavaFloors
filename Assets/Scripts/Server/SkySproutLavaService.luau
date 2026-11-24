@@ -1047,6 +1047,42 @@ local function buildArena()
 				end
 			end
 		end
+		-- Colonnade (#159): a slender column with a glowing orb wherever a long spoke meets the outer ring, skipping any
+		-- spot within a few studs of a lava gem (they sit on the deck's edge) or the Warm-up Hop's goal.
+		do
+			local toTower = (Vector3.new(c.X, 0, c.Z) - Vector3.new(plazaPos.X, 0, plazaPos.Z)).Unit
+			local side = Vector3.new(-toTower.Z, 0, toTower.X)
+			local radius = CFG.DeckRings[#CFG.DeckRings]
+			local keepClear = { plazaPos + side * (CFG.HopFrom + 37) } -- the hop's goal pad
+			for _, deg in { 140, 195, 250 } do -- the three edge gems (buildGems)
+				local g = math.rad(deg)
+				table.insert(keepClear, plazaPos + (toTower * math.cos(g) + side * math.sin(g)) * (CFG.DeckRadius - 8))
+			end
+			for k = 0, CFG.DeckSpokes - 1, 2 do
+				local a = k / CFG.DeckSpokes * math.pi * 2
+				local foot = Vector3.new(plazaPos.X + math.cos(a) * radius, plazaPos.Y, plazaPos.Z + math.sin(a) * radius)
+				local clear = true
+				for _, spot in keepClear do
+					if (Vector3.new(spot.X, 0, spot.Z) - Vector3.new(foot.X, 0, foot.Z)).Magnitude < 8 then
+						clear = false
+					end
+				end
+				if clear then
+					part(deck, "ColumnBase", Vector3.new(3, 0.8, 3), CFrame.new(foot + Vector3.new(0, 0.4, 0)) * CFrame.Angles(0, a, 0), Color3.fromRGB(70, 56, 54), Enum.Material.Basalt)
+					part(deck, "Column", Vector3.new(1.6, 9, 1.6), CFrame.new(foot + Vector3.new(0, 5.3, 0)) * CFrame.Angles(0, a, 0), Color3.fromRGB(78, 64, 60), Enum.Material.Basalt)
+					local cap = part(deck, "ColumnCap", Vector3.new(2.4, 0.5, 2.4), CFrame.new(foot + Vector3.new(0, 10, 0)) * CFrame.Angles(0, a + math.rad(45), 0), Color3.fromRGB(255, 120, 40), Enum.Material.Neon)
+					cap.CanCollide, cap.CanQuery, cap.CanTouch = false, false, false
+					local orb = part(deck, "ColumnOrb", Vector3.new(1.8, 1.8, 1.8), CFrame.new(foot + Vector3.new(0, 11.4, 0)), Color3.fromRGB(255, 120, 40), Enum.Material.Neon)
+					orb.Shape = Enum.PartType.Ball
+					orb.CanCollide, orb.CanQuery, orb.CanTouch, orb.CastShadow = false, false, false, false
+					local light = Instance.new("PointLight")
+					light.Range = 14
+					light.Brightness = 1.2
+					light.Color = Color3.fromRGB(255, 150, 80)
+					light.Parent = orb
+				end
+			end
+		end
 		-- Gateway arch (#156): two stone pillars and a half-round arch of wedge stones with a glowing keystone and trim,
 		-- standing between the plaza and the force field on the island side, so the walk to the edge frames the island.
 		do

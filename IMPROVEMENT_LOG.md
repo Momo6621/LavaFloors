@@ -3,6 +3,20 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 159. A colonnade around the hub deck
+
+**Why.** Architecture again: the compass rose (#155) gave the floor a pattern, but the deck still had nothing standing
+around its edge to echo it.
+
+**Built.** SkySproutLavaService deck block: wherever a long spoke meets the outer ring (every 45°, radius 64) stands a
+basalt base, a 9-stud column, a neon cap turned 45° and a floating neon orb with a soft point light. Cap and orb are
+in the lava colour, so they follow the theme. Columns collide; the cap and orb don't. A spot within 8 studs of the
+Warm-up Hop's goal pad or one of the three edge gems is skipped, so nothing hides a gem or blocks the hop's finish.
+
+**Verified.** Lints pass. The Studio copy matches the repo (240054 bytes, hash 740632139) and compiles. Playtest: 8
+columns built. Their nearest neighbours were 10-40 studs away (closest: the hop's goal at 10, an arch pillar at 18),
+and no gem was close. Not checked: a screenshot (Studio was in the background).
+
 ## 158. Three new gloves to earn: Jade, Frost and Obsidian
 
 **Why.** Content for the game to take off. Coins pile up once you own the gloves you like, and the most expensive was

@@ -18,6 +18,8 @@ The deck floor is a compass rose: four glowing rings in the round's lava colour,
 and diamond markers where the long spokes cross the rings, all flush and walk-through (`CFG.DeckRings`, #155).
 On the island side a stone gateway arch (two pillars, 13 wedge stones, a glowing keystone and inner edge in the theme
 colour) frames the walk to the edge and the island below (`CFG.DeckArch`, #156).
+Eight slender basalt columns, each with a glowing orb and lamp in the theme colour, stand where the long spokes meet the
+outer ring (any spot near a lava gem or the Warm-up Hop's goal is left open, #159).
 Behind the plaza a gold-framed try-on mirror stands on a glass stage: step on it and the shop opens with a TRY
 button on every glove, hat and buddy, so you can wear any of them for 30 seconds for free (nothing is saved or
 bought) while the camera looks out of the mirror at you (#140).
