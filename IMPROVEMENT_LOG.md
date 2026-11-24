@@ -3,6 +3,26 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 140. A try-on mirror on the hub deck (owner's request, hub stage 3)
+
+**Why.** The owner asked for a hub "to wait and look at costumes and stuff", and picked a try-on mirror.
+
+**Built.**
+- SkySproutLavaService: a glass stage behind the plaza (36 studs away from the island) and a 12x15 reflective mirror
+  in a gold frame with a "✨ TRY-ON MIRROR ✨" sign. The server sets an `OnMirror` attribute on whoever stands on the
+  stage (checked every 0.3 s, never during a round). A new `LavaTryOn` action (checked: on the stage, a known glove,
+  hat or buddy id) puts that item on you for `CFG.TryOnSeconds` (30). Tried-on items live in a separate `tryOn`
+  table, so the saved profile is never touched; stepping off or the timer puts your own look back.
+- LavaFloorsUI: on the stage the shop opens with a "✨ TRY" button on every glove, hat and buddy card (Aurora too),
+  and the camera looks out of the mirror at you. Stepping off hands the camera back. No hint pop-up.
+- Kid-fair: trying is free and saves nothing; buying is still each card's own button.
+
+**Verified.** Lints pass. The Studio copies match the repo (server 224840 bytes, hash 604177101; LavaFloorsUI 67890,
+hash 945365401) and compile. Playtest (solo): on the stage OnMirror turns on, the shop opens with 27 TRY buttons,
+a Watermelon Hat, Magma Gloves and a Pineapple Buddy go on, the profile keeps the saved Hat/Skin/Pet, and stepping
+off restores the saved look about 2 s later. The 🪞 emoji draws as an empty box in Roblox, so the sign and buttons
+use ✨. Owner approved the previews. Not tested: several players on the stage at once.
+
 ## 139. A pillar of light while a round is on (owner's request, hub stage 2)
 
 **Why.** Part of the owner's hub idea: "a pillar of light sprouting on the ground to indicate that a game is taking

@@ -29,6 +29,7 @@ local CFG = {
 	-- and come back here. (#137 had it on the ground at -130.7, 0, 209; before that beside the arena at -200.7, 262.4.)
 	Beacon = Vector3.new(-110.9, 200, 193.9),
 	DeckRadius = 74, -- the hub deck: everything around the plaza (Warm-up Hop, boards, lanterns) fits within ~63 studs
+	TryOnSeconds = 30, -- try-on mirror (#140): how long a tried-on glove, hat or buddy stays on
 	MinPlayers = 1,
 	Countdown = 4,
 	ResultsTime = 3,
@@ -940,6 +941,40 @@ local function buildArena()
 			local rail = part(deck, "ForceFieldRail", Vector3.new(2 * math.pi * R / SEGMENTS + 0.4, 0.35, 0.35), CFrame.lookAt(at + Vector3.new(0, 6, 0), at + out + Vector3.new(0, 6, 0)), Color3.fromRGB(255, 150, 60), Enum.Material.Neon)
 			rail.CanCollide, rail.CanQuery, rail.CanTouch, rail.CastShadow = false, false, false, false
 		end
+		-- Try-on mirror (#140, owner's request): a stage behind the plaza (away from the island) with a tall framed
+		-- mirror. Standing on it shows TRY buttons in the shop and turns your camera to look out of the mirror at you.
+		local toIsland = (Vector3.new(c.X, 0, c.Z) - Vector3.new(plazaPos.X, 0, plazaPos.Z)).Unit
+		local stageAt = plazaPos - toIsland * 36
+		local stage = part(deck, "MirrorStage", Vector3.new(0.8, 16, 16), CFrame.new(stageAt + Vector3.new(0, 0.4, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(120, 200, 255), Enum.Material.Glass)
+		stage.Shape = Enum.PartType.Cylinder
+		stage:SetAttribute("NoTheme", true)
+		local mirrorAt = stageAt - toIsland * 10 + Vector3.new(0, 8.5, 0)
+		local facing = CFrame.lookAt(mirrorAt, Vector3.new(stageAt.X, mirrorAt.Y, stageAt.Z))
+		local glass = part(deck, "Mirror", Vector3.new(12, 15, 0.4), facing, Color3.fromRGB(200, 230, 255), Enum.Material.Glass)
+		glass.Reflectance = 0.45
+		glass.Transparency = 0.1
+		glass:SetAttribute("NoTheme", true)
+		for _, bar in { { 0, 7.8, 13, 0.8 }, { 0, -7.8, 13, 0.8 }, { 6.3, 0, 0.8, 16.4 }, { -6.3, 0, 0.8, 16.4 } } do
+			local frame = part(deck, "MirrorFrame", Vector3.new(bar[3], bar[4], 0.9), facing * CFrame.new(bar[1], bar[2], 0), Color3.fromRGB(255, 200, 70), Enum.Material.Foil)
+			frame:SetAttribute("NoTheme", true)
+		end
+		local sign = Instance.new("SurfaceGui")
+		sign.Face = Enum.NormalId.Front
+		sign.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+		sign.PixelsPerStud = 40
+		local text = Instance.new("TextLabel")
+		text.BackgroundTransparency = 1
+		text.Size = UDim2.new(1, 0, 0.16, 0)
+		text.Font = Enum.Font.LuckiestGuy
+		text.TextScaled = true
+		text.TextColor3 = Color3.fromRGB(255, 220, 120)
+		text.TextStrokeTransparency = 0
+		text.Text = "\u{2728} TRY-ON MIRROR \u{2728}"
+		text.Parent = sign
+		sign.Parent = glass
+		workspace:SetAttribute("MirrorStage", stageAt)
+		-- The mirror's point of view for the client camera: just in front of the glass, looking at someone on the stage.
+		workspace:SetAttribute("MirrorView", CFrame.lookAt(mirrorAt - Vector3.new(0, 3, 0) + toIsland * 1, Vector3.new(stageAt.X, stageAt.Y + 3.5, stageAt.Z)))
 	end
 	local plaza = part(arenaFolder, "LobbyPlaza", Vector3.new(0.6, 30, 30), CFrame.new(plazaPos + Vector3.new(0, 0.3, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(72, 54, 52), Enum.Material.Basalt)
 	plaza.Shape = Enum.PartType.Cylinder
@@ -4783,6 +4818,39 @@ local function loop()
 end
 
 -- Fruit hats (cosmetic, bought with coins in the shop).
+-- Try-on mirror (#140): items tried on at the mirror stage, per player. A preview only: the saved profile (Skin, Hat,
+-- Pet) is never touched, and clearTryOn puts the saved look back.
+local tryOn: { [Player]: any } = setmetatable({}, { __mode = "k" }) :: any
+local function paintGloves(p: Player, skinId: string?)
+	local character = p.Character
+	local gloves = character and character:FindFirstChild("ArenaGloves")
+	if not gloves then
+		return
+	end
+	local def = GameConfig.Skins[1]
+	for _, skin in GameConfig.Skins do
+		if skin.Id == skinId then
+			def = skin
+		end
+	end
+	for _, g in gloves:GetChildren() do
+		if g:IsA("BasePart") and (g.Name == "RightGlove" or g.Name == "LeftGlove") then
+			g.Color = def.Color
+			g.Material = if def.Material then (Enum.Material :: any)[def.Material] else Enum.Material.SmoothPlastic
+		end
+	end
+end
+local function clearTryOn(p: Player)
+	if not tryOn[p] then
+		return
+	end
+	tryOn[p] = nil
+	applyHat(p)
+	applyPet(p)
+	local d = data(p)
+	paintGloves(p, d and d.Skin)
+end
+
 applyHat = function(p: Player)
 	local character = p.Character
 	local head = character and character:FindFirstChild("Head")
@@ -4794,7 +4862,7 @@ applyHat = function(p: Player)
 		old:Destroy()
 	end
 	local d = data(p)
-	local id = d and d.Hat
+	local id = (tryOn[p] and tryOn[p].Hat) or (d and d.Hat)
 	if type(id) ~= "string" or id == "" or not FruitModels:FindFirstChild(id) then
 		return
 	end
@@ -4833,7 +4901,7 @@ applyPet = function(p: Player)
 		old:Destroy()
 	end
 	local d = data(p)
-	local id = d and d.Pet
+	local id = (tryOn[p] and tryOn[p].Pet) or (d and d.Pet)
 	local def = if type(id) == "string" then petDef(id) else nil
 	local modelName = if def and def.Model then def.Model else id -- theme buddies are made from another fruit
 	if type(id) ~= "string" or id == "" or type(modelName) ~= "string" or not FruitModels:FindFirstChild(modelName) then
@@ -5067,6 +5135,42 @@ function L.HandleAction(p: Player, action: unknown, _value: unknown): boolean
 		if d and type(_value) == "boolean" then
 			d.MusicOff = _value
 			p:SetAttribute("MusicOff", _value)
+		end
+		return true
+	end
+	if action == "LavaTryOn" then
+		-- Try-on mirror (#140): on the mirror stage, wear any glove, hat or buddy for TryOnSeconds. Nothing is saved or
+		-- bought; buying is still the shop's own button.
+		local v = _value
+		if p:GetAttribute("OnMirror") == true and type(v) == "table" and type(v.Id) == "string" and #v.Id <= 24 then
+			local kind, id = v.Kind, v.Id
+			local items = if kind == "Skin" then GameConfig.Skins elseif kind == "Hat" then GameConfig.Hats elseif kind == "Pet" then GameConfig.Pets else nil
+			local name: string? = nil
+			for _, item in items or {} do
+				if item.Id == id then
+					name = item.Name
+				end
+			end
+			if name then
+				local t = tryOn[p] or { token = 0 }
+				tryOn[p] = t
+				t[kind] = id
+				t.token += 1
+				local token = t.token
+				if kind == "Hat" then
+					applyHat(p)
+				elseif kind == "Pet" then
+					applyPet(p)
+				else
+					paintGloves(p, id)
+				end
+				tell(p, "\u{2728} Trying on " .. name)
+				task.delay(CFG.TryOnSeconds, function()
+					if tryOn[p] == t and t.token == token then
+						clearTryOn(p)
+					end
+				end)
+			end
 		end
 		return true
 	end
@@ -5357,6 +5461,27 @@ function L.Start(arena: any, remote: RemoteEvent, stats: (Player) -> (), notice:
 		local at = CFG.Beacon + toTower * 16
 		spawn.CFrame = CFrame.lookAt(at + Vector3.new(0, 2.5, 0), at + toTower + Vector3.new(0, 2.5, 0))
 	end
+	-- Who is on the try-on mirror stage (#140): "OnMirror" shows the TRY buttons; stepping off ends the try-on.
+	task.spawn(function()
+		while true do
+			task.wait(0.3)
+			local stageAt = workspace:GetAttribute("MirrorStage")
+			for _, p in Players:GetPlayers() do
+				local me = root(p)
+				local on = false
+				if typeof(stageAt) == "Vector3" and me and p:GetAttribute("ArenaMode") ~= "LavaRush" then
+					local flat = Vector3.new(me.Position.X - stageAt.X, 0, me.Position.Z - stageAt.Z).Magnitude
+					on = flat <= 8 and math.abs(me.Position.Y - stageAt.Y) < 7
+				end
+				if (p:GetAttribute("OnMirror") == true) ~= on then
+					p:SetAttribute("OnMirror", on)
+					if not on then
+						clearTryOn(p)
+					end
+				end
+			end
+		end
+	end)
 	-- The old travel code (SkySproutTowerService) puts every new character at the floor's "Spawn" attribute, which the
 	-- place saved by the old plaza: point it at the hub too (#138), facing the island.
 	local hubFloor = workspace.SkySprout.Floors:FindFirstChild("Floor_" .. CFG.Floor)

@@ -267,6 +267,21 @@ local function card(order: number, swatch: Color3, title: string): (Frame, TextB
 	make("UIPadding", { PaddingLeft = UDim.new(0, 6), PaddingRight = UDim.new(0, 6) }, b)
 	return f, b
 end
+-- Try-on mirror (#140): standing on the mirror stage on the hub deck shows a TRY button on every glove, hat and buddy
+-- card; the server puts the item on you for a while. Nothing is saved or bought: buying is the card's own button.
+local tryButtons: { TextButton } = {}
+local function tryButton(f: Frame, kind: string, id: string)
+	local t = button(f, "\u{2728} TRY", Color3.fromRGB(90, 170, 255), UDim2.fromOffset(64, 26))
+	t.AnchorPoint = Vector2.new(1, 0)
+	t.Position = UDim2.new(1, -6, 0, 6)
+	t.TextScaled = true
+	t.ZIndex = 4
+	t.Visible = player:GetAttribute("OnMirror") == true
+	t.Activated:Connect(function()
+		event:FireServer("LavaTryOn", { Kind = kind, Id = id })
+	end)
+	table.insert(tryButtons, t)
+end
 local function setButton(b: TextButton, text: string, color: Color3)
 	b.Text = text
 	UI.button(b, color)
@@ -302,7 +317,8 @@ end
 
 for i, s in C.Skins do
 	if not s.Premium then
-		local _, b = card(i, s.Color, s.Name)
+		local f, b = card(i, s.Color, s.Name)
+		tryButton(f, "Skin", s.Id)
 		local id = s.Id
 		b.Activated:Connect(function()
 			event:FireServer("Skin", id)
@@ -324,6 +340,7 @@ end
 local FruitModels = game.ReplicatedStorage:WaitForChild("FruitModels")
 for i, h in C.Hats do
 	local f, b = card(50 + i, h.Color, h.Name)
+	tryButton(f, "Hat", h.Id)
 	local model = FruitModels:FindFirstChild(h.Id)
 	if model then
 		local view: ViewportFrame = make("ViewportFrame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 4), Size = UDim2.fromOffset(64, 64), BackgroundTransparency = 1, ZIndex = 3 }, f)
@@ -367,6 +384,7 @@ end
 -- card says which world to find them in.
 for i, h in C.Pets or {} do
 	local f, b = card(80 + i, h.Color, "🐾 " .. h.Name)
+	tryButton(f, "Pet", h.Id)
 	local model = FruitModels:FindFirstChild(h.Model or h.Id)
 	if model then
 		local view: ViewportFrame = make("ViewportFrame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 4), Size = UDim2.fromOffset(64, 64), BackgroundTransparency = 1, ZIndex = 3 }, f)
@@ -409,7 +427,8 @@ local function price(id: number, kind: Enum.InfoType, b: TextButton, prefix: str
 	end)
 end
 if (C.PassId or 0) > 0 then
-	local _, b = card(100, Color3.fromRGB(105, 224, 255), "✨ Aurora Gloves")
+	local f, b = card(100, Color3.fromRGB(105, 224, 255), "✨ Aurora Gloves")
+	tryButton(f, "Skin", "Aurora")
 	b.Activated:Connect(function()
 		if player:GetAttribute("AuroraPass") then
 			event:FireServer("Skin", "Aurora")
@@ -1383,6 +1402,40 @@ do
 	end
 	applySaved()
 	player:GetAttributeChangedSignal("TopView"):Connect(applySaved)
+end
+
+-- Try-on mirror (#140): stepping on the mirror stage opens the shop with TRY buttons, and the camera looks out of the
+-- mirror at you (shifted so you stand left of the shop panel). Stepping off hands the camera back. No hint pop-up:
+-- the TRY buttons and the mirror's sign explain it.
+do
+	local RunService = game:GetService("RunService")
+	local function mirrorCam()
+		local view = workspace:GetAttribute("MirrorView")
+		local cam = workspace.CurrentCamera
+		if typeof(view) == "CFrame" and cam then
+			cam.CameraType = Enum.CameraType.Scriptable
+			cam.CFrame = view * CFrame.new(4.5, 0, 0)
+		end
+	end
+	local function onMirror()
+		local on = player:GetAttribute("OnMirror") == true
+		for _, t in tryButtons do
+			t.Visible = on
+		end
+		if on then
+			openPanel("")
+			shop.Visible = true
+			refreshShop()
+			RunService:BindToRenderStep("LavaMirror", Enum.RenderPriority.Camera.Value + 1, mirrorCam)
+		else
+			RunService:UnbindFromRenderStep("LavaMirror")
+			local cam = workspace.CurrentCamera
+			if cam then
+				cam.CameraType = Enum.CameraType.Custom
+			end
+		end
+	end
+	player:GetAttributeChangedSignal("OnMirror"):Connect(onMirror)
 end
 
 -- Phones and small tablets: Roblox's own buttons take the first ~216 px, so not every button fits. Below MORE_WIDTH the

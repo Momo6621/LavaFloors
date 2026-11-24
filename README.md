@@ -14,6 +14,9 @@ climbers through a glowing force field that rings the deck in the round's theme 
 climbers onto the island, and anyone knocked out (or done) is brought back to the deck. The ground below is scenery.
 While a round is on, a pillar of light rises from the ground under the island up through its centre into the sky,
 in the world's lava colour, so the hub can see a game is taking place; it fades out with the results (#139).
+Behind the plaza a gold-framed try-on mirror stands on a glass stage: step on it and the shop opens with a TRY
+button on every glove, hat and buddy, so you can wear any of them for 30 seconds for free (nothing is saved or
+bought) while the camera looks out of the mirror at you (#140).
 
 Each round is 3 phases of 10 seconds. Every phase the floor:
 
