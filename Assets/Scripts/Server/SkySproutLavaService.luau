@@ -278,8 +278,18 @@ local CFG = {
 		{ Id = "Buddies", Need = "Buddies", Text = "🐾 Buddy Collector", Color = Color3.fromRGB(175, 115, 255) }, -- every theme buddy found (#98)
 		{ Id = "Twists", Need = "Twists", Text = "🌀 Twist Tamer", Color = Color3.fromRGB(120, 220, 160) }, -- crowned in TitleTwists different twists (#105)
 		{ Id = "Team", Need = "Parties", Text = "🤝 Team Player", Color = Color3.fromRGB(110, 200, 255) }, -- in TitleParties escape parties (#114)
-		{ Id = "Traveler", Need = "Worlds", Text = "🌍 World Traveler", Color = Color3.fromRGB(90, 220, 190) }, -- played in every world theme (#123)
+		{ Id = "Traveler", Need = "Worlds", Text = "🌍 World Traveler", Color = Color3.fromRGB(90, 220, 190) }, -- played in TitleWorlds world themes (#123)
+		{ Id = "Regular", Need = "Rounds", Text = "🎮 Lava Regular", Color = Color3.fromRGB(120, 200, 255) }, -- TitleRounds rounds played (#166)
+		{ Id = "Streak", Need = "Streak", Text = "📅 Week Warrior", Color = Color3.fromRGB(255, 170, 60) }, -- best days-in-a-row of TitleStreak (#166)
+		{ Id = "Style", Need = "Style", Text = "👗 Style Star", Color = Color3.fromRGB(255, 120, 200) }, -- TitleStyle gloves, hats and buddies owned (#166)
 	},
+	-- Buddy Collector and World Traveler once needed every theme buddy / world. New ones would take the title away from
+	-- kids who had earned it, so they need a count instead: the number there was when each title came out (#166).
+	TitleBuddies = 4,
+	TitleWorlds = 5,
+	TitleRounds = 100, -- 🎮 Lava Regular (#166)
+	TitleStreak = 7, -- 📅 Week Warrior: a best of 7 days in a row (#166)
+	TitleStyle = 8, -- 👗 Style Star: gloves, hats and buddies owned, the free Mint gloves not counted (#166)
 	TitleTwists = 5, -- different twists you've been crowned in, for 🌀 Twist Tamer
 	TitleParties = 3, -- 🤝 Escape parties you were part of, for 🤝 Team Player
 	TitleChests = 5, -- Lava Chests opened for 🎁 Chest Cracker (Gem Hunter needs every lava gem)
@@ -3833,6 +3843,10 @@ local function payout()
 			challenge(p, "Play", 1)
 			-- Round milestones (#124): count every finished round, ever; some counts come with a thank-you gift.
 			d.RoundsPlayed = (tonumber(d.RoundsPlayed) or 0) + 1
+			if d.RoundsPlayed == CFG.TitleRounds then
+				applyTitle(p)
+				tell(p, "🏷️ New title: 🎮 Lava Regular! Pick it with the 🏷️ button in 📋 Challenges.")
+			end
 			local milestone = CFG.RoundMilestones[d.RoundsPlayed]
 			if milestone then
 				d.Coins = math.min(100000000, d.Coins + milestone)
@@ -3856,7 +3870,7 @@ local function payout()
 						seen += 1
 					end
 				end
-				if seen == #Themes.List then
+				if seen == CFG.TitleWorlds then
 					applyTitle(p)
 					tell(p, "🏷️ New title: 🌍 World Traveler! Pick it with the 🏷️ button in 📋 Challenges.")
 				end
@@ -4198,12 +4212,27 @@ local function titleUnlocked(t: any, d: any, crowns: number): boolean
 	elseif t.Need == "Gifts" then
 		return (tonumber(d.GiftsSent) or 0) >= CFG.TitleGifts
 	elseif t.Need == "Worlds" then
+		local seen = 0
 		for _, theme in Themes.List do
-			if not (d.WorldsSeen and d.WorldsSeen[theme.Id]) then
-				return false
+			if d.WorldsSeen and d.WorldsSeen[theme.Id] then
+				seen += 1
 			end
 		end
-		return true
+		return seen >= CFG.TitleWorlds
+	elseif t.Need == "Rounds" then
+		return (tonumber(d.RoundsPlayed) or 0) >= CFG.TitleRounds
+	elseif t.Need == "Streak" then
+		return (tonumber(d.BestLoginStreak) or 0) >= CFG.TitleStreak
+	elseif t.Need == "Style" then
+		local owned = 0
+		for _, set in { d.Owned, d.OwnedHats, d.OwnedPets } do
+			for id, v in set or {} do
+				if v == true and id ~= "Mint" then
+					owned += 1
+				end
+			end
+		end
+		return owned >= CFG.TitleStyle
 	elseif t.Need == "Parties" then
 		return (tonumber(d.EscapeParties) or 0) >= CFG.TitleParties
 	elseif t.Need == "Twists" then
@@ -4213,12 +4242,13 @@ local function titleUnlocked(t: any, d: any, crowns: number): boolean
 		end
 		return n >= CFG.TitleTwists
 	elseif t.Need == "Buddies" then
+		local found = 0
 		for _, h in GameConfig.Pets or {} do
-			if h.FindIn and not (d.OwnedPets and d.OwnedPets[h.Id]) then
-				return false
+			if h.FindIn and d.OwnedPets and d.OwnedPets[h.Id] then
+				found += 1
 			end
 		end
-		return true
+		return found >= CFG.TitleBuddies
 	end
 	return false
 end

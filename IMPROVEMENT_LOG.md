@@ -3,6 +3,30 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 166. Three new titles, and earned titles stay earned
+
+**Why.**
+- Titles are worked out live from your save. 🐾 Buddy Collector needed *every* theme buddy and 🌍 World Traveler
+  *every* world, so the Jade Jungle world and its Jade Pineapple (#157) would have taken both titles away from kids
+  who had earned them, until they found the new buddy or played the new world. That's unfair to them.
+- The game's newer long-term goals (rounds played, days in a row, cosmetics owned) had no title to show off.
+
+**Built.** SkySproutLavaService:
+- Buddy Collector now needs `CFG.TitleBuddies` (4) theme buddies and World Traveler `CFG.TitleWorlds` (5) worlds:
+  the numbers there were when each title came out. Nobody who had them loses them, and later buddies or worlds
+  won't change that.
+- The World Traveler announcement fires at the fifth world.
+- New titles, all earned by playing:
+  - 🎮 Lava Regular: 100 rounds played (`RoundsPlayed`), announced when you reach it.
+  - 📅 Week Warrior: a best of 7 days in a row (`BestLoginStreak`, #146).
+  - 👗 Style Star: 8 gloves, hats or buddies owned, not counting the free Mint gloves.
+
+**Verified.** Lints pass. The Studio copy matches the repo (247784 bytes, hash 618829017) and compiles. Playtest with
+a temporary Studio-only edit setting the unsaved test profile to 100 rounds, a best of 9 days in a row, 9 owned
+cosmetics, the 4 original theme buddies and the 5 original worlds (removed after; SkySproutShopService re-hashed to
+9377 and 457132341). The title list read "Auto, Buddies, Traveler, Regular, Streak, Style, None": Buddy Collector and
+World Traveler still unlock without the Jade Jungle pieces, and the three new titles unlock.
+
 ## 165. Shop tabs: All, Gloves, Hats, Buddies, More
 
 **Why.** With this session's new gloves, hats and buddies the shop grid held 48 cards in one scroll. Kids looking for a

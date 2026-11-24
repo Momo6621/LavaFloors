@@ -84,13 +84,14 @@ coins, all earnable; tap again to send it to rest; Reduce Motion keeps it still)
 world theme except Sunset, that theme's lost buddy floats in a bubble on the outer ring (Inferno Berry in Blue
 Inferno, Moon Banana in Purple Moon, Star Buddy in Starry Night, Candy Dragon in Candy Crater, Jade Pineapple in Jade Jungle), each with its own
 glow. The first climber to grab it keeps it and it starts following them; grabbing one you already own pays 40 coins
-(`BuddyFindCoins`). Their shop cards say where to find them. Finding all four unlocks the title 🐾 Buddy Collector,
+(`BuddyFindCoins`). Their shop cards say where to find them. Finding four of them unlocks the title 🐾 Buddy Collector,
 and "Grab 1 lost buddy" is one of the daily challenges (so are "Cheer 3 times from the sidelines", "Send 1 strawberry
 gift", "Grab 2 shield orbs", "Survive 2 twist rounds", "Vote for the next twist 3 times", "Knock 2 climbers off the floor" (bots count
 too) and "Play in 3 different worlds"). Being crowned in 5 different twists unlocks 🌀 Twist Tamer
 (`TitleTwists`, saved as `TwistWins`), and being part of 3 escape parties unlocks 🤝 Team Player (`TitleParties`, saved
-as `EscapeParties`). Playing in all five worlds (ever, not in one day) unlocks 🌍 World
-Traveler (saved as `WorldsSeen`).
+as `EscapeParties`). Playing in five different worlds (ever, not in one day) unlocks 🌍 World
+Traveler (saved as `WorldsSeen`). 🎮 Lava Regular (100 rounds), 📅 Week Warrior (a best of 7 days in a row) and 👗 Style Star
+(8 gloves, hats or buddies) unlock the same way (#166).
 
 ![A Strawberry Buddy floating by a player's shoulder in the lobby](Media/fruit-buddy.jpg)
 
