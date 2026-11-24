@@ -12,6 +12,8 @@ cracks hangs under it, #137). Everyone waits on the hub deck, a floating stone d
 y 200, `DeckRadius` 74: plaza, beacons, leaderboards, the Warm-up Hop and the five lava gems), and looks down on the
 climbers through a glowing force field that rings the deck in the round's theme colour (#138). A round lifts its
 climbers onto the island, and anyone knocked out (or done) is brought back to the deck. The ground below is scenery.
+While a round is on, a pillar of light rises from the ground under the island up through its centre into the sky,
+in the world's lava colour, so the hub can see a game is taking place; it fades out with the results (#139).
 
 Each round is 3 phases of 10 seconds. Every phase the floor:
 

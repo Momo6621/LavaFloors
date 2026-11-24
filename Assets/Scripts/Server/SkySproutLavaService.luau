@@ -1362,6 +1362,20 @@ local function buildArena()
 			decor(crack)
 		end
 	end
+	-- Game pillar (#139, owner's request): a pillar of light from the ground under the island up through its centre to
+	-- the sky, shown while a round is on (setGamePillar) so the hub can see a game is taking place. Lava-coloured,
+	-- so the theme pass gives it the round's world colour. Hidden (fully transparent) between rounds.
+	do
+		local HEIGHT = 700
+		local mid = Vector3.new(c.X, 2 + HEIGHT / 2, c.Z)
+		local core = part(arenaFolder, "GamePillarCore", Vector3.new(HEIGHT, 5, 5), CFrame.new(mid) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(255, 140, 50), Enum.Material.Neon)
+		local glow = part(arenaFolder, "GamePillarGlow", Vector3.new(HEIGHT, 14, 14), CFrame.new(mid) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(255, 110, 30), Enum.Material.Neon)
+		for _, piece in { core, glow } do
+			piece.Shape = Enum.PartType.Cylinder
+			piece.CanCollide, piece.CanQuery, piece.CanTouch, piece.CastShadow = false, false, false, false
+			piece.Transparency = 1
+		end
+	end
 	local scorch = part(scenery, "ScorchedGround", Vector3.new(0.2, 160, 160), CFrame.new(c + Vector3.new(0, 0.1, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(58, 46, 44), Enum.Material.Ground)
 	scorch.Shape = Enum.PartType.Cylinder
 	local rng = Random.new(2026)
@@ -4272,6 +4286,20 @@ shoveNearestBot = function(p: Player, from: Vector3, look: Vector3, maxDist: num
 	return true
 end
 
+-- Fade the game pillar (#139) in while a round is on and out after it.
+local function setGamePillar(on: boolean)
+	local folder = arenaFolder
+	if not folder then
+		return
+	end
+	for name, shown in { GamePillarCore = 0.15, GamePillarGlow = 0.8 } do
+		local piece = folder:FindFirstChild(name)
+		if piece and piece:IsA("BasePart") then
+			game:GetService("TweenService"):Create(piece, TweenInfo.new(1.5), { Transparency = if on then shown else 1 }):Play()
+		end
+	end
+end
+
 local function runRound()
 	L.RoundId += 1
 	table.clear(L.Predictions)
@@ -4284,6 +4312,7 @@ local function runRound()
 	grid:SetAttribute("Start", started + CFG.StartDelay)
 	setLava(lavaFor(started))
 	L.Phase = "Round"
+	setGamePillar(true)
 	L.EndsAt = Grid.EndsAt(grid) or (started + 90)
 	for p in L.Queue do
 		enter(p)
@@ -4676,6 +4705,7 @@ local function loop()
 			warn("[LavaRush] round crashed:", err)
 		end
 		L.Phase = "Results"
+		setGamePillar(false)
 		L.EndsAt = now() + CFG.ResultsTime
 		pcall(payout)
 		broadcast()

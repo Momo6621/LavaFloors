@@ -3,6 +3,23 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 139. A pillar of light while a round is on (owner's request, hub stage 2)
+
+**Why.** Part of the owner's hub idea: "a pillar of light sprouting on the ground to indicate that a game is taking
+place", theme-coloured (their pick).
+
+**Built.** SkySproutLavaService:
+- `buildArena` adds GamePillarCore (5-stud neon cylinder) and GamePillarGlow (14-stud) from the ground (y 2) to
+  y 702, through the island's centre. They don't collide, query or touch, and are fully transparent by default.
+  Lava-coloured, so the theme pass shifts them with the world like the lava.
+- `setGamePillar(on)` tweens them over 1.5 s: core 0.15 and glow 0.8 when a round starts (`L.Phase = "Round"`),
+  back to 1 when the results show.
+
+**Verified.** Lints pass. The Studio copy matches the repo (219667 bytes, hash 147576653) and compiles. Playtest:
+the core read 1 before the round, 0.15 during it, and 1.00 again once the vote opened. Screenshots from the deck:
+the pillar rising from the island during a Sunset round, and none between rounds. The owner approved ("Ship").
+Console clean of game errors (Studio printed its own Assistant plugin version notice).
+
 ## 138. The hub becomes a floating deck above the island (owner's request)
 
 **Why.** Right after #137 (hub on the ground looking up), the owner asked: "is the hub higher than the island? you
