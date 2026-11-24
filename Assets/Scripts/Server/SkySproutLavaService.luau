@@ -21,8 +21,12 @@ local tileColour: (any, number, boolean) -> Color3
 local CFG = {
 	-- Arena
 	Floor = 1,
-	Center = Vector3.new(-250, 0, 300),
-	Beacon = Vector3.new(-200.7, 0, 262.4),
+	-- The play arena floats 100 studs above the crater (#137, owner's request), with a rocky underside (added when
+	-- Y > 20). Everything in the arena is built from this centre.
+	Center = Vector3.new(-250, 100, 300),
+	-- The hub plaza (#137): on the ground 150 studs out from under the island, so people waiting look up at an angle
+	-- and see its edge and the climbers (was right beside the arena at -200.7, 262.4). Players spawn and come back here.
+	Beacon = Vector3.new(-130.7, 0, 209.0),
 	MinPlayers = 1,
 	Countdown = 4,
 	ResultsTime = 3,
@@ -1285,6 +1289,47 @@ local function buildArena()
 	local scenery = Instance.new("Model")
 	scenery.Name = "Volcanic"
 	scenery.Parent = arenaFolder
+	-- Floating island underside (#137, owner's request): when the arena floats (CFG.Center above the ground), a jagged
+	-- rock cone hangs under it with glowing lava cracks, so the hub below looks up at an island, not a flat disc.
+	-- Decoration only; the theme pass recolours the rock and the lava glow like the rest of the arena.
+	if c.Y > 20 then
+		local under = Instance.new("Model")
+		under.Name = "IslandUnderside"
+		under.Parent = arenaFolder
+		local urng = Random.new(137)
+		local function decor(piece: BasePart)
+			piece.CanCollide = false
+			piece.CanQuery = false
+			piece.CanTouch = false
+		end
+		-- TOP reaches past the spire ring (64-90 studs out); the cone starts just under the arena floor, so the rising
+		-- lava never shows through the rock.
+		local LAYERS, DEPTH, TOP = 8, 90, 100
+		local THICK = DEPTH / LAYERS + 3
+		for i = 0, LAYERS - 1 do
+			local f = i / (LAYERS - 1)
+			local radius = TOP * (1 - f) ^ 1.15 + 6
+			local drift = Vector3.new(urng:NextNumber(-4, 4), 0, urng:NextNumber(-4, 4)) * f
+			local slab = part(under, "UndersideRock", Vector3.new(THICK, radius * 2, radius * 2), CFrame.new(c + drift - Vector3.new(0, 0.2 + THICK / 2 + f * DEPTH, 0)) * CFrame.Angles(0, urng:NextNumber(0, math.pi), math.rad(90)), Color3.fromRGB(64, 48, 46):Lerp(Color3.fromRGB(38, 28, 30), f), Enum.Material.Basalt)
+			slab.Shape = Enum.PartType.Cylinder
+			decor(slab)
+		end
+		for k = 1, 16 do
+			local a = (k + urng:NextNumber(-0.3, 0.3)) / 16 * math.pi * 2
+			local r = urng:NextNumber(50, 96)
+			local h = urng:NextNumber(14, 34)
+			local drop = (1 - r / TOP) * 40 + urng:NextNumber(2, 10)
+			local rock = part(under, "UndersideRock", Vector3.new(urng:NextNumber(9, 18), h, urng:NextNumber(9, 18)), CFrame.new(c + Vector3.new(math.cos(a) * r, -drop - h / 2, math.sin(a) * r)) * CFrame.Angles(urng:NextNumber(-0.3, 0.3), urng:NextNumber(0, math.pi), urng:NextNumber(-0.3, 0.3)), Color3.fromRGB(58, 44, 44), Enum.Material.Basalt)
+			decor(rock)
+		end
+		for k = 1, 12 do
+			local a = urng:NextNumber(0, math.pi * 2)
+			local f = urng:NextNumber(0.1, 0.75)
+			local r = (TOP * (1 - f) ^ 1.15 + 6) + 0.3
+			local crack = part(under, "LavaCrack", Vector3.new(0.6, urng:NextNumber(10, 22), 1.4), CFrame.new(c + Vector3.new(math.cos(a) * r, -1 - f * DEPTH, math.sin(a) * r)) * CFrame.Angles(0, -a, urng:NextNumber(-0.5, 0.5)), Color3.fromRGB(255, 110, 30), Enum.Material.Neon)
+			decor(crack)
+		end
+	end
 	local scorch = part(scenery, "ScorchedGround", Vector3.new(0.2, 160, 160), CFrame.new(c + Vector3.new(0, 0.1, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(58, 46, 44), Enum.Material.Ground)
 	scorch.Shape = Enum.PartType.Cylinder
 	local rng = Random.new(2026)
@@ -4808,7 +4853,8 @@ local function islandMode()
 		local onBeach = i <= 10
 		local r = if onBeach then rng:NextNumber(CFG.IslandRadius - 40, CFG.IslandRadius - 5) else rng:NextNumber(CFG.IslandRadius + 30, CFG.IslandRadius + 320)
 		local scale = if onBeach then rng:NextNumber(5, 8) else rng:NextNumber(9, 18)
-		local at = CFG.Center + Vector3.new(math.cos(a) * r, if onBeach then 1.5 * scale - 1 else 0.9 * scale - 6, math.sin(a) * r)
+		-- On the ground around the island, not up with the floating arena (#137).
+		local at = Vector3.new(CFG.Center.X, 0, CFG.Center.Z) + Vector3.new(math.cos(a) * r, if onBeach then 1.5 * scale - 1 else 0.9 * scale - 6, math.sin(a) * r)
 		fruit(kind, scale, CFrame.new(at) * CFrame.Angles(rng:NextNumber(-0.35, 0.35), rng:NextNumber(0, 2 * math.pi), rng:NextNumber(-0.35, 0.35)), decor)
 	end
 	decor.Parent = floorModel
@@ -5219,6 +5265,13 @@ function L.Start(arena: any, remote: RemoteEvent, stats: (Player) -> (), notice:
 	buildArena()
 	buildGems()
 	buildBackdrop()
+	-- New players appear at the hub plaza (#137), where placeAtBeacon also brings everyone back.
+	local spawn = workspace:FindFirstChildOfClass("SpawnLocation")
+	if spawn then
+		local toTower = (Vector3.new(CFG.Center.X, 0, CFG.Center.Z) - Vector3.new(CFG.Beacon.X, 0, CFG.Beacon.Z)).Unit
+		local at = CFG.Beacon + toTower * 16
+		spawn.CFrame = CFrame.lookAt(at + Vector3.new(0, 2.5, 0), at + toTower + Vector3.new(0, 2.5, 0))
+	end
 	if GameConfig.PartyMode then
 		islandMode()
 		local function scale(character: Model)

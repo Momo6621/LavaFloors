@@ -3,6 +3,34 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 137. The arena floats above a hub (owner's request, stage 1 of the hub)
+
+**Why.** The owner wants a hub area "onlooking the island from the bottom", with a light pillar while a game is on
+and a place to try on costumes. They chose: lift the island into the sky, hub off to the side (not right
+underneath), knocked-out climbers still teleported back. Stage 1 is the layout; the beam and the try-on mirror follow.
+
+**Built.** SkySproutLavaService:
+- `CFG.Center` y 0 → 100. Everything in the arena (floor, grid, lava, rims, spires, vents, lava strip, crown
+  height) is built from it, so the whole arena floats.
+- `buildArena` adds an "IslandUnderside" when the centre is above y 20: 8 stacked basalt discs narrowing over 90
+  studs (100-stud top radius, past the spire ring), 16 hanging rocks around the edge and 12 neon lava cracks.
+  Decoration only (no collide, query or touch). The theme pass recolours them like the rest of the arena. The cone
+  starts just under the arena floor, so the rising lava never shows through it.
+- `CFG.Beacon` (the hub plaza) moved from beside the arena (-200.7, 262.4) to 150 studs out (-130.7, 209.0) on flat
+  ground (terrain y 2 checked along the way). The beacons, lanterns, leaderboards, Warm-up Hop and placeAtBeacon all
+  follow it.
+- The beach fruit decor (`islandMode`) stays on the ground.
+- At start the server moves the SpawnLocation to the plaza. The place's own SpawnLocation was also moved there in
+  Studio (-213, 272 → -143, 219), so the very first spawn is right too.
+
+**Verified.** Lints pass. The Studio copy matches the repo (213611 bytes, hash 49678761) and compiles.
+- Playtests: a player went from the hub up onto the island at round start (y ≈ 119 at 100, ≈ 157 at the first 140
+  try) and came back to the new plaza (-143, 4, 219) when scorched. Phase-1 drop-backs put them on the island again.
+- Screenshots from the old plaza (straight under: only the underside) led the owner to pick "off to the side". From
+  the new plaza the island looms at an angle, spires and all. The owner locked the layout in from that view.
+- Known limit, told to the owner: from the ground you can't see the climbers on top (the island's floor hides them).
+- Console clean. Not tested: multiplayer, phones.
+
 ## 136. Tiles decay at random (owner's request)
 
 **Why.** The owner: "tiles should be able to randomly decay making the game on your feet fun". Until now a tile only

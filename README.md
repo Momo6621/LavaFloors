@@ -7,6 +7,11 @@ under you. Survive every phase to win the round.
 
 ## How a round works
 
+Rounds are played on a floating island 100 studs above the crater (`CFG.Center`; a rocky underside with lava
+cracks hangs under it). Everyone waits in the hub on the ground 150 studs out (`CFG.Beacon`: plaza, beacons,
+leaderboards and the Warm-up Hop), looking up at the island. A round lifts its climbers onto the island, and anyone
+knocked out (or done) is brought back to the hub (#137).
+
 Each round is 3 phases of 10 seconds. Every phase the floor:
 
 1. **Spins.** Everyone standing on it gets carried around.
