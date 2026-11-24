@@ -3,6 +3,19 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 154. The daily reward notice mentions days in a row
+
+**Why.** The days-in-a-row count (#146) was only on the calendar card. The notice toast reaches everyone, including
+anyone who taps the card away or is mid-climb when it would show.
+
+**Built.** SkySproutShopService `daily()`: from two days in a row the notice ends with " 🔥 N days in a row!". On a
+first day it stays as before.
+
+**Verified.** Lints pass. The Studio copy matches the repo (9377 bytes, hash 457132341) and compiles. With a temporary
+Studio-only line making the unsaved test profile look like yesterday was played (removed after, and re-hashed), the
+notice read "🎁 Day 1 daily reward: +25 coins! Come back tomorrow for more. 🔥 5 days in a row!", and the card
+attribute carried `InRow` 5.
+
 ## 153. Entering a round no longer counts as reaching the top
 
 **Why.** Seen while checking #152: a player dropped back in during phase 1 showed "⬆ 3" (the top) at once. The cause

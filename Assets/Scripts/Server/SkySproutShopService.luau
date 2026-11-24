@@ -182,7 +182,9 @@ local function daily(p: Player)
 	stats(p)
 	task.wait(4)
 	if p.Parent == Players then
-		tell(p, string.format("🎁 Day %d daily reward: +%d coins%s!%s", streak, reward, if isVip then " (⭐ VIP x2)" else "", if streak < #DAILY then " Come back tomorrow for more." else " Top reward every day now!"))
+		-- From two days in a row the notice says so too (#154), for anyone who misses the calendar card.
+		local inRowText = if inRow >= 2 then string.format(" 🔥 %d days in a row!", inRow) else ""
+		tell(p, string.format("🎁 Day %d daily reward: +%d coins%s!%s%s", streak, reward, if isVip then " (⭐ VIP x2)" else "", if streak < #DAILY then " Come back tomorrow for more." else " Top reward every day now!", inRowText))
 		-- The 7-day calendar card on the client (SkySproutLavaClient). Sent as a player attribute (JSON), not a message
 		-- (#148): on a fresh join the message arrived before the lava HUD was listening, so new players never saw their
 		-- day-1 card. An attribute waits until the HUD reads it.
