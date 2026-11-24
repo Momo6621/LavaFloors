@@ -4605,7 +4605,10 @@ local function runRound()
 					end
 				end
 				local h = me.Position.Y - CFG.Center.Y
-				if h > r.peak then
+				-- Heights above the climb don't count (#153): since the hub moved up onto the deck (#138, 100 studs over
+				-- the island), a player entering a round stood on the deck while their area streamed in, and that
+				-- counted as reaching the top: full rises, height coins and chest fill before they'd climbed at all.
+				if h > r.peak and h <= crownHeight + 12 then
 					r.peak = math.min(h, crownHeight)
 				end
 				if me.Position.Y < L.LavaY + 2 and now() - r.enteredAt > 1 then

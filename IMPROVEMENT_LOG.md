@@ -3,6 +3,22 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 153. Entering a round no longer counts as reaching the top
+
+**Why.** Seen while checking #152: a player dropped back in during phase 1 showed "⬆ 3" (the top) at once. The cause
+came with the hub deck (#138). `enter()` waits for `RequestStreamAroundAsync` before moving you onto the island, and
+during that wait you're already a runner but still standing on the deck, 100 studs over the island. The round loop
+took that as your height, so `peak` jumped to `crownHeight` (81). `peak` feeds the rises on the result card and live
+screen, the height coins, the Lava Chest fill, Best Height and the round awards, so players got top-of-the-climb
+credit without climbing.
+
+**Built.** SkySproutLavaService round loop: a height only counts toward `peak` when it is at most `crownHeight + 12`
+above the island (a jump off the top floor still fits; the deck at +100 doesn't).
+
+**Verified.** Lints pass. The Studio copy matches the repo (232851 bytes, hash 700555306) and compiles. Solo playtest
+over two rounds, reading the live screen: on entering, "⬆ 0"; after each phase-1 knockout and drop back in, "⬆ 1" (the
+floor's real height then) instead of the "⬆ 3" seen before the fix (#152 test).
+
 ## 152. The live round screen shows the time left
 
 **Why.** A round is won by surviving until time runs out, so "how long is left" is the thing watchers on the deck most
