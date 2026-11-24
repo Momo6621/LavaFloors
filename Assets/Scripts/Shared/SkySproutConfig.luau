@@ -49,6 +49,7 @@ return {
  {Id="InfernoBerry",Name="Inferno Berry",Model="Blueberry",FindIn="BlueInferno",Where="💙 Blue Inferno",Aura="Fire",Cost=0,Color=Color3.fromRGB(70,150,255)},
  {Id="MoonBanana",Name="Moon Banana",Model="Banana",FindIn="PurpleMoon",Where="🌙 Purple Moon",Aura="Glow",Cost=0,Color=Color3.fromRGB(175,115,255)},
  {Id="StarBuddy",Name="Star Buddy",Model="StarFruit",FindIn="StarryNight",Where="✨ Starry Night",Aura="Sparkles",Cost=0,Color=Color3.fromRGB(255,240,160)},
+ {Id="JadePineapple",Name="Jade Pineapple",Model="Pineapple",FindIn="JadeJungle",Where="🌿 Jade Jungle",Aura="Glow",Cost=0,Color=Color3.fromRGB(90,220,110)}, -- #157
  {Id="CandyDragon",Name="Candy Dragon",Model="DragonFruit",FindIn="Candy",Where="🍭 Candy Crater",Aura="Sparkles",Cost=0,Color=Color3.fromRGB(255,120,200)},
  },
  Hats={

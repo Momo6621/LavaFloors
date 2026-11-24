@@ -3,6 +3,31 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 157. A sixth world: 🌿 Jade Jungle
+
+**Why.** Content for the game to take off (owner's request). Every round rolls a world, so a new world freshens every
+session. There were five; four come with a lost buddy and themed bots, which kids collect and talk about.
+
+**Built.**
+- LavaThemes: "🌿 Jade Jungle" (weight 2). Glowing green "slime" lava (Hue 0.33), mossy rocks, a warm jungle dusk
+  (clock 18.1, green air, 600 stars), golden tiles (TileHue 0.13) so the red warning tiles still stand out, and a
+  green HUD accent and glass.
+- SkySproutLavaService `BotNamesByTheme.JadeJungle`: Fern, Moss, Gecko, Kiwi, Lily, Sprout.
+- SkySproutConfig: a new theme buddy, "Jade Pineapple" (Pineapple model, green, Glow aura, `FindIn = "JadeJungle"`).
+  Never sold; the first climber to grab it in a Jade Jungle round keeps it, like the other four.
+- The World Traveler title and the Worlds challenge count `Themes.List`, so they include the new world without other
+  changes.
+
+**Verified.** Lints pass. The Studio copies match the repo (LavaThemes 6810 bytes, hash 712842909;
+SkySproutLavaService 237845, hash 236389711; SkySproutConfig 6810, hash 504890534) and compile. Playtest with
+`StudioForceTheme = "JadeJungle"` (cleared afterwards):
+- `LavaTheme` was JadeJungle.
+- The bots were Kiwi, Sprout and Lily.
+- The round's BuddyFind held a Pineapple with the jade BaseColor (90, 220, 110).
+
+Not checked: the client lighting and a screenshot. Studio was in the background, so the client didn't render, and both
+captures timed out.
+
 ## 156. A gateway arch over the walk to the island
 
 **Why.** More of the owner's "geometrically satisfying architecture": the deck had nothing standing between the plaza
