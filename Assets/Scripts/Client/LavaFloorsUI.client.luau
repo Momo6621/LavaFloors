@@ -400,6 +400,17 @@ for i, h in C.Pets or {} do
 	if model then
 		local view: ViewportFrame = make("ViewportFrame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 4), Size = UDim2.fromOffset(64, 64), BackgroundTransparency = 1, ZIndex = 3 }, f)
 		local copy = model:Clone()
+		if h.Material then -- a remixed buddy (#163): the same repaint the server gives it
+			for _, part in copy:GetDescendants() do
+				if part:IsA("BasePart") then
+					part.Material = (Enum.Material :: any)[h.Material]
+					part.Color = h.Color
+					if part:IsA("MeshPart") then
+						part.TextureID = ""
+					end
+				end
+			end
+		end
 		copy:PivotTo(CFrame.new())
 		copy.Parent = view
 		local _, size = copy:GetBoundingBox()

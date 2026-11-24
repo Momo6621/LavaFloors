@@ -5323,6 +5323,17 @@ applyPet = function(p: Player)
 	local s = root.Size.Y / 2 -- 1 for a full-size character
 	local pet = (FruitModels:FindFirstChild(modelName) :: Model):Clone()
 	pet.Name = "FruitBuddy"
+	if def and def.Material then -- a remixed buddy (#163): repainted before the eyes go on
+		for _, part in pet:GetDescendants() do
+			if part:IsA("BasePart") then
+				part.Material = (Enum.Material :: any)[def.Material]
+				part.Color = def.Color
+				if part:IsA("MeshPart") then
+					part.TextureID = ""
+				end
+			end
+		end
+	end
 	local _, size = pet:GetBoundingBox()
 	pet:ScaleTo(CFG.PetSize * s / math.max(size.X, size.Y, size.Z))
 	local box, scaled = pet:GetBoundingBox()

@@ -3,6 +3,29 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 163. Three remixed buddies: Frost Berry, Molten Melon and Golden Pineapple
+
+**Why.** Buddies float by your shoulder all the time, so they're the most visible thing to save up for. The top coin
+buddy was Coconut (3000).
+
+**Built.**
+- SkySproutConfig `Pets`, coin prices only:
+  - Frost Berry Buddy: 3500, Blueberry in Ice.
+  - Molten Melon Buddy: 4200, Watermelon in CrackedLava.
+  - Golden Pineapple Buddy: 5500, Pineapple in Foil.
+- SkySproutLavaService `applyPet`: a buddy with a `Material` is repainted right after it's cloned, before the eyes
+  are added, so the eyes stay white.
+- LavaFloorsUI: the buddy card's 3D preview repaints the same way, as the remixed hats do (#160).
+
+**Verified.** Lints pass. The Studio copies match the repo (SkySproutConfig 8131 bytes, hash 85502314;
+SkySproutLavaService 245834, hash 11985446; LavaFloorsUI 71405, hash 854811944) and compile. The first LavaFloorsUI sync
+failed to compile: a Lua long string drops its leading newline, which pulled the repaint loop into a comment. Studio's
+copy was fixed and re-hashed to the repo; the repo file was never wrong. Playtest:
+- The previews came out Ice, CrackedLava and Foil.
+- At the try-on mirror each buddy body was the right material and colour, with white eyes.
+
+Not checked: a screenshot (the display had gone to sleep again).
+
 ## 162. The champion statue is all gold, in every world
 
 **Why.** The first screenshots of #161, once the display was woken and Studio maximized, showed two flaws:
