@@ -1146,6 +1146,9 @@ local function buildArena()
 				local width, height = 11 - tier * 2.5, 0.8
 				local disc = part(deck, "ChampionTier", Vector3.new(height, width, width), CFrame.new(top + Vector3.new(0, height / 2, 0)) * CFrame.Angles(0, 0, math.rad(90)), if tier == 3 then GOLD else STONE, if tier == 3 then Enum.Material.Foil else Enum.Material.Basalt)
 				disc.Shape = Enum.PartType.Cylinder
+				if tier == 3 then
+					disc:SetAttribute("NoTheme", true) -- gold stays gold in every world
+				end
 				top += Vector3.new(0, height, 0)
 			end
 			local trim = part(deck, "ChampionGlow", Vector3.new(0.2, 8.8, 8.8), CFrame.new(at + Vector3.new(0, 0.85, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(255, 120, 40), Enum.Material.Neon)
@@ -1199,11 +1202,14 @@ local function buildArena()
 										d.CanTouch = false
 										d.Material = Enum.Material.Foil
 										d.Color = GOLD
+										d:SetAttribute("NoTheme", true) -- the theme pass turned it lime in Jade Jungle
 										if d:IsA("MeshPart") then
 											d.TextureID = ""
 										end
-									elseif d:IsA("Decal") or d:IsA("Texture") or d:IsA("Script") or d:IsA("LocalScript") then
-										d:Destroy()
+									elseif d:IsA("SpecialMesh") then
+										d.TextureId = "" -- accessory meshes keep their shape but turn gold too
+									elseif d:IsA("Decal") or d:IsA("Texture") or d:IsA("Clothing") or d:IsA("ShirtGraphic") or d:IsA("Script") or d:IsA("LocalScript") then
+										d:Destroy() -- clothing and faces would show through the gold (#162)
 									end
 								end
 								local _, size = model:GetBoundingBox()

@@ -3,6 +3,28 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 162. The champion statue is all gold, in every world
+
+**Why.** The first screenshots of #161, once the display was woken and Studio maximized, showed two flaws:
+- The statue still wore the champion's shirt and jacket: Clothing draws over a Foil part.
+- In Jade Jungle the theme pass recoloured the statue and the gold podium top to lime, because gold falls inside the
+  "lava colour" range it shifts.
+
+**Built.** SkySproutLavaService champion block:
+- Clothing and ShirtGraphic are removed along with decals.
+- Accessory SpecialMeshes lose their texture, so hats and hair turn gold too.
+- Every statue part and the gold tier carry `NoTheme`.
+
+**Verified.** Lints pass. The Studio copy matches the repo (245504 bytes, hash 260523076) and compiles. Playtest with a
+temporary Studio-only 3-win profile and `StudioForceTheme = "JadeJungle"` (both removed after;
+SkySproutShopService re-hashed to 9377 and 457132341):
+- No Clothing or Decal was left on the statue.
+- A close-up showed a plain gold figure.
+- After the Jade Jungle theme pass, the statue head and gold tier were still (255, 200, 70).
+
+Screenshots of the whole deck (Sunset) and of the island in Jade Jungle were sent to the owner. The close-ups show the
+owner's name on the champion sign, so they weren't shared or committed.
+
 ## 161. A gold champion statue on the hub deck
 
 **Why.** Content for the game to take off. Seeing a real player's avatar standing on a podium gives every kid a
