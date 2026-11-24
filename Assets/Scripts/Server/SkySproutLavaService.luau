@@ -34,6 +34,8 @@ local CFG = {
 	-- 360/Spokes degrees, alternating long and short) and diamonds where the long spokes cross the rings.
 	DeckRings = { 22, 36, 50, 64 },
 	DeckSpokes = 16,
+	-- Gateway arch on the island side of the deck (#156): studs from the plaza centre, half the opening, pillar height.
+	DeckArch = { Distance = 46, HalfWidth = 11, Height = 15 },
 	-- Bounce pads on the hub deck (#142): { studs sideways from the plaza (away from the Warm-up Hop), studs toward the
 	-- island, launch speed (about speed^2 / 392 studs high: 75 -> 14, 90 -> 21, 105 -> 28), colour }.
 	BouncePads = {
@@ -1042,6 +1044,40 @@ local function buildArena()
 						d.Transparency = 0.1
 					end
 				end
+			end
+		end
+		-- Gateway arch (#156): two stone pillars and a half-round arch of wedge stones with a glowing keystone and trim,
+		-- standing between the plaza and the force field on the island side, so the walk to the edge frames the island.
+		do
+			local toward = (Vector3.new(c.X, 0, c.Z) - Vector3.new(plazaPos.X, 0, plazaPos.Z)).Unit
+			local across = Vector3.new(-toward.Z, 0, toward.X)
+			local arch = CFG.DeckArch
+			local base = plazaPos + toward * arch.Distance
+			local face = CFrame.lookAt(Vector3.zero, toward).Rotation -- arch faces the island
+			local STONE, TRIM = Color3.fromRGB(70, 56, 54), Color3.fromRGB(255, 120, 40)
+			for _, sideSign in { -1, 1 } do
+				local foot = base + across * (sideSign * (arch.HalfWidth + 1.5))
+				part(deck, "ArchPlinth", Vector3.new(5, 1.2, 5), CFrame.new(foot + Vector3.new(0, 0.6, 0)) * face, STONE, Enum.Material.Basalt)
+				part(deck, "ArchPillar", Vector3.new(3, arch.Height, 3), CFrame.new(foot + Vector3.new(0, 1.2 + arch.Height / 2, 0)) * face, STONE, Enum.Material.Basalt)
+				local trim = part(deck, "ArchTrim", Vector3.new(3.3, 0.4, 3.3), CFrame.new(foot + Vector3.new(0, 1.2 + arch.Height, 0)) * face, TRIM, Enum.Material.Neon)
+				trim.CanCollide, trim.CanQuery, trim.CanTouch = false, false, false
+			end
+			-- The arch: wedge stones on a half circle over the opening, centred at the top of the pillars.
+			local centre = base + Vector3.new(0, 1.2 + arch.Height, 0)
+			local radius = arch.HalfWidth + 1.5
+			local STONES = 13
+			for k = 0, STONES - 1 do
+				local a0, a1 = k / STONES * math.pi, (k + 1) / STONES * math.pi
+				local p0 = centre + across * (math.cos(a0) * radius) + Vector3.new(0, math.sin(a0) * radius, 0)
+				local p1 = centre + across * (math.cos(a1) * radius) + Vector3.new(0, math.sin(a1) * radius, 0)
+				local mid = (p0 + p1) / 2
+				local cf = CFrame.lookAt(mid, mid + toward, (mid - centre).Unit)
+				local keystone = k == (STONES - 1) / 2
+				local stone = part(deck, if keystone then "ArchKeystone" else "ArchStone", Vector3.new((p1 - p0).Magnitude + 0.1, if keystone then 3.6 else 3, 3), cf, if keystone then TRIM else STONE, if keystone then Enum.Material.Neon else Enum.Material.Basalt)
+				stone.CanCollide = false
+				-- A thin glowing line along the arch's inner edge.
+				local inner = part(deck, "ArchGlow", Vector3.new((p1 - p0).Magnitude * (radius - 1.6) / radius + 0.1, 0.25, 3.1), cf * CFrame.new(0, -1.6, 0), TRIM, Enum.Material.Neon)
+				inner.CanCollide, inner.CanQuery, inner.CanTouch, inner.CastShadow = false, false, false, false
 			end
 		end
 		-- Try-on mirror (#140, owner's request): a stage behind the plaza (away from the island) with a tall framed

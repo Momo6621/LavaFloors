@@ -3,6 +3,22 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 156. A gateway arch over the walk to the island
+
+**Why.** More of the owner's "geometrically satisfying architecture": the deck had nothing standing between the plaza
+and the force field on the island side, the direction everyone looks.
+
+**Built.** SkySproutLavaService deck block, `CFG.DeckArch` (Distance 46, HalfWidth 11, Height 15):
+- Two basalt pillars on plinths with neon caps.
+- A half-round arch of 13 wedge stones, centred on the pillar tops, with a neon keystone and a thin neon line along
+  its inner edge, all in the lava colour, so they follow the theme.
+- The pillars collide; the arch stones and trim don't. It faces the island and sits clear of the boards, the bounce
+  pads, the mirror and the gems. 32 parts.
+
+**Verified.** Lints pass. The Studio copy matches the repo (237767 bytes, hash 222944220) and compiles. Playtest:
+32 arch parts built, keystone at about y 228.6 (28.6 over the deck). A screenshot in the Starry Night world shows the
+pillars and the glowing arch over the compass-rose rings. A second camera angle timed out.
+
 ## 155. A compass-rose floor on the hub deck (owner's request: geometrically satisfying architecture)
 
 **Why.** The owner asked for "geometrically satisfying architecture". The hub deck was a plain round slab, and from
