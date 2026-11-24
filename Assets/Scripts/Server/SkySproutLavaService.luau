@@ -30,6 +30,10 @@ local CFG = {
 	Beacon = Vector3.new(-110.9, 200, 193.9),
 	DeckRadius = 74, -- the hub deck: everything around the plaza (Warm-up Hop, boards, lanterns) fits within ~63 studs
 	TryOnSeconds = 30, -- try-on mirror (#140): how long a tried-on glove, hat or buddy stays on
+	-- Compass-rose floor on the hub deck (#155): glowing rings (radii from the plaza centre), stone spokes (every
+	-- 360/Spokes degrees, alternating long and short) and diamonds where the long spokes cross the rings.
+	DeckRings = { 22, 36, 50, 64 },
+	DeckSpokes = 16,
 	-- Bounce pads on the hub deck (#142): { studs sideways from the plaza (away from the Warm-up Hop), studs toward the
 	-- island, launch speed (about speed^2 / 392 studs high: 75 -> 14, 90 -> 21, 105 -> 28), colour }.
 	BouncePads = {
@@ -1003,6 +1007,42 @@ local function buildArena()
 			wall.CastShadow = false
 			local rail = part(deck, "ForceFieldRail", Vector3.new(2 * math.pi * R / SEGMENTS + 0.4, 0.35, 0.35), CFrame.lookAt(at + Vector3.new(0, 6, 0), at + out + Vector3.new(0, 6, 0)), Color3.fromRGB(255, 150, 60), Enum.Material.Neon)
 			rail.CanCollide, rail.CanQuery, rail.CanTouch, rail.CastShadow = false, false, false, false
+		end
+		-- Compass-rose floor (#155): concentric glowing rings in the lava colour (so they follow the theme like the force
+		-- field), stone spokes and diamonds, all inlaid flush in the deck and walk-through.
+		do
+			local floorY = plazaPos.Y + 0.06
+			local function inlay(name: string, size: Vector3, cf: CFrame, color: Color3, material: Enum.Material): Part
+				local piece = part(deck, name, size, cf, color, material)
+				piece.CanCollide, piece.CanQuery, piece.CanTouch, piece.CastShadow = false, false, false, false
+				return piece
+			end
+			local function at(angle: number, radius: number): Vector3
+				return Vector3.new(plazaPos.X + math.cos(angle) * radius, floorY, plazaPos.Z + math.sin(angle) * radius)
+			end
+			for _, radius in CFG.DeckRings do
+				local pieces = math.max(24, math.floor(radius * 0.9))
+				for k = 1, pieces do
+					local a0, a1 = (k - 1) / pieces * math.pi * 2, k / pieces * math.pi * 2
+					local p0, p1 = at(a0, radius), at(a1, radius)
+					local ring = inlay("DeckRing", Vector3.new(0.7, 0.12, (p1 - p0).Magnitude + 0.15), CFrame.lookAt((p0 + p1) / 2, p1), Color3.fromRGB(255, 120, 40), Enum.Material.Neon)
+					ring.Transparency = 0.25
+				end
+			end
+			local last = CFG.DeckRings[#CFG.DeckRings]
+			for k = 0, CFG.DeckSpokes - 1 do
+				local a = k / CFG.DeckSpokes * math.pi * 2
+				local long = k % 2 == 0
+				local r0, r1 = 16, if long then last else CFG.DeckRings[#CFG.DeckRings - 1]
+				local p0, p1 = at(a, r0), at(a, r1)
+				inlay("DeckSpoke", Vector3.new(if long then 1.1 else 0.7, 0.1, (p1 - p0).Magnitude), CFrame.lookAt((p0 + p1) / 2, p1), Color3.fromRGB(122, 102, 94), Enum.Material.Marble)
+				if long then
+					for _, radius in CFG.DeckRings do
+						local d = inlay("DeckDiamond", Vector3.new(1.8, 0.14, 1.8), CFrame.new(at(a, radius)) * CFrame.Angles(0, a + math.rad(45), 0), Color3.fromRGB(255, 120, 40), Enum.Material.Neon)
+						d.Transparency = 0.1
+					end
+				end
+			end
 		end
 		-- Try-on mirror (#140, owner's request): a stage behind the plaza (away from the island) with a tall framed
 		-- mirror. Standing on it shows TRY buttons in the shop and turns your camera to look out of the mirror at you.

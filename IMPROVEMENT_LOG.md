@@ -3,6 +3,24 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 155. A compass-rose floor on the hub deck (owner's request: geometrically satisfying architecture)
+
+**Why.** The owner asked for "geometrically satisfying architecture". The hub deck was a plain round slab, and from
+above (where the camera often is) it read as an empty disc.
+
+**Built.** SkySproutLavaService deck block, `CFG.DeckRings` and `CFG.DeckSpokes`:
+- Four concentric rings at radii 22, 36, 50 and 64 around the plaza. They're built from short neon segments, about
+  one per 1.1 studs of circumference, in the lava colour, so the theme pass recolours them with the force field.
+- Sixteen marble spokes from the plaza's edge, alternating long (to the outer ring) and short (to the third).
+- A neon diamond wherever a long spoke crosses a ring.
+- Everything is 0.1-0.14 studs thick, flush with the deck, and doesn't collide, query, touch or cast shadows, so
+  nothing about walking, the Warm-up Hop or the bounce pads changes. That's 206 parts in all.
+
+**Verified.** Lints pass. The Studio copy matches the repo (235050 bytes, hash 504940895) and compiles. Playtest:
+158 ring pieces, 16 spokes and 32 diamonds built. Screenshots (angled and top-down, Candy-pink world) show the rings
+and diamonds glowing in the theme colour around the plaza, with the bounce pads, live screen and mirror in place.
+The spokes come out faint on that pink theme.
+
 ## 154. The daily reward notice mentions days in a row
 
 **Why.** The days-in-a-row count (#146) was only on the calendar card. The notice toast reaches everyone, including
