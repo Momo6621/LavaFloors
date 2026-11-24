@@ -3,6 +3,20 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 169. The countdown explains the twist
+
+**Why.** Eighteen twists is a lot for a kid to remember. The live round screen's countdown named the next twist but
+not what it does, so new players only found out by falling off.
+
+**Built.** SkySproutLavaService:
+- `TWIST_TIPS` holds one short line per twist, for example "Shoves only nudge. A calm round", "Pass the bomb before it
+  pops!" or "The floor spins twice as far". Each line was checked against what the twist's code does.
+- The LiveRound board's countdown shows it under "Twist: …". A twist without a line leaves the row empty.
+
+**Verified.** Lints pass. The Studio copy matches the repo (249223 bytes, hash 430387032) and compiles. Playtest with
+`StudioForceMutator = "SoftShove"` (cleared afterwards): every countdown second read "Next round in N... / Twist: 🧸
+Soft Shoves / Shoves only nudge. A calm round".
+
 ## 168. A gentle twist: 🧸 Soft Shoves
 
 **Why.** Content: a twist kids will vote for. Most twists make rounds wilder (Mega Shoves, Shove Frenzy, Fast-Forward).

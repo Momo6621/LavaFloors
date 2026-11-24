@@ -365,6 +365,27 @@ local MUTATORS: { Mutator } = {
 	{ Id = "FastForward", Name = "⏩ Fast-Forward", Weight = 1 }, -- shorter phases, a harder round (CFG.FastForwardPhaseTime, #107)
 	{ Id = "Magnet", Name = "🧲 Magnet Hands", Weight = 2 }, -- shoves pull the other climber toward you instead (#115)
 }
+-- One line per twist for the live round screen's countdown (#169), so the deck knows what's coming.
+local TWIST_TIPS: { [string]: string } = {
+	Classic = "Survive the rising floor to win!",
+	LowGravity = "Floaty jumps: go higher, fall slower",
+	TurboSpin = "The floor spins twice as far",
+	HoleParty = "More tiles drop away. Watch your feet!",
+	SpeedRush = "Everyone runs faster",
+	ShieldParty = "Lots of shield orbs to grab",
+	DropParty = "Supply drops all round",
+	HotPotato = "Pass the bomb before it pops!",
+	Duos = "Team up in pairs. Last team wins!",
+	BigHeads = "Giant heads, same game",
+	MegaShove = "Shoves send climbers flying",
+	SoftShove = "Shoves only nudge. A calm round",
+	QuickCrumble = "Tiles crumble fast. Keep moving!",
+	Bouncy = "Super high jumps",
+	ShoveFrenzy = "Shove twice as often",
+	SlowMo = "A slower floor, a gentler round",
+	FastForward = "A faster floor, a harder round",
+	Magnet = "Shoves pull climbers toward you",
+}
 -- Twist vote: when a round ends everyone gets a few twists to pick from; the most votes wins (ties and no votes are
 -- settled at random among the options).
 type Vote = { options: { Mutator }, votes: { [Player]: string }, endsAt: number }
@@ -1413,7 +1434,7 @@ local function buildArena()
 		local lastRound: { string }? = nil
 		board("LiveRound", 0, "🔴 LIVE ROUND", Color3.fromRGB(230, 50, 40), function()
 			if L.Phase == "Countdown" then
-				return { string.format("Next round in %d...", math.max(1, math.ceil(L.EndsAt - now()))), "Twist: " .. tostring(L.Mutator.Name), "", "Look down through the force field", "to watch the climbers!" }
+				return { string.format("Next round in %d...", math.max(1, math.ceil(L.EndsAt - now()))), "Twist: " .. tostring(L.Mutator.Name), TWIST_TIPS[L.Mutator.Id] or "", "Look down through the force field", "to watch the climbers!" }
 			end
 			if L.Phase == "Idle" or next(L.Runners) == nil then
 				if lastRound then
