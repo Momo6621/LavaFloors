@@ -3,6 +3,22 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 168. A gentle twist: 🧸 Soft Shoves
+
+**Why.** Content: a twist kids will vote for. Most twists make rounds wilder (Mega Shoves, Shove Frenzy, Fast-Forward).
+Younger players get knocked off a lot, and a calmer round where shoves barely nudge gives them a real chance to climb.
+
+**Built.** SkySproutLavaService:
+- A new twist, `{ Id = "SoftShove", Name = "🧸 Soft Shoves", Weight = 2 }`, in the vote pool like the others.
+- Player shoves go out at `CFG.SoftShove` (0.6) of normal power, after the showdown multiplier.
+- A shoved bot slides one tile instead of 1.6. Bots don't shove players, so nothing else changes.
+- The Twist Tamer title and the twist analytics read the twist list, so they include it.
+
+**Verified.** Lints pass. The Studio copy matches the repo (248245 bytes, hash 576098044) and compiles. Playtest with
+`StudioForceMutator = "SoftShove"` (cleared afterwards): the round ran as "Twist: 🧸 Soft Shoves!", six shove attempts
+went through, and there were no server or client errors. Not checked: measuring the slower shove on a second real
+player (needs a 2-player test; it's the same multiplier path Mega Shoves uses).
+
 ## 167. A halo of floating stones circling the island
 
 **Why.** Architecture with movement: looking down from the deck, the floating island had nothing around it. A slow

@@ -97,7 +97,7 @@ Traveler (saved as `WorldsSeen`). 🎮 Lava Regular (100 rounds), 📅 Week Warr
 ![A Strawberry Buddy floating by a player's shoulder in the lobby](Media/fruit-buddy.jpg)
 
 Every round also rolls a twist (Low Gravity, Turbo Spin, Hole Party, Speed Rush, Shield Party, Drop Party, Hot Potato,
-Duos, Big Heads, Mega Shoves, Quick Crumble, Bouncy, Shove Frenzy, Slow-Mo, Fast-Forward, Magnet Hands) and a world theme (Sunset, Blue Inferno, Purple Moon, Starry Night, the bright daytime Candy Crater: mint tiles
+Duos, Big Heads, Mega Shoves, Soft Shoves, Quick Crumble, Bouncy, Shove Frenzy, Slow-Mo, Fast-Forward, Magnet Hands) and a world theme (Sunset, Blue Inferno, Purple Moon, Starry Night, the bright daytime Candy Crater: mint tiles
 over strawberry-pink lava, and Jade Jungle: golden tiles over glowing green lava at a jungle dusk, #157). Big Heads is just a look: every
 climber's head (bots too) grows 1.75x for the round, and speed, jumps and shoves stay the same. Mega Shoves makes shoves fly 1.6x as far
 (`MegaShove`; capped at `ShoveMax` 110 so the showdown boost can't push past the client's 120 limit) and pushes bots one

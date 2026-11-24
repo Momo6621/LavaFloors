@@ -195,6 +195,7 @@ local CFG = {
 	ShoveSpeed = 66,
 	ShoveLift = 18,
 	MegaShove = 1.6, -- Mega Shoves twist: shoves fly this much further (bots slide one tile further)
+	SoftShove = 0.6, -- 🧸 Soft Shoves twist (#168): shoves only push this far, a gentler round (bots slide one tile)
 	ShoveMax = 110, -- top horizontal shove speed; the client drops anything over 120 as a bad value
 	BlockedNoticeGap = 6, -- seconds between "bubble shield blocked your shove" notices for the same shover and target
 	JoinGrace = 2, -- seconds nobody can shove a climber who just landed on the grid (joined late or was rescued)
@@ -356,6 +357,7 @@ local MUTATORS: { Mutator } = {
 	{ Id = "Duos", Name = "👥 Duos", Weight = 2 },
 	{ Id = "BigHeads", Name = "🎈 Big Heads", Weight = 2 },
 	{ Id = "MegaShove", Name = "💥 Mega Shoves", Weight = 2 },
+	{ Id = "SoftShove", Name = "🧸 Soft Shoves", Weight = 2 }, -- gentle shoves for a calmer round (CFG.SoftShove, #168)
 	{ Id = "QuickCrumble", Name = "⚡ Quick Crumble", Weight = 1 },
 	{ Id = "Bouncy", Name = "🦘 Bouncy", Weight = 2 }, -- everyone jumps higher (CFG.BouncyJumpPower, #99)
 	{ Id = "ShoveFrenzy", Name = "🎯 Shove Frenzy", Weight = 2 }, -- shove cooldown halved (CFG.FrenzyShoveCooldown, #102)
@@ -3578,7 +3580,7 @@ local function shove(p: Player)
 		if magnet then
 			dir = -dir -- 🧲 Magnet Hands: yank them toward you (and maybe right past you)
 		end
-		local power = (if L.ShowdownAt > 0 then CFG.ShowdownShove else 1) * (if L.Mutator.Id == "MegaShove" then CFG.MegaShove else 1)
+		local power = (if L.ShowdownAt > 0 then CFG.ShowdownShove else 1) * (if L.Mutator.Id == "MegaShove" then CFG.MegaShove elseif L.Mutator.Id == "SoftShove" then CFG.SoftShove else 1)
 		-- Capped at ShoveMax: the client ignores shoves over 120 studs/s (Mega Shoves in the showdown would pass it).
 		local speed = math.min(CFG.ShoveSpeed * power, CFG.ShoveMax)
 		event:FireClient(best, "LavaShove", dir * speed + Vector3.new(0, CFG.ShoveLift, 0))
@@ -4714,7 +4716,7 @@ local function shoveBot(p: Player, b: Bot, dir: Vector3)
 	if magnet then
 		dir = -dir -- 🧲 Magnet Hands: the bot slides toward you instead
 	end
-	local reach = if L.Mutator.Id == "MegaShove" then 2.6 else 1.6 -- tiles; Mega Shoves pushes a bot one tile further
+	local reach = if L.Mutator.Id == "MegaShove" then 2.6 elseif L.Mutator.Id == "SoftShove" then 1 else 1.6 -- tiles; Mega Shoves pushes a bot one tile further, Soft Shoves less (#168)
 	local row, col = Grid.TileAt(towerModel, from + dir * CFG.GridTile * reach + Vector3.new(0, 2, 0), now())
 	shoveImpact(p, nil, from)
 	challenge(p, "Shoves", 1)
