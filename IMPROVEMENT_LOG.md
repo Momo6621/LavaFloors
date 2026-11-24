@@ -3,6 +3,29 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 160. Three remixed hats: Frost Berry, Molten Melon and Crystal Coconut
+
+**Why.** More earnable goals (content for the game to take off). The place has nine fruit models and all were already
+hats, so these are new looks made from existing models, with no new assets.
+
+**Built.**
+- SkySproutConfig `Hats`, coin prices only:
+  - Frost Berry Hat: 2600, Blueberry in Ice.
+  - Molten Melon Hat: 3200, Watermelon in CrackedLava.
+  - Crystal Coconut Hat: 4500, Coconut in Glass.
+- A hat can now name another fruit as its `Model` and set a `Material` and `Color`.
+- SkySproutLavaService `applyHat`: clones that model and repaints every part, clearing mesh textures so the colour
+  shows. This covers wearing the hat and trying it on at the mirror.
+- LavaFloorsUI: the shop card's 3D preview repaints the same way.
+- Saving, buying and the `OwnsHat` attributes already read the hat list.
+
+**Verified.** Lints pass. The Studio copies match the repo (SkySproutConfig 7617 bytes, hash 315518870;
+SkySproutLavaService 240539, hash 788699470; LavaFloorsUI 71072, hash 25548616) and compile. Playtest:
+- The three shop previews came out Ice, CrackedLava and Glass.
+- On the try-on mirror the worn hats were Ice (185, 230, 255), CrackedLava (255, 110, 40) and Glass (200, 235, 255).
+
+Not checked: buying one and a screenshot.
+
 ## 159. A colonnade around the hub deck
 
 **Why.** Architecture again: the compass rose (#155) gave the floor a pattern, but the deck still had nothing standing

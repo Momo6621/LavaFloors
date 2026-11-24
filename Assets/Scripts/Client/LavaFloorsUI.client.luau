@@ -341,10 +341,21 @@ local FruitModels = game.ReplicatedStorage:WaitForChild("FruitModels")
 for i, h in C.Hats do
 	local f, b = card(50 + i, h.Color, h.Name)
 	tryButton(f, "Hat", h.Id)
-	local model = FruitModels:FindFirstChild(h.Id)
+	local model = FruitModels:FindFirstChild(h.Model or h.Id)
 	if model then
 		local view: ViewportFrame = make("ViewportFrame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 4), Size = UDim2.fromOffset(64, 64), BackgroundTransparency = 1, ZIndex = 3 }, f)
 		local copy = model:Clone()
+		if h.Material then -- a remixed hat (#160): the same repaint the server gives it
+			for _, part in copy:GetDescendants() do
+				if part:IsA("BasePart") then
+					part.Material = (Enum.Material :: any)[h.Material]
+					part.Color = h.Color
+					if part:IsA("MeshPart") then
+						part.TextureID = ""
+					end
+				end
+			end
+		end
 		copy:PivotTo(CFrame.new())
 		copy.Parent = view
 		local _, size = copy:GetBoundingBox()

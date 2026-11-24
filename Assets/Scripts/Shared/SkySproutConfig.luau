@@ -62,6 +62,10 @@ return {
  {Id="Watermelon",Name="Watermelon Hat",Cost=1000,Color=Color3.fromRGB(255,110,140)},
  {Id="Coconut",Name="Coconut Hat",Cost=1500,Color=Color3.fromRGB(150,95,60)},
  {Id="Blueberry",Name="Blueberry Hat",Cost=2200,Color=Color3.fromRGB(120,110,255)},
+ -- Remixed hats (#160): an existing fruit (Model) remade in a new Material and Color.
+ {Id="FrostBerry",Name="Frost Berry Hat",Model="Blueberry",Material="Ice",Cost=2600,Color=Color3.fromRGB(185,230,255)},
+ {Id="MoltenMelon",Name="Molten Melon Hat",Model="Watermelon",Material="CrackedLava",Cost=3200,Color=Color3.fromRGB(255,110,40)},
+ {Id="CrystalCoconut",Name="Crystal Coconut Hat",Model="Coconut",Material="Glass",Cost=4500,Color=Color3.fromRGB(200,235,255)},
  {Id="DragonFruit",Name="Dragon Fruit Hat",Cost=0,PassOnly=true,Color=Color3.fromRGB(255,80,170)},
  {Id="StarFruit",Name="Star Fruit Hat",Cost=0,PassOnly=true,Color=Color3.fromRGB(255,215,60)},
  {Id="GoldenApple",Name="Golden Apple Hat",Cost=0,VipOnly=true,Color=Color3.fromRGB(255,200,40)},

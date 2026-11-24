@@ -5155,10 +5155,18 @@ applyHat = function(p: Player)
 	end
 	local d = data(p)
 	local id = (tryOn[p] and tryOn[p].Hat) or (d and d.Hat)
-	if type(id) ~= "string" or id == "" or not FruitModels:FindFirstChild(id) then
+	-- Remixed hats (#160) name another fruit's Model and repaint it in their own Material and Color.
+	local def: any = nil
+	for _, h in GameConfig.Hats do
+		if h.Id == id then
+			def = h
+		end
+	end
+	local modelId = if def and def.Model then def.Model else id
+	if type(id) ~= "string" or id == "" or type(modelId) ~= "string" or not FruitModels:FindFirstChild(modelId) then
 		return
 	end
-	local hat = (FruitModels:FindFirstChild(id) :: Model):Clone()
+	local hat = (FruitModels:FindFirstChild(modelId) :: Model):Clone()
 	hat.Name = "FruitHat"
 	local _, size = hat:GetBoundingBox()
 	hat:ScaleTo(head.Size.X * 1.15 / math.max(size.X, size.Z))
@@ -5171,6 +5179,13 @@ applyHat = function(p: Player)
 			part.CanQuery = false
 			part.CanTouch = false
 			part.Massless = true
+			if def and def.Material then
+				part.Material = (Enum.Material :: any)[def.Material]
+				part.Color = def.Color
+				if part:IsA("MeshPart") then
+					part.TextureID = ""
+				end
+			end
 			local weld = Instance.new("WeldConstraint")
 			weld.Part0 = head
 			weld.Part1 = part
