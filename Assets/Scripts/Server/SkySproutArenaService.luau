@@ -20,7 +20,7 @@ local function stats(p)
  local ls=p:FindFirstChild("leaderstats")
  if ls then
   local function set(name,v)local s=ls:FindFirstChild(name);if s then s.Value=v end end
-  set("Level",A.RPG and A.RPG.Level(d)or 1);set("Access",d.BestFloor);set("Wins",d.Wins);set("👑 Crowns",d.Crowns or 0);set("💰 Coins",d.Coins)
+  set("Level",A.RPG and A.RPG.Level(d)or 1);set("Access",d.BestFloor);set("Wins",d.Wins);set("👑 Crowns",d.Crowns or 0);set("🏆 Wins",d.Crowns or 0);set("🎮 Played",tonumber(d.RoundsPlayed)or 0);set("💰 Coins",d.Coins)
  end
 end
 local function color(p)
@@ -309,7 +309,8 @@ function A.Start()
   if not p.Parent then Profiles.save(p,true);return end
   A.Admin.ProfileLoaded(p,s.Data)
   local ls=Instance.new("Folder");ls.Name="leaderstats";ls.Parent=p
-  for _,k in ipairs(C.PartyMode and{"👑 Crowns","💰 Coins"}or{"Level","Access","Wins","👑 Crowns"})do local v=Instance.new("IntValue");v.Name=k;v.Parent=ls end
+  -- Party mode's player list (#147, owner's request): rounds won (crowns), rounds played, coins. Wins come first, so the list sorts by them.
+  for _,k in ipairs(C.PartyMode and{"🏆 Wins","🎮 Played","💰 Coins"}or{"Level","Access","Wins","👑 Crowns"})do local v=Instance.new("IntValue");v.Name=k;v.Parent=ls end
   stats(p);p.CharacterAdded:Connect(function(ch)character(p,ch)end)
   if p.Character then task.spawn(character,p,p.Character)end
  end

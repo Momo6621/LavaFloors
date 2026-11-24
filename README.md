@@ -129,6 +129,8 @@ Progression and live-ops:
   SkySproutShopService). Missing a day pauses the ladder instead of resetting it, so there's no "come back or lose it"
   pressure. A 7-day calendar card shows collected days, today and the next reward. It only appears once you've been
   out of a round for 3 s, never over the floor, and comes back (up to 3 times) if a round cuts it short.
+- Player list leaderboard: Roblox's player list shows 🏆 Wins (rounds you escaped, the same as your crowns), 🎮 Played
+  (rounds finished, ever) and 💰 Coins for everyone in the server, sorted by wins (#147).
 - Days in a row: the daily card also shows how many days in a row you've played ("🔥 5 days in a row · Best: 9";
   `LoginStreak` and `BestLoginStreak` in the profile, UTC days). It's only a count to be proud of: no coins depend on
   it, and a missed day just starts it again at 1 while your best stays (#146).

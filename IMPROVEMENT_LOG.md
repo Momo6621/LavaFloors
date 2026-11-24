@@ -3,6 +3,21 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 147. Wins and rounds played on the player list leaderboard (owner's request)
+
+**Why.** The owner asked for the number of battles played and games won, on a leaderboard. The game already saved
+both (`Crowns` for rounds escaped, `RoundsPlayed` for rounds finished, #124), but the player list only showed
+"👑 Crowns" and coins.
+
+**Built.** SkySproutArenaService (party mode's leaderstats): the columns are now 🏆 Wins, 🎮 Played and 💰 Coins.
+Wins come first, so Roblox's player list sorts everyone by them. `stats()` fills Wins from `Crowns` and Played from
+`RoundsPlayed`; it already runs after every payout, so both update as soon as a round ends. Nothing new is saved.
+
+**Verified.** Lints pass. The Studio copy matches the repo (24656 bytes, hash 67128363) and compiles. Solo
+playtest reading the leaderstats every 0.5 s: "🏆 Wins=0, 🎮 Played=0, 💰 Coins=25" on joining, then Played 1 and 2
+after the first two rounds (coins 70, then 90). Not checked: Wins going up (a solo test player can't reliably win a
+round; it reads the same `Crowns` value the old 👑 Crowns column showed) and a screenshot of the player list.
+
 ## 146. Days in a row on the daily card (owner's request)
 
 **Why.** The owner asked for a feature that shows how many days you've logged in in a row. The daily reward ladder
