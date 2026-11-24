@@ -3,6 +3,19 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 150. The live round screen names the bots when they win
+
+**Why.** In a round the bots win, the round-over screen (#145) only listed the players, all "💥 out", so the deck
+couldn't tell who won.
+
+**Built.** SkySproutLavaService, LiveRound board: in the Results phase, if no player was crowned, the last line says
+which bots are still standing ("👑 🤖 Blizzard, 🤖 Glacier won!", at most two names). It replaces a fourth player's
+line, the same way the bot count does during the round.
+
+**Verified.** Lints pass. The Studio copy matches the repo (232165 bytes, hash 75069221) and compiles. Solo playtest:
+after the player was knocked out the board showed "Round over! / (player)  💥 out / 👑 🤖 Blizzard, 🤖 Glacier won!",
+then "Last round: ... Next round soon!".
+
 ## 149. An all-time Top Winners board on the hub deck (owner's request)
 
 **Why.** After #147 the owner said yes to an all-time board. The hub's Top Climbers board only counts this week's

@@ -22,7 +22,7 @@ and 28 studs up with a springy sound, just for fun between rounds (`CFG.BouncePa
 Floating over the walkway between the two leaderboards, a 🔴 LIVE ROUND screen faces the plaza and updates every
 second during a round: each player's name with how many rises up they are (👑 when crowned, 💥 when out) and how many
 bots are still climbing, so the deck can follow the game below (#144). Between rounds it counts down the next one with
-its twist ("Next round in 3... / Twist: 👥 Duos"), shows "Round over!" with the standings, then keeps them up as
+its twist ("Next round in 3... / Twist: 👥 Duos"), shows "Round over!" with the standings (and "👑 🤖 Name won!" when the bots won, #150), then keeps them up as
 "Last round:" until the next countdown (#145).
 To its left, raised the same way, 🏆 ALL-TIME WINNERS lists the five players with the most rounds won ever, across
 all servers (OrderedDataStore `LavaAllTimeCrowns_v1`, total crowns; players here now are merged in live, and crowns

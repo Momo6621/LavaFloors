@@ -1212,6 +1212,12 @@ local function buildArena()
 				table.insert(rows, string.format("%s  %s", e.Name, mark))
 			end
 			if L.Phase == "Results" then
+				-- When no player was crowned, the bots still standing won (#150): name them on the last line.
+				local anyCrowned = climbers[1] ~= nil and climbers[1].Crowned
+				local botsWon = if anyCrowned then {} else aliveBotNames()
+				if #botsWon > 0 then
+					rows[4] = string.format("👑 %s won!", table.concat(botsWon, ", ", 1, math.min(2, #botsWon)))
+				end
 				lastRound = rows
 				return { "Round over!", rows[1] or "", rows[2] or "", rows[3] or "", rows[4] or "" }
 			end
