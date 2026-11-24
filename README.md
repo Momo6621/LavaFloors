@@ -17,6 +17,8 @@ in the world's lava colour, so the hub can see a game is taking place; it fades 
 Behind the plaza a gold-framed try-on mirror stands on a glass stage: step on it and the shop opens with a TRY
 button on every glove, hat and buddy, so you can wear any of them for 30 seconds for free (nothing is saved or
 bought) while the camera looks out of the mirror at you (#140).
+On the other side of the plaza from the Warm-up Hop, three neon bounce pads (pink, teal, gold) launch you about 14, 21
+and 28 studs up with a springy sound, just for fun between rounds (`CFG.BouncePads`, #142).
 
 Each round is 3 phases of 10 seconds. Every phase the floor:
 

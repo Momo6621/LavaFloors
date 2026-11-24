@@ -30,6 +30,13 @@ local CFG = {
 	Beacon = Vector3.new(-110.9, 200, 193.9),
 	DeckRadius = 74, -- the hub deck: everything around the plaza (Warm-up Hop, boards, lanterns) fits within ~63 studs
 	TryOnSeconds = 30, -- try-on mirror (#140): how long a tried-on glove, hat or buddy stays on
+	-- Bounce pads on the hub deck (#142): { studs sideways from the plaza (away from the Warm-up Hop), studs toward the
+	-- island, launch speed (about speed^2 / 392 studs high: 75 -> 14, 90 -> 21, 105 -> 28), colour }.
+	BouncePads = {
+		{ 28, 8, 75, Color3.fromRGB(255, 110, 190) },
+		{ 34, -4, 90, Color3.fromRGB(90, 230, 210) },
+		{ 26, -15, 105, Color3.fromRGB(255, 215, 80) },
+	},
 	MinPlayers = 1,
 	Countdown = 4,
 	ResultsTime = 3,
@@ -975,6 +982,23 @@ local function buildArena()
 		workspace:SetAttribute("MirrorStage", stageAt)
 		-- The mirror's point of view for the client camera: just in front of the glass, looking at someone on the stage.
 		workspace:SetAttribute("MirrorView", CFrame.lookAt(mirrorAt - Vector3.new(0, 3, 0) + toIsland * 1, Vector3.new(stageAt.X, stageAt.Y + 3.5, stageAt.Z)))
+		-- Bounce pads (#142): three springy pads on the empty side of the deck (the Warm-up Hop is on the other side),
+		-- something to play with between rounds. Each pad's "Bounce" is the launch speed; LavaFloorsUI does the bounce
+		-- on the client, which owns its character. Just for fun: no coins, no score.
+		local across = Vector3.new(-toIsland.Z, 0, toIsland.X)
+		for i, pad in CFG.BouncePads do
+			local at = plazaPos - across * pad[1] + toIsland * pad[2]
+			local colour = pad[4]
+			local base = part(deck, "BounceBase", Vector3.new(1, 9, 9), CFrame.new(at + Vector3.new(0, 0.5, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(70, 56, 54), Enum.Material.Basalt)
+			base.Shape = Enum.PartType.Cylinder
+			base:SetAttribute("NoTheme", true)
+			local top = part(deck, "BouncePad", Vector3.new(0.5, 7.5, 7.5), CFrame.new(at + Vector3.new(0, 1.2, 0)) * CFrame.Angles(0, 0, math.rad(90)), colour, Enum.Material.Neon)
+			top.Shape = Enum.PartType.Cylinder
+			top:SetAttribute("NoTheme", true)
+			top:SetAttribute("Bounce", pad[3])
+			top:SetAttribute("BounceIndex", i)
+			game:GetService("CollectionService"):AddTag(top, "LavaBounce")
+		end
 	end
 	local plaza = part(arenaFolder, "LobbyPlaza", Vector3.new(0.6, 30, 30), CFrame.new(plazaPos + Vector3.new(0, 0.3, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(72, 54, 52), Enum.Material.Basalt)
 	plaza.Shape = Enum.PartType.Cylinder

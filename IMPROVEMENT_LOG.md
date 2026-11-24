@@ -3,6 +3,25 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 142. Bounce pads on the hub deck
+
+**Why.** The hub is where kids wait between rounds (owner's hub idea). Besides the Warm-up Hop and the mirror there was
+little to just play with; a trampoline is the simplest toy, and the empty side of the deck had room.
+
+**Built.**
+- SkySproutLavaService: `CFG.BouncePads` lists three pads (sideways and toward-island offsets, launch speed, colour).
+  The deck block builds each as a basalt ring with a neon top (pink 75, teal 90, gold 105), on the side of the plaza
+  away from the Warm-up Hop, clear of the boards, gems and mirror. The tops carry a `Bounce` attribute and the
+  `LavaBounce` tag; all are NoTheme.
+- LavaFloorsUI: each Heartbeat a short downward raycast (only against tagged pads) finds a pad under you while you're
+  not rising; it sets your upward speed to the pad's `Bounce`, plays the built-in jump sound pitched by power, and
+  flashes the pad white. Client-side because the client owns its character's physics. No coins or score.
+
+**Verified.** Lints pass. The Studio copies match the repo (server 226371 bytes, hash 805725842; LavaFloorsUI 70730,
+hash 398921717) and compile. Solo playtest on the deck: dropped onto each pad, the character kept bouncing (4-5
+bounces in 3.5 s) and peaked 14.4, 20.6 and 28.0 studs above the pads, as planned; no console errors. Not checked:
+a screenshot (Studio wasn't the front window, so the capture timed out) and bouncing with several players.
+
 ## 141. Names over climbers while spectating from above
 
 **Why.** The top view (#132, owner's request) puts a big name over every climber. Knocked-out players watch the

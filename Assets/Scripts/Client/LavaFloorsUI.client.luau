@@ -1428,6 +1428,56 @@ do
 	player:GetAttributeChangedSignal("TopView"):Connect(applySaved)
 end
 
+-- Bounce pads on the hub deck (#142): landing on a pad (tag "LavaBounce") launches you at its "Bounce" speed with a
+-- springy sound and the pad flashing white. Done here because the client owns its character's physics.
+task.defer(function()
+	local CollectionService = game:GetService("CollectionService")
+	local RunService = game:GetService("RunService")
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Include
+	local function refresh()
+		params.FilterDescendantsInstances = CollectionService:GetTagged("LavaBounce")
+	end
+	refresh()
+	CollectionService:GetInstanceAddedSignal("LavaBounce"):Connect(refresh)
+	CollectionService:GetInstanceRemovedSignal("LavaBounce"):Connect(refresh)
+	local last = 0
+	RunService.Heartbeat:Connect(function()
+		local character = player.Character
+		local root = character and character:FindFirstChild("HumanoidRootPart")
+		local hum = character and character:FindFirstChildOfClass("Humanoid")
+		if not root or not root:IsA("BasePart") or not hum or hum.Health <= 0 or os.clock() - last < 0.25 then
+			return
+		end
+		local v = root.AssemblyLinearVelocity
+		if v.Y > 2 then
+			return
+		end
+		local hit = workspace:Raycast(root.Position, Vector3.new(0, -(hum.HipHeight + root.Size.Y / 2 + 1), 0), params)
+		local pad = hit and hit.Instance
+		local power = pad and pad:GetAttribute("Bounce")
+		if not pad or type(power) ~= "number" then
+			return
+		end
+		last = os.clock()
+		root.AssemblyLinearVelocity = Vector3.new(v.X, power, v.Z)
+		hum:ChangeState(Enum.HumanoidStateType.Freefall)
+		local s = Instance.new("Sound")
+		s.SoundId = "rbxasset://sounds/action_jump.mp3"
+		s.PlaybackSpeed = 0.7 + power / 150
+		s.Volume = 0.5
+		s.Parent = root
+		s:Play()
+		game:GetService("Debris"):AddItem(s, 2)
+		if pad:IsA("BasePart") then
+			local colour = pad:GetAttribute("BounceColour") or pad.Color
+			pad:SetAttribute("BounceColour", colour)
+			pad.Color = Color3.new(1, 1, 1)
+			game:GetService("TweenService"):Create(pad, TweenInfo.new(0.35), { Color = colour }):Play()
+		end
+	end)
+end)
+
 -- Try-on mirror (#140): stepping on the mirror stage opens the shop with TRY buttons, and the camera looks out of the
 -- mirror at you (shifted so you stand left of the shop panel). Stepping off hands the camera back. No hint pop-up:
 -- the TRY buttons and the mirror's sign explain it.
