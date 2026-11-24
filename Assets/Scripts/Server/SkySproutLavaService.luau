@@ -24,9 +24,11 @@ local CFG = {
 	-- The play arena floats 100 studs above the crater (#137, owner's request), with a rocky underside (added when
 	-- Y > 20). Everything in the arena is built from this centre.
 	Center = Vector3.new(-250, 100, 300),
-	-- The hub plaza (#137): on the ground 150 studs out from under the island, so people waiting look up at an angle
-	-- and see its edge and the climbers (was right beside the arena at -200.7, 262.4). Players spawn and come back here.
-	Beacon = Vector3.new(-130.7, 0, 209.0),
+	-- The hub plaza (#138, owner's request): on a floating deck above and beside the island (175 studs out, y 200, over
+	-- the floor's highest phase), so people waiting look down on the climbers through a force field. Players spawn
+	-- and come back here. (#137 had it on the ground at -130.7, 0, 209; before that beside the arena at -200.7, 262.4.)
+	Beacon = Vector3.new(-110.9, 200, 193.9),
+	DeckRadius = 74, -- the hub deck: everything around the plaza (Warm-up Hop, boards, lanterns) fits within ~63 studs
 	MinPlayers = 1,
 	Countdown = 4,
 	ResultsTime = 3,
@@ -909,6 +911,36 @@ local function buildArena()
 	end
 
 	local plazaPos = CFG.Beacon
+	-- Hub deck (#138): when the plaza floats, a round stone deck carries it, with a rocky underside and a glowing force
+	-- field all round the edge: you can watch the island below but not jump in or fall off. Lava-coloured, so the
+	-- theme pass recolours the force field like the rest of the arena.
+	if plazaPos.Y > 20 then
+		local deck = Instance.new("Model")
+		deck.Name = "HubDeck"
+		deck.Parent = arenaFolder
+		local R = CFG.DeckRadius
+		local slab = part(deck, "DeckFloor", Vector3.new(4, R * 2, R * 2), CFrame.new(plazaPos - Vector3.new(0, 2, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(78, 64, 60), Enum.Material.Slate)
+		slab.Shape = Enum.PartType.Cylinder
+		local drng = Random.new(138)
+		for i = 1, 5 do
+			local f = i / 5
+			local radius = R * (1 - f) ^ 1.1 + 5
+			local rock = part(deck, "DeckUnderside", Vector3.new(9, radius * 2, radius * 2), CFrame.new(plazaPos - Vector3.new(0, 4 + i * 8, 0) + Vector3.new(drng:NextNumber(-3, 3), 0, drng:NextNumber(-3, 3)) * f) * CFrame.Angles(0, drng:NextNumber(0, math.pi), math.rad(90)), Color3.fromRGB(60, 46, 46):Lerp(Color3.fromRGB(38, 28, 30), f), Enum.Material.Basalt)
+			rock.Shape = Enum.PartType.Cylinder
+			rock.CanCollide, rock.CanQuery, rock.CanTouch = false, false, false
+		end
+		local SEGMENTS = 40
+		for k = 1, SEGMENTS do
+			local a = k / SEGMENTS * math.pi * 2
+			local out = Vector3.new(math.cos(a), 0, math.sin(a))
+			local at = plazaPos + out * R + Vector3.new(0, 6, 0)
+			local wall = part(deck, "ForceField", Vector3.new(2 * math.pi * R / SEGMENTS + 0.4, 12, 0.6), CFrame.lookAt(at, at + out), Color3.fromRGB(255, 120, 40), Enum.Material.ForceField)
+			wall.Transparency = 0.3
+			wall.CastShadow = false
+			local rail = part(deck, "ForceFieldRail", Vector3.new(2 * math.pi * R / SEGMENTS + 0.4, 0.35, 0.35), CFrame.lookAt(at + Vector3.new(0, 6, 0), at + out + Vector3.new(0, 6, 0)), Color3.fromRGB(255, 150, 60), Enum.Material.Neon)
+			rail.CanCollide, rail.CanQuery, rail.CanTouch, rail.CastShadow = false, false, false, false
+		end
+	end
 	local plaza = part(arenaFolder, "LobbyPlaza", Vector3.new(0.6, 30, 30), CFrame.new(plazaPos + Vector3.new(0, 0.3, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(72, 54, 52), Enum.Material.Basalt)
 	plaza.Shape = Enum.PartType.Cylinder
 	for k = 0, 5 do
@@ -5154,6 +5186,29 @@ local function buildGems()
 	if not floorModel then
 		return
 	end
+	-- With the hub on a floating deck (#138) the ground can't be reached, so the five gems move onto the deck: over the
+	-- Warm-up Hop goal, behind the Top Climbers board and three along the force field. Same ids (G1-G5), so gems a
+	-- player already found still count; the pickup check reads the same list.
+	if CFG.Beacon.Y > 20 then
+		local b = CFG.Beacon
+		local toTower = (Vector3.new(CFG.Center.X, 0, CFG.Center.Z) - Vector3.new(b.X, 0, b.Z)).Unit
+		local side = Vector3.new(-toTower.Z, 0, toTower.X)
+		local spots = {}
+		local goal = arenaFolder and arenaFolder:FindFirstChild("HopGoal", true)
+		table.insert(spots, if goal and goal:IsA("BasePart") then goal.Position + Vector3.new(0, 6, 0) else b + side * 40 + Vector3.new(0, 6, 0))
+		local board = arenaFolder and arenaFolder:FindFirstChild("TopClimbers", true)
+		if board and board:IsA("BasePart") then
+			local away = Vector3.new(board.Position.X - b.X, 0, board.Position.Z - b.Z).Unit
+			table.insert(spots, Vector3.new(board.Position.X, b.Y + 2.5, board.Position.Z) + away * 3)
+		else
+			table.insert(spots, b - side * 24 + Vector3.new(0, 2.5, 0))
+		end
+		for _, deg in { 140, 195, 250 } do
+			local a = math.rad(deg)
+			table.insert(spots, b + (toTower * math.cos(a) + side * math.sin(a)) * (CFG.DeckRadius - 8) + Vector3.new(0, 2.5, 0))
+		end
+		CFG.Gems = spots
+	end
 	local old = floorModel:FindFirstChild("LobbyGems")
 	if old then
 		old:Destroy()
@@ -5224,7 +5279,7 @@ local function gemLoop()
 						p:SetAttribute("LavaGems", list)
 						event:FireClient(p, "LavaFX", { Kind = "Invite", Text = string.format("💎 Gem %d/%d", found, #CFG.Gems), Coins = coins })
 						tell(p, if all then string.format("💎 All %d lava gems found! +%d coins", #CFG.Gems, coins)
-							else string.format("💎 Lava gem %d/%d! +%d coins. %d more hidden around the volcano and island.", found, #CFG.Gems, coins, #CFG.Gems - found))
+							else string.format("💎 Lava gem %d/%d! +%d coins. %d more hidden around the hub.", found, #CFG.Gems, coins, #CFG.Gems - found))
 						if all then
 							applyTitle(p)
 							tell(p, "🏷️ New title: 🔶 Gem Hunter! Pick it with the 🏷️ button in 📋 Challenges.")
@@ -5272,6 +5327,18 @@ function L.Start(arena: any, remote: RemoteEvent, stats: (Player) -> (), notice:
 		local at = CFG.Beacon + toTower * 16
 		spawn.CFrame = CFrame.lookAt(at + Vector3.new(0, 2.5, 0), at + toTower + Vector3.new(0, 2.5, 0))
 	end
+	-- The old travel code (SkySproutTowerService) puts every new character at the floor's "Spawn" attribute, which the
+	-- place saved by the old plaza: point it at the hub too (#138), facing the island.
+	local hubFloor = workspace.SkySprout.Floors:FindFirstChild("Floor_" .. CFG.Floor)
+	if hubFloor then
+		local toTower = (Vector3.new(CFG.Center.X, 0, CFG.Center.Z) - Vector3.new(CFG.Beacon.X, 0, CFG.Beacon.Z)).Unit
+		hubFloor:SetAttribute("Spawn", CFG.Beacon + toTower * 16 + Vector3.new(0, 3.6, 0))
+		hubFloor:SetAttribute("SpawnLookAt", Vector3.new(CFG.Center.X, 0, CFG.Center.Z))
+		-- Its out-of-bounds check sends anyone above MaxExploreHeight (190 in the place) back to the spawn with a
+		-- "Returned to floor 1" notice: the hub deck at y 200 must be inside it.
+		local limit = tonumber(hubFloor:GetAttribute("MaxExploreHeight")) or 270
+		hubFloor:SetAttribute("MaxExploreHeight", math.max(limit, CFG.Beacon.Y + 80))
+	end
 	if GameConfig.PartyMode then
 		islandMode()
 		local function scale(character: Model)
@@ -5306,7 +5373,7 @@ function L.Start(arena: any, remote: RemoteEvent, stats: (Player) -> (), notice:
 					local me = root(p)
 					if me and p:GetAttribute("ArenaMode") ~= "LavaRush" then
 						local flat = Vector3.new(me.Position.X - CFG.Center.X, 0, me.Position.Z - CFG.Center.Z).Magnitude
-						if flat > CFG.SeaLimit or me.Position.Y < -40 then
+						if flat > CFG.SeaLimit or me.Position.Y < CFG.Beacon.Y - 60 then -- fell off the hub deck (#138) or the sea
 							me.AssemblyLinearVelocity = Vector3.zero
 							placeAtBeacon(p)
 							tell(p, "🌊 Too far out to sea! Back to the lobby.")

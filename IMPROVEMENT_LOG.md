@@ -3,6 +3,38 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 138. The hub becomes a floating deck above the island (owner's request)
+
+**Why.** Right after #137 (hub on the ground looking up), the owner asked: "is the hub higher than the island? you
+should be able to onlook the game with a barrier blocking it". They chose: keep the island floating, hub on a deck
+above it, with a glowing force field for the barrier.
+
+**Built.** SkySproutLavaService:
+- `CFG.Beacon` (the hub plaza) → (-110.9, 200, 193.9): 175 studs out, beside the island and above the floor's
+  highest phase. `DeckRadius = 74` (everything around the plaza fits within ~63 studs).
+- `buildArena` adds a "HubDeck" when the plaza is above y 20: a slate disc under the plaza, a 5-layer rocky
+  underside, and a ring of 40 ForceField-material walls (12 studs tall, solid) with a neon rail. They're
+  lava-coloured, so the theme pass recolours them.
+- `buildGems`: on a deck the ground can't be reached, so the five gems move onto it (over the Warm-up Hop goal,
+  behind the Top Climbers board, three along the force field). Same ids, and the pickup reads the same list. The
+  notice now says "hidden around the hub".
+- Players who drop more than 60 studs below the hub (not in a round) are brought back, like the old sea limit.
+- At start the floor model's "Spawn"/"SpawnLookAt" attributes point at the deck. The old travel code
+  (SkySproutTowerService) put every new character at the old plaza from them. Its MaxExploreHeight is raised to
+  cover the deck (190 in the place → 280): it had been sending deck players "back to floor 1" every 0.35 s.
+- The place's SpawnLocation was moved onto the deck in Studio.
+
+**Verified.** Lints pass. The Studio copy matches the repo (218171 bytes, hash 498664406) and compiles. Playtests:
+- Spawned on the deck (-124, 202, 204); a round put the player on the island (y ≈ 116); knocked out, they came back
+  to the deck; a phase-1 drop-back put them on the island again.
+- Walking outward stopped at 73.4 studs from the deck centre (the force field), still on the deck.
+- Stepping on gems G3 and G1 gave "💎 Lava gem 1/5 … 2/5" and LavaGems=G1,G3.
+- No "Returned to floor 1" notices after the height fix. The two spawn problems (old plaza spawn, the height check)
+  were found and fixed in these runs.
+- Screenshots: the deck from above, and the view from its edge down onto the island during a round. The owner locked
+  it in from those.
+- Console clean. Not tested: multiplayer, phones.
+
 ## 137. The arena floats above a hub (owner's request, stage 1 of the hub)
 
 **Why.** The owner wants a hub area "onlooking the island from the bottom", with a light pillar while a game is on
