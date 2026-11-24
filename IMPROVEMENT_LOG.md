@@ -51,8 +51,10 @@ Younger players get knocked off a lot, and a calmer round where shoves barely nu
 
 **Verified.** Lints pass. The Studio copy matches the repo (248245 bytes, hash 576098044) and compiles. Playtest with
 `StudioForceMutator = "SoftShove"` (cleared afterwards): the round ran as "Twist: 🧸 Soft Shoves!", six shove attempts
-went through, and there were no server or client errors. Not checked: measuring the slower shove on a second real
-player (needs a 2-player test; it's the same multiplier path Mega Shoves uses).
+went through, and there were no server or client errors.
+2-player Studio test (2026-11-24, Soft Shoves forced): Player1 shoved Player2 at the start of their second round
+(the first has a 15 s new-player bubble). Player2 received two shoves at 39.6 studs/s sideways and 18 up: 66 x 0.6,
+as designed. Two earlier tries failed because Player1 was knocked out before shoving.
 
 ## 167. A halo of floating stones circling the island
 
