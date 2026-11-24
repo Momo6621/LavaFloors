@@ -3,6 +3,20 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 171. Two more remixed hats: Shadow Banana and Emerald Strawberry
+
+**Why.** The remix system from #160 makes a new hat one config line. These two fill price gaps on the hat ladder.
+
+**Built.** SkySproutConfig `Hats`:
+- Shadow Banana Hat: 1800, Banana in dark slate. It sits between Coconut (1500) and Blueberry (2200).
+- Emerald Strawberry Hat: 2800, Strawberry in green glass. It sits between Frost Berry (2600) and Molten Melon (3200).
+
+Coin prices only; no other code changed.
+
+**Verified.** Lints pass. The Studio copy matches the repo (8403 bytes, hash 277146801) and compiles. Playtest: both
+shop cards are there with repainted previews, Slate (60, 50, 80) and Glass (60, 210, 120), at LayoutOrders 57 and 59,
+inside the Hats tab's range.
+
 ## 170. A weekly goal: win 5 rounds this week for 250 coins
 
 **Why.** Content for retention: the daily challenges reset every day, but nothing rewarded coming back across a week.
