@@ -3,6 +3,24 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 158. Three new gloves to earn: Jade, Frost and Obsidian
+
+**Why.** Content for the game to take off. Coins pile up once you own the gloves you like, and the most expensive was
+Diamond (4000). More earnable goals keep kids playing, and a long-term goal gives regulars something to save for.
+
+**Built.** SkySproutConfig `Skins`, all bought with coins and kept in price order:
+- Jade Gloves: 1200, green marble.
+- Frost Gloves: 2000, pale blue ice.
+- Obsidian Gloves: 6000, dark glass with sparkles, the new top goal.
+
+The shop, the try-on mirror, saving and glove painting all read the list, so nothing else changed. Kid-fair: plain
+coin prices, nothing random or paid.
+
+**Verified.** Lints pass. The Studio copy matches the repo (7152 bytes, hash 121187831) and compiles. Playtest: the
+shop had "Jade Gloves", "Frost Gloves" and "Obsidian Gloves" cards. At the try-on mirror the gloves came out Ice
+(190, 235, 255), Glass (45, 32, 60) and Marble (60, 200, 110). Not checked: buying one (the test profile has 25
+coins) and a screenshot.
+
 ## 157. A sixth world: 🌿 Jade Jungle
 
 **Why.** Content for the game to take off (owner's request). Every round rolls a world, so a new world freshens every

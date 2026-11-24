@@ -32,9 +32,12 @@ return {
  {Id="Lilac",Name="Royal Gloves",Cost=320,Color=Color3.fromRGB(189,159,255)},
  {Id="Magma",Name="Magma Gloves",Cost=600,Color=Color3.fromRGB(255,96,30),Material="CrackedLava"},
  {Id="Ocean",Name="Ocean Gloves",Cost=900,Color=Color3.fromRGB(45,150,255),Material="Glass"},
+ {Id="Jade",Name="Jade Gloves",Cost=1200,Color=Color3.fromRGB(60,200,110),Material="Marble"}, -- #158
  {Id="Galaxy",Name="Galaxy Gloves",Cost=1500,Color=Color3.fromRGB(130,70,255),Material="Neon"},
+ {Id="Frost",Name="Frost Gloves",Cost=2000,Color=Color3.fromRGB(190,235,255),Material="Ice"}, -- #158
  {Id="Gold",Name="Golden Gloves",Cost=2500,Color=Color3.fromRGB(255,200,60),Material="Foil"},
  {Id="Diamond",Name="Diamond Gloves",Cost=4000,Color=Color3.fromRGB(205,240,255),Material="Glass",Sparkle=true},
+ {Id="Obsidian",Name="Obsidian Gloves",Cost=6000,Color=Color3.fromRGB(45,32,60),Material="Glass",Sparkle=true}, -- #158: a long-term goal
  {Id="Aurora",Name="Aurora Gloves",Premium=true,Cost=0,Color=Color3.fromRGB(105,224,255),Material="Neon",Sparkle=true},
  },
  -- Fruit buddies: little fruit pets with eyes that float by your shoulder. Cosmetic only, all bought with coins.
