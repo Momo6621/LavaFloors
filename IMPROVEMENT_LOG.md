@@ -3,6 +3,28 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 161. A gold champion statue on the hub deck
+
+**Why.** Content for the game to take off. Seeing a real player's avatar standing on a podium gives every kid a
+visible goal ("that could be me") and gives the champion something to show their friends. It also adds a centrepiece
+to the deck's architecture.
+
+**Built.** SkySproutLavaService:
+- `allTime.Champion()`: the stored all-time top entry (#149) merged with the players in the server now; nil until
+  someone has won a round.
+- The podium, `CFG.ChampionDistance` 22 studs behind the plaza (the mirror is at 36): three stepped discs (basalt,
+  basalt, gold foil) with a glowing lava-colour ring, and a sign above facing the plaza. The sign reads "🏆 Win rounds
+  to stand here!" until there's a champion, then "🏆 CHAMPION: Name · N wins".
+- Every 30 s, if the champion changed, the server builds their avatar from `GetHumanoidDescriptionFromUserId` (R15)
+  and casts it in gold (Foil, textures, decals and scripts removed). The statue is anchored and doesn't collide, has
+  no name tag, faces the plaza, and replaces the old one.
+
+**Verified.** Lints pass. The Studio copy matches the repo (245083 bytes, hash 588559543) and compiles. Playtest with a
+temporary Studio-only edit giving the unsaved test profile 3 wins (removed afterwards; SkySproutShopService
+re-hashed to the repo, 9377 and 457132341): after 29 s a 16-part statue, all gold, stood on the podium, and the sign
+read "🏆 CHAMPION: (player) · 3 wins". Not checked: a screenshot (Studio was in the background) and a live server's
+data store champion.
+
 ## 160. Three remixed hats: Frost Berry, Molten Melon and Crystal Coconut
 
 **Why.** More earnable goals (content for the game to take off). The place has nine fruit models and all were already

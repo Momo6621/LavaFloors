@@ -20,6 +20,9 @@ On the island side a stone gateway arch (two pillars, 13 wedge stones, a glowing
 colour) frames the walk to the edge and the island below (`CFG.DeckArch`, #156).
 Eight slender basalt columns, each with a glowing orb and lamp in the theme colour, stand where the long spokes meet the
 outer ring (any spot near a lava gem or the Warm-up Hop's goal is left open, #159).
+Behind the plaza, three stepped discs (the top one gold) carry a gold statue of the all-time champion, the player with
+the most rounds won: their own avatar cast in gold, under a sign "🏆 CHAMPION: Name · N wins". It's rebuilt when the
+top spot changes and invites everyone else to "Win rounds to stand here!" until someone has won (#161).
 Behind the plaza a gold-framed try-on mirror stands on a glass stage: step on it and the shop opens with a TRY
 button on every glove, hat and buddy, so you can wear any of them for 30 seconds for free (nothing is saved or
 bought) while the camera looks out of the mirror at you (#140).

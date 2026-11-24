@@ -36,6 +36,7 @@ local CFG = {
 	DeckSpokes = 16,
 	-- Gateway arch on the island side of the deck (#156): studs from the plaza centre, half the opening, pillar height.
 	DeckArch = { Distance = 46, HalfWidth = 11, Height = 15 },
+	ChampionDistance = 22, -- champion podium (#161): studs behind the plaza centre, away from the island (the mirror is at 36)
 	-- Bounce pads on the hub deck (#142): { studs sideways from the plaza (away from the Warm-up Hop), studs toward the
 	-- island, launch speed (about speed^2 / 392 studs high: 75 -> 14, 90 -> 21, 105 -> 28), colour }.
 	BouncePads = {
@@ -601,6 +602,23 @@ allTime.Write = function(p: Player, crowns: number)
 		end)
 	end)
 end
+-- The all-time champion (#161): the stored top entry merged with the players here now, or nil before anyone has won.
+allTime.Champion = function(): { Id: number, Name: string, Crowns: number }?
+	local best: { Id: number, Name: string, Crowns: number }? = nil
+	local function consider(id: number, name: string, crowns: number)
+		if crowns > 0 and (not best or crowns > best.Crowns) then
+			best = { Id = id, Name = name, Crowns = crowns }
+		end
+	end
+	for _, e in allTime.Top do
+		consider(e.Id, e.Name, e.Crowns)
+	end
+	for _, p in Players:GetPlayers() do
+		local d = data(p)
+		consider(p.UserId, p.DisplayName, d and tonumber(d.Crowns) or 0)
+	end
+	return best
+end
 task.spawn(function()
 	while true do
 		local store = allTime.Store
@@ -1116,6 +1134,88 @@ local function buildArena()
 				local inner = part(deck, "ArchGlow", Vector3.new((p1 - p0).Magnitude * (radius - 1.6) / radius + 0.1, 0.25, 3.1), cf * CFrame.new(0, -1.6, 0), TRIM, Enum.Material.Neon)
 				inner.CanCollide, inner.CanQuery, inner.CanTouch, inner.CastShadow = false, false, false, false
 			end
+		end
+		-- Champion podium (#161): three stepped discs behind the plaza with a gold statue of the all-time top
+		-- winner (their own avatar, cast in gold) and a sign with their name. Rebuilt when the top spot changes.
+		do
+			local toward = (Vector3.new(c.X, 0, c.Z) - Vector3.new(plazaPos.X, 0, plazaPos.Z)).Unit
+			local at = plazaPos - toward * CFG.ChampionDistance
+			local GOLD, STONE = Color3.fromRGB(255, 200, 70), Color3.fromRGB(70, 56, 54)
+			local top = at
+			for tier = 1, 3 do -- three stepped discs, the top one gold
+				local width, height = 11 - tier * 2.5, 0.8
+				local disc = part(deck, "ChampionTier", Vector3.new(height, width, width), CFrame.new(top + Vector3.new(0, height / 2, 0)) * CFrame.Angles(0, 0, math.rad(90)), if tier == 3 then GOLD else STONE, if tier == 3 then Enum.Material.Foil else Enum.Material.Basalt)
+				disc.Shape = Enum.PartType.Cylinder
+				top += Vector3.new(0, height, 0)
+			end
+			local trim = part(deck, "ChampionGlow", Vector3.new(0.2, 8.8, 8.8), CFrame.new(at + Vector3.new(0, 0.85, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(255, 120, 40), Enum.Material.Neon)
+			trim.Shape = Enum.PartType.Cylinder
+			trim.CanCollide, trim.CanQuery, trim.CanTouch = false, false, false
+			-- The sign floats over the statue, facing the plaza.
+			local signPart = part(deck, "ChampionSign", Vector3.new(8, 2, 0.2), CFrame.lookAt(top + Vector3.new(0, 8.5, 0), Vector3.new(plazaPos.X, top.Y + 8.5, plazaPos.Z)), Color3.new(0, 0, 0), Enum.Material.SmoothPlastic)
+			signPart.Transparency = 1
+			signPart.CanCollide, signPart.CanQuery, signPart.CanTouch = false, false, false
+			local gui = Instance.new("SurfaceGui")
+			gui.Face = Enum.NormalId.Front
+			gui.PixelsPerStud = 40
+			gui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+			gui.LightInfluence = 0
+			gui.Parent = signPart
+			local label = Instance.new("TextLabel")
+			label.BackgroundTransparency = 1
+			label.Size = UDim2.fromScale(1, 1)
+			label.Font = Enum.Font.LuckiestGuy
+			label.TextScaled = true
+			label.TextColor3 = Color3.fromRGB(255, 220, 120)
+			label.TextStrokeTransparency = 0
+			label.Text = "🏆 Win rounds to stand here!"
+			label.Parent = gui
+			local shownId: number? = nil
+			local statue: Model? = nil
+			task.spawn(function()
+				while deck.Parent do
+					local champ = allTime.Champion()
+					if champ then
+						label.Text = string.format("🏆 CHAMPION: %s · %d wins", champ.Name, champ.Crowns)
+						if champ.Id ~= shownId then
+							shownId = champ.Id
+							local ok, model = pcall(function()
+								local desc = Players:GetHumanoidDescriptionFromUserId(champ.Id)
+								return Players:CreateHumanoidModelFromDescription(desc, Enum.HumanoidRigType.R15)
+							end)
+							if ok and model then
+								if statue then
+									statue:Destroy()
+								end
+								model.Name = "ChampionStatue"
+								local hum = model:FindFirstChildOfClass("Humanoid")
+								if hum then
+									hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+								end
+								for _, d in model:GetDescendants() do
+									if d:IsA("BasePart") then
+										d.Anchored = true
+										d.CanCollide = false
+										d.CanTouch = false
+										d.Material = Enum.Material.Foil
+										d.Color = GOLD
+										if d:IsA("MeshPart") then
+											d.TextureID = ""
+										end
+									elseif d:IsA("Decal") or d:IsA("Texture") or d:IsA("Script") or d:IsA("LocalScript") then
+										d:Destroy()
+									end
+								end
+								local _, size = model:GetBoundingBox()
+								model:PivotTo(CFrame.lookAt(top + Vector3.new(0, size.Y / 2, 0), Vector3.new(plazaPos.X, top.Y + size.Y / 2, plazaPos.Z)))
+								model.Parent = deck
+								statue = model
+							end
+						end
+					end
+					task.wait(30)
+				end
+			end)
 		end
 		-- Try-on mirror (#140, owner's request): a stage behind the plaza (away from the island) with a tall framed
 		-- mirror. Standing on it shows TRY buttons in the shop and turns your camera to look out of the mirror at you.
