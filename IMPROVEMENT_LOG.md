@@ -3,6 +3,20 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 152. The live round screen shows the time left
+
+**Why.** A round is won by surviving until time runs out, so "how long is left" is the thing watchers on the deck most
+want to know. (Showing rises out of the total was tried first and dropped: the climb is only 3 rises, and "⬆ 3/3" read
+like a win when you still have to survive to the end.)
+
+**Built.** SkySproutLavaService, LiveRound board: the round's last line starts with the time left from `L.EndsAt`,
+"⏱ 33s · 🤖 3 bots · 💣 Hot Potato" (or "⏱ 33s · 💣 Hot Potato" with no bots left).
+
+**Verified.** Lints pass. The Studio copy matches the repo (232506 bytes, hash 300777450) and compiles. Solo playtest
+reading the board each second: "⏱ 33s" counting down one a second to "⏱ 20s" with the bots and the Hot Potato twist.
+Noticed, not changed: a player dropped back in during phase 1 shows "⬆ 3" right away. Their peak seems to count the
+height they're dropped from (the result card and coins use the same `peak`), so it's worth a look.
+
 ## 151. The live round screen shows the twist during the round
 
 **Why.** The countdown names the twist (#145), but once the round started the deck lost it, and twists like Drop
