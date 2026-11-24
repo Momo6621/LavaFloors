@@ -3,6 +3,32 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 149. An all-time Top Winners board on the hub deck (owner's request)
+
+**Why.** After #147 the owner said yes to an all-time board. The hub's Top Climbers board only counts this week's
+crowns; the player list only shows who is in this server.
+
+**Built.** SkySproutLavaService:
+- `allTime`, one table (the script is near its local limit), holds the OrderedDataStore `LavaAllTimeCrowns_v1`
+  (not opened in Studio, where data store access is off).
+- `allTime.Write` saves a player's total crowns, keyed by UserId, after every crown (in `crownPlayer`, next to the
+  weekly count).
+- Every 60 s a loop reads the top 5. Names come from `GetNameFromUserIdAsync`, cached with the weekly board's names.
+  The same loop writes anyone here with crowns who isn't in the store yet this session, so wins from before the
+  board count.
+- The board "🏆 ALL-TIME WINNERS" uses `board()`'s raised mode from #144: 14 studs left of the live round screen,
+  facing the plaza, over Top Supporters. It merges the stored top 5 with the players in the server now, like the
+  weekly board, and shows "1. Name  🏆 12" rows, or "Win a round to get on the board!" when empty.
+- One data store write per crown plus at most one per player per server, well inside the budget.
+
+**Verified.** Lints pass. The Studio copy matches the repo (231804 bytes, hash 714686207) and compiles. Playtest:
+- The board stands at y 214.5, 14 studs from the live screen, facing the plaza, and shows the empty-board line.
+- With a temporary Studio-only edit giving the unsaved test profile 3 crowns, the board showed "1. (player)  🏆 3"
+  and the player list "🏆 Wins=3", which also checks #147's Wins column. The edit was removed and the shop
+  service re-hashed to the repo (9169, 710849118).
+
+Not checked: the data store itself (Studio can't reach it here), and a screenshot.
+
 ## 148. New players see their day-1 reward card again
 
 **Why.** While testing #146 a brand-new player never saw the daily calendar card. Two causes:

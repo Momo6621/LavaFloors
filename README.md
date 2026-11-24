@@ -24,6 +24,9 @@ second during a round: each player's name with how many rises up they are (👑 
 bots are still climbing, so the deck can follow the game below (#144). Between rounds it counts down the next one with
 its twist ("Next round in 3... / Twist: 👥 Duos"), shows "Round over!" with the standings, then keeps them up as
 "Last round:" until the next countdown (#145).
+To its left, raised the same way, 🏆 ALL-TIME WINNERS lists the five players with the most rounds won ever, across
+all servers (OrderedDataStore `LavaAllTimeCrowns_v1`, total crowns; players here now are merged in live, and crowns
+won before the board existed are added the first time a player is seen) (#149).
 
 Each round is 3 phases of 10 seconds. Every phase the floor:
 

@@ -574,6 +574,62 @@ local function addWeekCrown(p: Player, d: any)
 	end
 end
 
+-- All-time Top Winners (#149, owner's request): every player's total crowns (rounds won) in one ordered data store,
+-- shown on a board on the hub deck. Studio has no data store access here, so the board falls back to this server.
+local allTime: any = { Top = {}, Written = setmetatable({}, { __mode = "k" }), Store = nil }
+if not Run:IsStudio() then
+	pcall(function()
+		allTime.Store = game:GetService("DataStoreService"):GetOrderedDataStore("LavaAllTimeCrowns_v1")
+	end)
+end
+allTime.Write = function(p: Player, crowns: number)
+	local store = allTime.Store
+	if not store or crowns <= 0 then
+		return
+	end
+	allTime.Written[p] = crowns
+	task.spawn(function()
+		pcall(function()
+			(store :: OrderedDataStore):SetAsync(tostring(p.UserId), crowns)
+		end)
+	end)
+end
+task.spawn(function()
+	while true do
+		local store = allTime.Store
+		if store then
+			-- Crowns won before this board existed count too: written the first time a player is seen here.
+			for _, p in Players:GetPlayers() do
+				local d = data(p)
+				local crowns = d and tonumber(d.Crowns) or 0
+				if crowns > 0 and allTime.Written[p] == nil then
+					allTime.Write(p, crowns)
+				end
+			end
+			local ok, page = pcall(function()
+				return (store :: OrderedDataStore):GetSortedAsync(false, 5):GetCurrentPage()
+			end)
+			if ok and type(page) == "table" then
+				local rows = {}
+				for _, entry in page do
+					local id = tonumber(entry.key)
+					if id then
+						local name = weeklyNames[id]
+						if not name then
+							local okName, n = pcall(Players.GetNameFromUserIdAsync, Players, id)
+							name = if okName and type(n) == "string" then n else "Climber"
+							weeklyNames[id] = name
+						end
+						table.insert(rows, { Id = id, Name = name, Crowns = tonumber(entry.value) or 0 })
+					end
+				end
+				allTime.Top = rows
+			end
+		end
+		task.wait(60)
+	end
+end)
+
 local function root(p: Player): BasePart?
 	local r = p.Character and p.Character:FindFirstChild("HumanoidRootPart")
 	return if r and r:IsA("BasePart") then r else nil
@@ -1161,6 +1217,42 @@ local function buildArena()
 			end
 			local botsIn = #aliveBotNames()
 			rows[5] = if botsIn > 0 then string.format("🤖 %d bot%s still climbing", botsIn, if botsIn == 1 then "" else "s") else ""
+			return rows
+		end, true)
+		-- All-time Top Winners (#149): raised like the live screen, to its left, over Top Supporters.
+		board("AllTimeWinners", -14, "🏆 ALL-TIME WINNERS", Color3.fromRGB(245, 170, 20), function()
+			local best: { [number]: { Name: string, Crowns: number } } = {}
+			for _, e in allTime.Top do
+				best[e.Id] = { Name = e.Name, Crowns = e.Crowns }
+			end
+			for _, p in Players:GetPlayers() do
+				local d = data(p)
+				local crowns = d and tonumber(d.Crowns) or 0
+				local e = best[p.UserId]
+				if e then
+					e.Name = p.DisplayName
+					e.Crowns = math.max(e.Crowns, crowns)
+				elseif crowns > 0 then
+					best[p.UserId] = { Name = p.DisplayName, Crowns = crowns }
+				end
+			end
+			local ranked = {}
+			for _, e in best do
+				table.insert(ranked, e)
+			end
+			table.sort(ranked, function(a, b)
+				if a.Crowns ~= b.Crowns then
+					return a.Crowns > b.Crowns
+				end
+				return a.Name < b.Name
+			end)
+			local rows = {}
+			for i = 1, math.min(5, #ranked) do
+				table.insert(rows, string.format("%d. %s  🏆 %d", i, ranked[i].Name, ranked[i].Crowns))
+			end
+			if #rows == 0 then
+				rows[1] = "Win a round to get on the board!"
+			end
 			return rows
 		end, true)
 		board("TopSupporters", -13, "💖 TOP SUPPORTERS", Color3.fromRGB(235, 60, 130), function()
@@ -3839,6 +3931,7 @@ local function crownPlayer(p: Player, r: Runner)
 	if d then
 		d.Crowns = (d.Crowns or 0) + 1
 		addWeekCrown(p, d)
+		allTime.Write(p, d.Crowns)
 		if d.Crowns >= 10 then
 			badge(p, "TenCrowns")
 		end
