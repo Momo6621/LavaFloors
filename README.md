@@ -361,6 +361,9 @@ each) is free for everyone.
 - Set Lighting → Technology to **Future** in Studio.
 - After publishing, check the parts Studio can't test here: the 🏆 ALL-TIME WINNERS board fills from its data store
   (`LavaAllTimeCrowns_v1`) within a minute of a crown, and "🔥 days in a row" counts real days (UTC).
+  Also: the 🏆 champion statue shows the all-time leader's avatar in gold; the 🗓️ weekly goal pays 250 coins on the
+  fifth win of a week; tapping the shop tabs (All / Gloves / Hats / Buddies / More) filters the cards; the "Try on 3
+  things at the mirror" challenge counts when it's in the day's three. Studio couldn't test these.
 
 ## Store art
 
