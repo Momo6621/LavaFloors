@@ -3,6 +3,24 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 164. Two hub challenges: finish the Warm-up Hop, try things on at the mirror
+
+**Why.** The daily challenges pointed only at rounds. Two of them now send kids to the hub features between rounds,
+which shows off the try-on mirror (and the shop behind it) and fills the wait.
+
+**Built.** SkySproutLavaService:
+- `CFG.Challenges` gains "Finish the Warm-up Hop %d times" (2, 30 coins) and "Try on %d things at the mirror"
+  (3, 20 coins).
+- The hop's goal handler calls `challenge(p, "Hop", 1)` on every valid finish, after the `HopMinTime` check.
+- The `LavaTryOn` action calls `challenge(p, "TryOn", 1)` for each item put on.
+- Side effect: the daily pick shuffles the whole list with the day as its seed, so a longer list means a different
+  three on the day this goes live; progress already made today is kept by id.
+
+**Verified.** Lints pass. The Studio copy matches the repo (246170 bytes, hash 35928614) and compiles. Playtest:
+today's three included the hop challenge. Two hop runs counted 1/2, then 2/2 DONE, and coins went 50 to 80. A first
+test that hovered the character anchored didn't count, because the server never sees a client-anchored character
+move. Not checked: the mirror challenge (not in today's three); it's the same one-line hook in the try-on handler.
+
 ## 163. Three remixed buddies: Frost Berry, Molten Melon and Golden Pineapple
 
 **Why.** Buddies float by your shoulder all the time, so they're the most visible thing to save up for. The top coin

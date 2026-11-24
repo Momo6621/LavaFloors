@@ -310,6 +310,8 @@ local CFG = {
 		{ Id = "Vote", Text = "Vote for the next twist %d times", Goal = 3, Reward = 20 }, -- once per ballot (#116)
 		{ Id = "Knockouts", Text = "Knock %d climbers off the floor", Goal = 2, Reward = 50 }, -- bots count too (#119)
 		{ Id = "Worlds", Text = "Play in %d different worlds", Goal = 3, Reward = 40 }, -- world themes played today (#120)
+		{ Id = "Hop", Text = "Finish the Warm-up Hop %d times", Goal = 2, Reward = 30 }, -- hub play between rounds (#164)
+		{ Id = "TryOn", Text = "Try on %d things at the mirror", Goal = 3, Reward = 20 }, -- the try-on mirror (#164)
 	},
 
 	-- Keep moving
@@ -1648,6 +1650,7 @@ local function buildArena()
 			if t < CFG.HopMinTime then
 				return
 			end
+			challenge(p, "Hop", 1) -- daily challenge (#164)
 			local prev = best[p]
 			local text = string.format("⏱ %.1fs", t)
 			if prev == nil or t < prev then
@@ -5589,6 +5592,7 @@ function L.HandleAction(p: Player, action: unknown, _value: unknown): boolean
 					paintGloves(p, id)
 				end
 				tell(p, "\u{2728} Trying on " .. name)
+				challenge(p, "TryOn", 1) -- daily challenge (#164)
 				task.delay(CFG.TryOnSeconds, function()
 					if tryOn[p] == t and t.token == token then
 						clearTryOn(p)
