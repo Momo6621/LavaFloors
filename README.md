@@ -19,6 +19,9 @@ button on every glove, hat and buddy, so you can wear any of them for 30 seconds
 bought) while the camera looks out of the mirror at you (#140).
 On the other side of the plaza from the Warm-up Hop, three neon bounce pads (pink, teal, gold) launch you about 14, 21
 and 28 studs up with a springy sound, just for fun between rounds (`CFG.BouncePads`, #142).
+Floating over the walkway between the two leaderboards, a 🔴 LIVE ROUND screen faces the plaza and updates every
+second during a round: each player's name with how many rises up they are (👑 when crowned, 💥 when out) and how many
+bots are still climbing, so the deck can follow the game below (#144).
 
 Each round is 3 phases of 10 seconds. Every phase the floor:
 

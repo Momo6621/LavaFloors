@@ -1021,11 +1021,15 @@ local function buildArena()
 		local toward = (Vector3.new(c.X, 0, c.Z) - Vector3.new(plazaPos.X, 0, plazaPos.Z)).Unit
 		local side = Vector3.new(-toward.Z, 0, toward.X)
 		local spawnAt = plazaPos + toward * 16
-		local function board(name: string, offset: number, title: string, titleColor: Color3, fill: () -> { string })
-			local at = plazaPos + toward * 10 + side * offset + Vector3.new(0, 5.5, 0)
-			local slab = part(arenaFolder, name, Vector3.new(13, 8.5, 0.8), CFrame.lookAt(at, Vector3.new(spawnAt.X, at.Y, spawnAt.Z)), Color3.fromRGB(48, 36, 36), Enum.Material.Basalt)
-			local post = part(arenaFolder, name .. "Post", Vector3.new(0.8, 1.5, 0.8), CFrame.new(at.X, plazaPos.Y + 0.75, at.Z), Color3.fromRGB(40, 30, 30), Enum.Material.Basalt)
-			post.CanCollide = false
+		-- live: the round screen (#144) floats 9 studs higher over the walkway, faces the plaza and refreshes every second.
+		local function board(name: string, offset: number, title: string, titleColor: Color3, fill: () -> { string }, live: boolean?)
+			local at = plazaPos + toward * 10 + side * offset + Vector3.new(0, if live then 14.5 else 5.5, 0)
+			local facing = if live then plazaPos else spawnAt
+			local slab = part(arenaFolder, name, Vector3.new(13, 8.5, 0.8), CFrame.lookAt(at, Vector3.new(facing.X, at.Y, facing.Z)), Color3.fromRGB(48, 36, 36), Enum.Material.Basalt)
+			if not live then
+				local post = part(arenaFolder, name .. "Post", Vector3.new(0.8, 1.5, 0.8), CFrame.new(at.X, plazaPos.Y + 0.75, at.Z), Color3.fromRGB(40, 30, 30), Enum.Material.Basalt)
+				post.CanCollide = false
+			end
 			local sg = Instance.new("SurfaceGui")
 			sg.Face = Enum.NormalId.Front
 			sg.PixelsPerStud = 40
@@ -1071,7 +1075,7 @@ local function buildArena()
 					for i, l in lines do
 						l.Text = rows[i] or ""
 					end
-					task.wait(4)
+					task.wait(if live then 1 else 4)
 				end
 			end)
 		end
@@ -1114,6 +1118,39 @@ local function buildArena()
 			rows[5] = string.format("⏳ New week in %dd %dh", left // 86400, (left % 86400) // 3600)
 			return rows
 		end)
+		-- Live round screen (#144, the hub watches the game): who is still climbing and how many rises up, so the
+		-- deck can follow the round below. Real players only by name; bots are counted on the last line.
+		board("LiveRound", 0, "🔴 LIVE ROUND", Color3.fromRGB(230, 50, 40), function()
+			if L.Phase ~= "Round" then
+				return { "Waiting for the next round...", "", "Look down through the force field", "to watch the climbers!" }
+			end
+			local climbers = {}
+			for p, r in L.Runners do
+				local rises = math.clamp(math.floor((r.peak - 3 - CFG.GridBaseY) / CFG.GridRise + 0.5), 0, #CFG.GridSpins)
+				table.insert(climbers, { Name = p.DisplayName, Rises = rises, Crowned = r.crowned, Alive = r.alive })
+			end
+			table.sort(climbers, function(a, b)
+				if a.Crowned ~= b.Crowned then
+					return a.Crowned
+				end
+				if a.Alive ~= b.Alive then
+					return a.Alive
+				end
+				if a.Rises ~= b.Rises then
+					return a.Rises > b.Rises
+				end
+				return a.Name < b.Name
+			end)
+			local rows = {}
+			for i = 1, math.min(4, #climbers) do
+				local e = climbers[i]
+				local mark = if e.Crowned then "👑" elseif e.Alive then "⬆ " .. e.Rises else "💥 out"
+				table.insert(rows, string.format("%s  %s", e.Name, mark))
+			end
+			local botsIn = #aliveBotNames()
+			rows[5] = if botsIn > 0 then string.format("🤖 %d bot%s still climbing", botsIn, if botsIn == 1 then "" else "s") else ""
+			return rows
+		end, true)
 		board("TopSupporters", -13, "💖 TOP SUPPORTERS", Color3.fromRGB(235, 60, 130), function()
 			local top = A and A.Shop and A.Shop.TopSupporters() or {}
 			local rows = {}

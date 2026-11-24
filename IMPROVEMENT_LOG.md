@@ -3,6 +3,24 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 144. A live round screen on the hub deck
+
+**Why.** The owner's hub is meant to "onlook the game". From the deck you can see the island far below, but not who
+is who or how high they've got. A stadium-style screen makes watching the round easy, especially for small kids.
+
+**Built.** SkySproutLavaService: `board()` takes an optional `live` flag: the board floats 9 studs higher (no post,
+bottom at about 210, well over head height), faces the plaza instead of the spawn, and refreshes every second. The
+new "LiveRound" board sits over the walkway between Top Climbers and Top Supporters. During a round it lists up to
+four players from `L.Runners`, crowned first, then those still in, then by rises (the same peak-to-rises formula as
+the result card): "Name  ⬆ 3", "👑" or "💥 out"; the last line counts the bots still climbing. Between rounds it
+says to look down through the force field. Real names only for real players, as on the other boards.
+
+**Verified.** Lints pass. The Studio copy matches the repo (228067 bytes, hash 350964163) and compiles. Solo
+playtest, reading the board's labels each second: the waiting text in the lobby; in the round the player's line went
+"⬆ 0", then "💥 out" when they fell, then "⬆ 3" after the phase-1 drop back in, with "🤖 3 bots still climbing".
+The board sits at y 214.5 and faces the plaza (look vector 0.80, -0.61). Not checked: a screenshot (capture timed
+out with Studio in the background) and a crowned line.
+
 ## 143. The leaderboard posts stand on the deck again
 
 **Why.** Found while placing the bounce pads: the Top Climbers and Top Supporters boards' posts were still built at
