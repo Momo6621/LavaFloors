@@ -3,6 +3,32 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 148. New players see their day-1 reward card again
+
+**Why.** While testing #146 a brand-new player never saw the daily calendar card. Two causes:
+1. A race on joining. The server sent the "LavaDaily" message about 2.5 s after the save loaded, before
+   SkySproutLavaClient had connected to the remote. A RemoteEvent hands queued messages to the first script that
+   listens, which was another client script, so the lava HUD never got it.
+2. No window to show it. New players go straight from round to round. The card waits for 3 s out of a round with
+   the result card closed, and the result card (5.5-8 s) closes about 1.5 s before the next round starts.
+
+**Built.**
+- SkySproutShopService: the day's card goes out as a `LavaDailyCard` player attribute (JSON) instead of a message.
+  An attribute stays put until it's read.
+- SkySproutLavaClient: reads the attribute when it starts and whenever it changes. If your result card is up when a
+  card is waiting, the calendar joins the end-of-round column under the result card (LayoutOrder 4; `fitEndStack`
+  counts it). When it closes it goes back to its usual place. Still never over the floor during a climb.
+
+**Verified.** Lints pass. The Studio copies match the repo (SkySproutShopService 9169 bytes, hash 710849118;
+SkySproutLavaClient 127457, hash 541851556) and compile. Fresh Studio join, watched from the client:
+- 2.7 s: the attribute arrived.
+- 7.0 s: the card showed in the middle of the screen ("🔥 1 day in a row!").
+- 9.0 s: hidden as the first round started.
+- 28.3 s: the round ended; the card came back under the result card in the end-of-round column.
+- 35.3 s: it closed itself, before the next round.
+
+Before the fix, the same join never showed the card in 75 s.
+
 ## 147. Wins and rounds played on the player list leaderboard (owner's request)
 
 **Why.** The owner asked for the number of battles played and games won, on a leaderboard. The game already saved

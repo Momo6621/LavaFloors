@@ -183,11 +183,10 @@ local function daily(p: Player)
 	task.wait(4)
 	if p.Parent == Players then
 		tell(p, string.format("🎁 Day %d daily reward: +%d coins%s!%s", streak, reward, if isVip then " (⭐ VIP x2)" else "", if streak < #DAILY then " Come back tomorrow for more." else " Top reward every day now!"))
-		-- The 7-day calendar card on the client (SkySproutLavaClient, "LavaDaily").
-		local remote = game.ReplicatedStorage:FindFirstChild("ArenaEvent")
-		if remote and remote:IsA("RemoteEvent") then
-			remote:FireClient(p, "LavaDaily", { Day = streak, Rewards = DAILY, Multiplier = if isVip and C.Vip then C.Vip.DailyMultiplier else 1, InRow = inRow, BestInRow = bestInRow })
-		end
+		-- The 7-day calendar card on the client (SkySproutLavaClient). Sent as a player attribute (JSON), not a message
+		-- (#148): on a fresh join the message arrived before the lava HUD was listening, so new players never saw their
+		-- day-1 card. An attribute waits until the HUD reads it.
+		p:SetAttribute("LavaDailyCard", game:GetService("HttpService"):JSONEncode({ Day = streak, Rewards = DAILY, Multiplier = if isVip and C.Vip then C.Vip.DailyMultiplier else 1, InRow = inRow, BestInRow = bestInRow }))
 		if welcomeBack then
 			tell(p, string.format("👋 Welcome back! We missed you: +%d coins", WELCOME_BACK_COINS))
 		end

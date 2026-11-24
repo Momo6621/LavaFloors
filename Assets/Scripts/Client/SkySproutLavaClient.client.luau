@@ -374,12 +374,44 @@ local function showDaily(v: any)
 	end
 end
 task.spawn(function()
+	-- New players are put into round after round, and the lobby gap between the result card closing and the next round
+	-- was too short for the card (#148: a new player never saw their day-1 card). So when your result card comes up
+	-- with a card still waiting, the calendar joins the end-of-round column under it, and goes back to the middle of
+	-- the screen when it closes.
+	local home = dailyCard.Parent
+	local anchor, position = dailyCard.AnchorPoint, dailyCard.Position
+	-- The day's card comes as the "LavaDailyCard" player attribute (JSON, set once a day by SkySproutShopService), so
+	-- it can't be missed by joining before this script listens.
+	local function readCard()
+		local raw = player:GetAttribute("LavaDailyCard")
+		if type(raw) == "string" then
+			local ok, v = pcall(function()
+				return game:GetService("HttpService"):JSONDecode(raw)
+			end)
+			if ok then
+				showDaily(v)
+			end
+		end
+	end
+	player:GetAttributeChangedSignal("LavaDailyCard"):Connect(readCard)
+	readCard()
+	dailyCard:GetPropertyChangedSignal("Visible"):Connect(function()
+		if not dailyCard.Visible and dailyCard.Parent ~= home then
+			dailyCard.Parent = home
+			dailyCard.AnchorPoint, dailyCard.Position = anchor, position
+		end
+	end)
 	while true do
 		task.wait(1)
 		local settled = lobbySince ~= nil and os.clock() - lobbySince >= DAILY_SETTLE
-		if dailyPending and settled and not result.Visible then
+		if dailyPending and (result.Visible or settled) then
 			local v = dailyPending
 			dailyPending = nil
+			if result.Visible then
+				dailyCard.AnchorPoint = Vector2.zero
+				dailyCard.LayoutOrder = 4
+				dailyCard.Parent = endStack
+			end
 			revealDaily(v)
 		end
 	end
@@ -521,11 +553,15 @@ local function fitEndStack()
 	local top = GuiService:GetGuiInset().Y / fit + NOTICE_BOTTOM + NOTICE_GAP
 	endStack.Position = UDim2.new(0.5, 0, 0, top)
 	local need = (if banner.Visible then banner.Size.Y.Offset else 0) + (if result.Visible then 210 else 0) + (if banner.Visible and result.Visible then END_GAP else 0)
+	if dailyCard.Visible and dailyCard.Parent == endStack then
+		need += dailyCard.Size.Y.Offset + END_GAP -- the daily calendar under the result card (#148)
+	end
 	local room = workspace.CurrentCamera.ViewportSize.Y / fit - top - 12 - endBottomReserve
 	endScale.Scale = if need > 0 then math.clamp(room / need, 0.45, 1) else 1
 end
 banner:GetPropertyChangedSignal("Visible"):Connect(fitEndStack)
 result:GetPropertyChangedSignal("Visible"):Connect(fitEndStack)
+dailyCard:GetPropertyChangedSignal("Visible"):Connect(fitEndStack)
 workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fitEndStack)
 make("UISizeConstraint", { MaxSize = Vector2.new(520, 190) }, banner)
 make("UICorner", { CornerRadius = UDim.new(0, 22) }, banner)
