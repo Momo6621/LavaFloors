@@ -66,7 +66,8 @@ little to just play with; a trampoline is the simplest toy, and the empty side o
 **Verified.** Lints pass. The Studio copies match the repo (server 226371 bytes, hash 805725842; LavaFloorsUI 70730,
 hash 398921717) and compile. Solo playtest on the deck: dropped onto each pad, the character kept bouncing (4-5
 bounces in 3.5 s) and peaked 14.4, 20.6 and 28.0 studs above the pads, as planned; no console errors. Not checked:
-a screenshot (Studio wasn't the front window, so the capture timed out) and bouncing with several players.
+a screenshot (Studio wasn't the front window, so the capture timed out). 2-player Studio test (2026-11-24): both
+players bounced at the same time on different pads (teal 6 bounces, peak 20.7; gold 5 bounces, peak 28.1), no errors.
 
 ## 141. Names over climbers while spectating from above
 
@@ -106,7 +107,11 @@ names cleared. Not tested: switching to a followed player with ◀ ▶, and no s
 hash 945365401) and compile. Playtest (solo): on the stage OnMirror turns on, the shop opens with 27 TRY buttons,
 a Watermelon Hat, Magma Gloves and a Pineapple Buddy go on, the profile keeps the saved Hat/Skin/Pet, and stepping
 off restores the saved look about 2 s later. The 🪞 emoji draws as an empty box in Roblox, so the sign and buttons
-use ✨. Owner approved the previews. Not tested: several players on the stage at once.
+use ✨. Owner approved the previews.
+2-player Studio test (2026-11-24): both players on the stage at once each got the TRY buttons (27) and wore their
+own try-on (Banana hat + Strawberry buddy, Pineapple hat), seen the same from the other player's client; when one
+stepped off, only their try-on cleared (hat and buddy gone, TRY buttons hidden) and the other kept theirs. The mirror
+camera itself only runs on a rendering window, so it wasn't checked in the background test windows.
 
 ## 139. A pillar of light while a round is on (owner's request, hub stage 2)
 
