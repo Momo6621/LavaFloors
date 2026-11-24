@@ -50,6 +50,8 @@ return {
  -- Remixed buddies (#163): an existing fruit (Model) remade in a new Material and Color, like the remixed hats.
  {Id="FrostBerryBuddy",Name="Frost Berry Buddy",Model="Blueberry",Material="Ice",Cost=3500,Color=Color3.fromRGB(185,230,255)},
  {Id="MoltenMelonBuddy",Name="Molten Melon Buddy",Model="Watermelon",Material="CrackedLava",Cost=4200,Color=Color3.fromRGB(255,110,40)},
+ {Id="ShadowBananaBuddy",Name="Shadow Banana Buddy",Model="Banana",Material="Slate",Cost=2600,Color=Color3.fromRGB(60,50,80)}, -- #172
+ {Id="EmeraldStrawberryBuddy",Name="Emerald Strawberry Buddy",Model="Strawberry",Material="Glass",Cost=3800,Color=Color3.fromRGB(60,210,120)}, -- #172
  {Id="GoldenPineappleBuddy",Name="Golden Pineapple Buddy",Model="Pineapple",Material="Foil",Cost=5500,Color=Color3.fromRGB(255,200,60)},
  -- Theme buddies: never sold. One "lost buddy" waits on the floor in each round of its world theme; the first climber
  -- to grab it keeps it (Model = the fruit it's made from, FindIn = the theme Id, Aura = its glow).

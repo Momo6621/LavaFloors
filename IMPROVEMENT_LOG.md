@@ -3,6 +3,21 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 172. Matching buddies: Shadow Banana and Emerald Strawberry
+
+**Why.** Kids like matching sets. These two buddies match the hats from #171, so a matching hat and buddy is a goal to
+save for.
+
+**Built.** SkySproutConfig `Pets`:
+- Shadow Banana Buddy: 2600, Banana in dark slate.
+- Emerald Strawberry Buddy: 3800, Strawberry in green glass.
+
+Both use the buddy repaint from #163. Coin prices only.
+
+**Verified.** Lints pass. The Studio copy matches the repo (8689 bytes, hash 171696748) and compiles. Playtest: both
+shop cards are there with Slate and Glass previews, at LayoutOrders 88 and 89, inside the Buddies tab's range (80-98;
+15 buddies now fill 81-95).
+
 ## 171. Two more remixed hats: Shadow Banana and Emerald Strawberry
 
 **Why.** The remix system from #160 makes a new hat one config line. These two fill price gaps on the hat ladder.
