@@ -3,6 +3,26 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 141. Names over climbers while spectating from above
+
+**Why.** The top view (#132, owner's request) puts a big name over every climber. Knocked-out players watch the
+same floor from the overhead spectate camera but couldn't tell who was who, which matters for the strawberry gift
+and for cheering a friend on.
+
+**Built.**
+- SkySproutLavaClient sets a local `LavaSpectatingAbove` attribute: true when the overhead spectate view starts or
+  ◀ ▶ comes back to it, false while following one player (also when joining to watch a friend) and when spectating
+  ends.
+- LavaFloorsUI: the top view's name layer now has its own switch (`updateNames`), on during top view or while
+  `LavaSpectatingAbove` is set. Names are placed by their own render step after whichever camera ran that frame.
+  Same names and look as #132; no new pop-up.
+
+**Verified.** Lints pass. The Studio copies match the repo (LavaFloorsUI 68691 bytes, hash 538706371;
+SkySproutLavaClient 125087, hash 863989976) and compile. 2-player Studio test: Player1 knocked out 17 s into a
+round while Player2 was still in; 1.2 s later the overhead spectate began, `LavaSpectatingAbove` turned on and the
+name layer showed "Player2", "🤖 Flare" and "🤖 Pumice", all on screen; at the next round it turned off and the
+names cleared. Not tested: switching to a followed player with ◀ ▶, and no screenshot (the look is the same as #132).
+
 ## 140. A try-on mirror on the hub deck (owner's request, hub stage 3)
 
 **Why.** The owner asked for a hub "to wait and look at costumes and stuff", and picked a try-on mirror.

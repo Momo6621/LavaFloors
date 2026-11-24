@@ -1328,12 +1328,43 @@ do
 		-- Phones (short landscape screens) back off a bit: their HUD covers more of the height (#134).
 		local far = if cam.ViewportSize.Y < 500 then 1.3 else 1
 		cam.CFrame = CFrame.lookAt(centre + Vector3.new(0, HEIGHT * far, BACK * far), centre - Vector3.new(0, 0, AHEAD))
+	end
+
+	-- Names over climbers: during top view, and also while spectating from above after a knockout (#135; the
+	-- spectate script sets the local "LavaSpectatingAbove" attribute). Placed after whichever camera ran this frame.
+	local namesOn = false
+	local function placeNames()
+		local cam = workspace.CurrentCamera
+		if not cam then
+			return
+		end
 		for head, l in tags do
 			local pos, onScreen = cam:WorldToViewportPoint(head.Position + Vector3.new(0, 2.5, 0))
 			l.Visible = onScreen
 			l.Position = UDim2.fromOffset(pos.X, pos.Y)
 		end
 	end
+	local function updateNames()
+		local should = active or player:GetAttribute("LavaSpectatingAbove") == true
+		if should == namesOn then
+			return
+		end
+		namesOn = should
+		names.Enabled = should
+		if should then
+			RunService:BindToRenderStep("LavaTopNames", Enum.RenderPriority.Camera.Value + 2, placeNames)
+			task.spawn(function()
+				while namesOn do
+					refreshTags()
+					task.wait(0.3)
+				end
+				clearTags()
+			end)
+		else
+			RunService:UnbindFromRenderStep("LavaTopNames")
+		end
+	end
+	player:GetAttributeChangedSignal("LavaSpectatingAbove"):Connect(updateNames)
 
 	local function update()
 		local should = wanted and player:GetAttribute("ArenaMode") == "LavaRush"
@@ -1341,16 +1372,9 @@ do
 			return
 		end
 		active = should
-		names.Enabled = active
+		updateNames()
 		if active then
 			RunService:BindToRenderStep("LavaTopView", Enum.RenderPriority.Camera.Value + 1, step)
-			task.spawn(function()
-				while active do
-					refreshTags()
-					task.wait(0.3)
-				end
-				clearTags()
-			end)
 		else
 			RunService:UnbindFromRenderStep("LavaTopView")
 			-- Hand the camera back to your character, behind it, as at the start of a round.

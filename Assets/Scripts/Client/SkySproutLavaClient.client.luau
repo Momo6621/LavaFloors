@@ -1940,6 +1940,7 @@ local function stopSpectate(byPlayer: boolean?)
 		spectateAutoEnded = os.clock()
 	end
 	spectateLabel.Visible = false
+	player:SetAttribute("LavaSpectatingAbove", false) -- names over climbers (LavaFloorsUI top view, #135)
 	setGiftTarget(nil)
 	game:GetService("ContextActionService"):UnbindAction("LavaFollowPad")
 	Run:UnbindFromRenderStep("LavaSpectate")
@@ -1982,6 +1983,7 @@ local function cycleFollow(step: number)
 	index = (index + step) % (#list + 1)
 	followKey = if index == 0 then nil else list[index].key
 	spectateLabel.Text = if index == 0 then OVERHEAD_TEXT else "👀 Watching " .. list[index].name
+	player:SetAttribute("LavaSpectatingAbove", index == 0)
 	local key = followKey
 	setGiftTarget(if key and string.sub(key, 1, 1) == "P" then tonumber(string.sub(key, 2)) else nil)
 end
@@ -1999,6 +2001,7 @@ local function startSpectate()
 	spectating = true
 	followKey = nil
 	spectateLabel.Text = OVERHEAD_TEXT
+	player:SetAttribute("LavaSpectatingAbove", true) -- the overhead view shows names over climbers (#135)
 	setGiftTarget(nil)
 	-- Controller: L1 / R1 switch who you follow and X sends the strawberry gift, without UI selection mode.
 	game:GetService("ContextActionService"):BindAction("LavaFollowPad", function(_, inputState, input)
@@ -2092,6 +2095,7 @@ local function watchFriend(tries: number?)
 	end
 	startSpectate()
 	followKey = "P" .. id
+	player:SetAttribute("LavaSpectatingAbove", false) -- following one friend, not the overhead view (#135)
 	spectateLabel.Text = "👀 Watching your friend " .. friend.DisplayName
 	setGiftTarget(id)
 end

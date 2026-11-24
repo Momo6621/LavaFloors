@@ -179,6 +179,8 @@ Progression and live-ops:
   screen layer placed over each head every frame. Outside a round the camera is normal. The choice is saved with your
   profile like the music button ("LavaTopView", saved as `TopView`, #133). On phones the camera backs off 1.3x and the
   names shrink with the screen, so the whole floor fits below the HUD (#134).
+  The same names show while you spectate from above after a knockout, so you can tell who is still climbing; they
+  hide while you follow one player with ◀ ▶ (#141).
 - 👀 Watch: while a round is on, anyone in the lobby gets a 👀 Watch button in the top bar (sitting out, joined
   mid-round, or walked off after being knocked out). It opens the overhead spectate view with ◀ ▶ to follow a
   climber; 🚶 Back (or any move key) returns to your character, and it hides when the round ends.
