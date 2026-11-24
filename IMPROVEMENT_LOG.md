@@ -3,6 +3,18 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 143. The leaderboard posts stand on the deck again
+
+**Why.** Found while placing the bounce pads: the Top Climbers and Top Supporters boards' posts were still built at
+y 0.75, the old ground-level hub, so since the hub moved up to the floating deck (#138) the boards floated with no
+post under them and two stray posts stood on the ground 200 studs below.
+
+**Built.** SkySproutLavaService `board()`: the post's height is now `plazaPos.Y + 0.75`, so it stands on the deck
+(or on the ground if the hub is ever moved back down).
+
+**Verified.** Lints pass. The Studio copy matches the repo (226384 bytes, hash 734602873) and compiles. Playtest: both
+posts span y 200.00-201.50 on the deck top (200.00) and meet their boards (bottoms at 201.25).
+
 ## 142. Bounce pads on the hub deck
 
 **Why.** The hub is where kids wait between rounds (owner's hub idea). Besides the Warm-up Hop and the mirror there was

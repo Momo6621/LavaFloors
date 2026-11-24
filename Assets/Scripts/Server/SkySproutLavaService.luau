@@ -1024,7 +1024,7 @@ local function buildArena()
 		local function board(name: string, offset: number, title: string, titleColor: Color3, fill: () -> { string })
 			local at = plazaPos + toward * 10 + side * offset + Vector3.new(0, 5.5, 0)
 			local slab = part(arenaFolder, name, Vector3.new(13, 8.5, 0.8), CFrame.lookAt(at, Vector3.new(spawnAt.X, at.Y, spawnAt.Z)), Color3.fromRGB(48, 36, 36), Enum.Material.Basalt)
-			local post = part(arenaFolder, name .. "Post", Vector3.new(0.8, 1.5, 0.8), CFrame.new(at.X, 0.75, at.Z), Color3.fromRGB(40, 30, 30), Enum.Material.Basalt)
+			local post = part(arenaFolder, name .. "Post", Vector3.new(0.8, 1.5, 0.8), CFrame.new(at.X, plazaPos.Y + 0.75, at.Z), Color3.fromRGB(40, 30, 30), Enum.Material.Basalt)
 			post.CanCollide = false
 			local sg = Instance.new("SurfaceGui")
 			sg.Face = Enum.NormalId.Front
