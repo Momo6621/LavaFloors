@@ -235,6 +235,9 @@ SkySproutLavaClient 125087, hash 863989976) and compile. 2-player Studio test: P
 round while Player2 was still in; 1.2 s later the overhead spectate began, `LavaSpectatingAbove` turned on and the
 name layer showed "Player2", "🤖 Flare" and "🤖 Pumice", all on screen; at the next round it turned off and the
 names cleared. Not tested: switching to a followed player with ◀ ▶, and no screenshot (the look is the same as #132).
+Re-checked 2026-11-24 in a second 2-player test: after a phase-2 knockout the spectator had LavaSpectatingAbove on and
+the name layer enabled. Clicking ▶ (FollowNext) timed out because the test window wasn't in front, so following one
+player is still untested.
 
 ## 140. A try-on mirror on the hub deck (owner's request, hub stage 3)
 
