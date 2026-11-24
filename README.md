@@ -83,7 +83,7 @@ buddies: little fruit pets with googly eyes that float by your shoulder and bob 
 coins, all earnable; tap again to send it to rest; Reduce Motion keeps it still). `Pets` in SkySproutConfig,
 `PetSize`/`PetOffset` in CFG, saved as `Pet`/`OwnedPets`. Four more buddies can't be bought, only found: in every
 world theme except Sunset, that theme's lost buddy floats in a bubble on the outer ring (Inferno Berry in Blue
-Inferno, Moon Banana in Purple Moon, Star Buddy in Starry Night, Candy Dragon in Candy Crater, Jade Pineapple in Jade Jungle), each with its own
+Inferno, Moon Banana in Purple Moon, Star Buddy in Starry Night, Candy Dragon in Candy Crater, Jade Pineapple in Jade Jungle, Tide Coconut in Tidal Lagoon), each with its own
 glow. The first climber to grab it keeps it and it starts following them; grabbing one you already own pays 40 coins
 (`BuddyFindCoins`). Their shop cards say where to find them. Finding four of them unlocks the title 🐾 Buddy Collector,
 and "Grab 1 lost buddy" is one of the daily challenges (so are "Cheer 3 times from the sidelines", "Send 1 strawberry
@@ -98,7 +98,8 @@ Traveler (saved as `WorldsSeen`). 🎮 Lava Regular (100 rounds), 📅 Week Warr
 
 Every round also rolls a twist (Low Gravity, Turbo Spin, Hole Party, Speed Rush, Shield Party, Drop Party, Hot Potato,
 Duos, Big Heads, Mega Shoves, Soft Shoves, Quick Crumble, Bouncy, Shove Frenzy, Slow-Mo, Fast-Forward, Magnet Hands) and a world theme (Sunset, Blue Inferno, Purple Moon, Starry Night, the bright daytime Candy Crater: mint tiles
-over strawberry-pink lava, and Jade Jungle: golden tiles over glowing green lava at a jungle dusk, #157). Big Heads is just a look: every
+over strawberry-pink lava, Jade Jungle: golden tiles over glowing green lava at a jungle dusk, #157, and Tidal Lagoon: lavender tiles over teal
+sea-glass lava, #173). Big Heads is just a look: every
 climber's head (bots too) grows 1.75x for the round, and speed, jumps and shoves stay the same. Mega Shoves makes shoves fly 1.6x as far
 (`MegaShove`; capped at `ShoveMax` 110 so the showdown boost can't push past the client's 120 limit) and pushes bots one
 tile further. Bouncy raises everyone's round jump from 48 to 58 (`BouncyJumpPower`, about 8.6 studs instead

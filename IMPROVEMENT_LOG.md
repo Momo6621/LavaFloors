@@ -3,6 +3,29 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 173. A seventh world: 🌊 Tidal Lagoon
+
+**Why.** More variety in every session (content for the game to take off). The count-based titles from #166 mean a
+new world and buddy no longer cost anyone a title.
+
+**Built.**
+- LavaThemes "🌊 Tidal Lagoon" (weight 2):
+  - Glowing teal "sea-glass" lava (Hue 0.48) and blue-grey rocks under a soft evening sky (clock 18.6, 900 stars).
+  - Lavender tiles (TileHue 0.74), clear of both the red warning tiles and the teal lava.
+  - A teal HUD accent.
+- Bots named Coral, Pearl, Shelly, Bubbles, Splashy and Wave.
+- A new theme buddy, "Tide Coconut" (Coconut model, teal, Glow aura): never sold, found in Tidal Lagoon rounds.
+
+**Verified.** Lints pass. The Studio copies match the repo (LavaThemes 7806 bytes, hash 999679922;
+SkySproutLavaService 250313, hash 643218170; SkySproutConfig 8853, hash 395490477) and compile. The first themes sync
+added two stray tabs; it was fixed and re-hashed. Playtest with `StudioForceTheme = "TidalLagoon"` (cleared after):
+- `LavaTheme` was TidalLagoon.
+- The bots were Shelly, Wave and Splashy.
+- The round's BuddyFind held the Coconut.
+- No errors.
+
+Not checked: how it looks (no screenshot).
+
 ## 172. Matching buddies: Shadow Banana and Emerald Strawberry
 
 **Why.** Kids like matching sets. These two buddies match the hats from #171, so a matching hat and buddy is a goal to

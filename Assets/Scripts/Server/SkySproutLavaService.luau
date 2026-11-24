@@ -122,6 +122,7 @@ local CFG = {
 		StarryNight = { "Comet", "Nova", "Twinkle", "Orbit", "Stardust", "Meteor" },
 		Candy = { "Gumdrop", "Sprinkles", "Taffy", "Jellybean", "Lolly", "Fudge" },
 		JadeJungle = { "Fern", "Moss", "Gecko", "Kiwi", "Lily", "Sprout" }, -- #157
+		TidalLagoon = { "Coral", "Pearl", "Shelly", "Bubbles", "Splashy", "Wave" }, -- #173
 	} :: { [string]: { string } },
 
 	-- Anti-cheat: a climber who jumps more than TeleportJump studs in one tick can't grab pickups for a second,
