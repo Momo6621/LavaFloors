@@ -983,7 +983,8 @@ refreshChallenges = function()
 	end)
 	local list = if ok and type(info) == "table" and type(info.List) == "table" then info.List else {}
 	for i, c in list do
-		local row: Frame = make("Frame", { LayoutOrder = i, Size = UDim2.new(1, 0, 0, 70), BackgroundColor3 = Color3.new(1, 1, 1) }, challengeList)
+		-- Four rows (three daily + the weekly goal, #170) are a little shorter so they fit above the code box.
+		local row: Frame = make("Frame", { LayoutOrder = i, Size = UDim2.new(1, 0, 0, if #list > 3 then 60 else 70), BackgroundColor3 = Color3.new(1, 1, 1) }, challengeList)
 		corner(row, 14)
 		outline(row, 2, if c.Done then GREEN else nil)
 		local text = label(row, (if c.Done then "✅ " else "") .. tostring(c.Text), 20)

@@ -42,6 +42,7 @@ function R.clean(raw)
  p.WelcomeClaimed=raw.WelcomeClaimed==true
  p.TutorialDone=raw.TutorialDone==true
  if type(raw.WeekNo)=="number"and raw.WeekNo==raw.WeekNo then p.WeekNo=math.clamp(math.floor(raw.WeekNo),0,100000)end
+ if type(raw.WeeklyGoalWeek)=="number"and raw.WeeklyGoalWeek==raw.WeeklyGoalWeek then p.WeeklyGoalWeek=math.clamp(math.floor(raw.WeeklyGoalWeek),0,100000)end
  if type(raw.Chest)=="number"and raw.Chest==raw.Chest then p.Chest=math.clamp(math.floor(raw.Chest),0,1000)end
  if type(raw.ChestsOpened)=="number"and raw.ChestsOpened==raw.ChestsOpened then p.ChestsOpened=math.clamp(math.floor(raw.ChestsOpened),0,10000000)end
  if type(raw.BestHeight)=="number"and raw.BestHeight==raw.BestHeight then p.BestHeight=math.clamp(math.floor(raw.BestHeight),0,1000)end

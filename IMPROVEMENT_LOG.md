@@ -3,6 +3,27 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 170. A weekly goal: win 5 rounds this week for 250 coins
+
+**Why.** Content for retention: the daily challenges reset every day, but nothing rewarded coming back across a week.
+A bigger weekly goal gives regulars a reason to return, and reuses the week's crown count the Top Climbers board
+already keeps.
+
+**Built.**
+- SkySproutLavaService: `CFG.WeeklyGoal = { Goal = 5, Reward = 250 }`.
+- `pushChallenges` adds a fourth row, "This week: win 5 rounds", with progress from `weekCrowns(d)`, marked done once
+  paid this week.
+- In `crownPlayer`, the crown that reaches 5 this week pays 250 coins once (`d.WeeklyGoalWeek = weekNumber()`), logs
+  it as "WeeklyGoal", says so, and refreshes the panel.
+- SkySproutRules cleans `WeeklyGoalWeek`.
+- LavaFloorsUI: with four rows each row is 60 px instead of 70, so they fit above the code box.
+- Kid-fair: it's earned by winning rounds; missing a week just means a fresh goal next week.
+
+**Verified.** Lints pass. The Studio copies match the repo (SkySproutLavaService 250227 bytes, hash 975001491;
+SkySproutRules 11911, hash 493954530; LavaFloorsUI 76115, hash 36329860) and compile. Playtest: the panel showed the
+three daily rows plus "This week: win 5 rounds 0/5 +250", all four fitting above the code box (screenshot). Not
+checked: the payout itself. It needs 5 crowns in a week, and a solo Studio player can't reliably win.
+
 ## 169. The countdown explains the twist
 
 **Why.** Eighteen twists is a lot for a kid to remember. The live round screen's countdown named the next twist but

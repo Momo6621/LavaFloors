@@ -305,6 +305,7 @@ local CFG = {
 
 	-- Daily challenges (three a day, the same for everyone)
 	ChallengesPerDay = 3,
+	WeeklyGoal = { Goal = 5, Reward = 250 }, -- weekly goal (#170): rounds won this week (the weekly board's count), paid once a week
 	Challenges = {
 		{ Id = "Play", Text = "Play %d rounds", Goal = 4, Reward = 40 },
 		{ Id = "Survive", Text = "Survive %d rounds", Goal = 2, Reward = 60 },
@@ -914,6 +915,16 @@ local function pushChallenges(p: Player)
 			Done = daily.C[c.Id] == true,
 		})
 	end
+	-- The weekly goal (#170) rides along as a fourth row: rounds won this week, paid once when it's reached.
+	local weekly = CFG.WeeklyGoal
+	table.insert(out, {
+		Id = "Weekly",
+		Text = string.format("This week: win %d rounds", weekly.Goal),
+		Goal = weekly.Goal,
+		Progress = math.min(weekly.Goal, weekCrowns(d)),
+		Reward = weekly.Reward,
+		Done = d.WeeklyGoalWeek == weekNumber(),
+	})
 	p:SetAttribute("Challenges", HttpService:JSONEncode({ Day = today(), List = out }))
 end
 
@@ -4202,6 +4213,15 @@ local function crownPlayer(p: Player, r: Runner)
 		d.Crowns = (d.Crowns or 0) + 1
 		addWeekCrown(p, d)
 		allTime.Write(p, d.Crowns)
+		-- Weekly goal (#170): the round that reaches it pays once per week.
+		local week = weekNumber()
+		if weekCrowns(d) >= CFG.WeeklyGoal.Goal and d.WeeklyGoalWeek ~= week then
+			d.WeeklyGoalWeek = week
+			d.Coins = math.min(100000000, d.Coins + CFG.WeeklyGoal.Reward)
+			logCoins(p, "Gameplay", CFG.WeeklyGoal.Reward, "WeeklyGoal")
+			tell(p, string.format("🗓️ Weekly goal done: %d wins this week! +%d coins", CFG.WeeklyGoal.Goal, CFG.WeeklyGoal.Reward))
+		end
+		pushChallenges(p)
 		if d.Crowns >= 10 then
 			badge(p, "TenCrowns")
 		end

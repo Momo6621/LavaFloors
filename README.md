@@ -154,6 +154,8 @@ Progression and live-ops:
   ("👋 Welcome back! We missed you"), flat for everyone (`WELCOME_BACK_DAYS` / `WELCOME_BACK_COINS` in
   SkySproutShopService). New players don't get it; it's for returning players only.
 - Daily challenges: three a day for everyone (CFG.Challenges), paid on completion; shown in the Challenges panel.
+- Weekly goal: a fourth row in the Challenges panel, "This week: win 5 rounds", pays 250 coins once per week when the
+  fifth crown of the week lands (`CFG.WeeklyGoal`, saved as `WeeklyGoalWeek`, #170).
 - Codes: typed into the Challenges panel, once per account (CFG.Codes, server-only). Launch codes LAVA, VOLCANO, ESCAPE.
 - Titles over your head (CFG.Titles), and a gold pillar with fireworks over every winner. Crown titles unlock with
   total crowns; 🔶 Gem Hunter (every lava gem), 🎁 Chest Cracker (5 Lava Chests) and 🍓 Kind Climber (5 strawberry
