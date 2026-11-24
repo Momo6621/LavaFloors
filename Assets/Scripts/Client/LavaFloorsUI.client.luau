@@ -233,7 +233,7 @@ heading.TextStrokeTransparency = 0.2
 local close = button(ribbon, "X", RED, UDim2.fromOffset(40, 40))
 close.AnchorPoint = Vector2.new(1, 0.5)
 close.Position = UDim2.new(1, -10, 0.5, 0)
-local list = make("ScrollingFrame", { Position = UDim2.fromOffset(12, 66), Size = UDim2.new(1, -24, 1, -110), BackgroundTransparency = 1, BorderSizePixel = 0, ScrollBarThickness = 6, ScrollBarImageColor3 = INK, CanvasSize = UDim2.new(), AutomaticCanvasSize = Enum.AutomaticSize.Y }, shop)
+local list = make("ScrollingFrame", { Position = UDim2.fromOffset(12, 104), Size = UDim2.new(1, -24, 1, -148), BackgroundTransparency = 1, BorderSizePixel = 0, ScrollBarThickness = 6, ScrollBarImageColor3 = INK, CanvasSize = UDim2.new(), AutomaticCanvasSize = Enum.AutomaticSize.Y }, shop)
 make("UIGridLayout", { CellSize = UDim2.new(0.5, -8, 0, 150), CellPadding = UDim2.fromOffset(10, 10), SortOrder = Enum.SortOrder.LayoutOrder, HorizontalAlignment = Enum.HorizontalAlignment.Center }, list)
 make("UIPadding", { PaddingTop = UDim.new(0, 4), PaddingBottom = UDim.new(0, 8) }, list)
 local foot = label(shop, "Gloves, hats and buddies are just for looks. Robux items are optional.", 14, INK:Lerp(CREAM, 0.35))
@@ -516,6 +516,7 @@ if (C.ProductIds and C.ProductIds.Coins100 or 0) > 0 then
 		event:FireServer("WatchAd")
 	end)
 	f.Visible = false
+	f:SetAttribute("ShopOff", true) -- the shop tabs (#165) keep it hidden until an ad is available
 	adCard = f
 end
 local function checkAd()
@@ -527,7 +528,7 @@ local function checkAd()
 		local ok, result = pcall(function()
 			return AdService:GetAdAvailabilityNowAsync(Enum.AdFormat.RewardedVideo)
 		end)
-		f.Visible = ok and result and result.AdAvailabilityResult == Enum.AdAvailabilityResult.IsAvailable or false
+		f:SetAttribute("ShopOff", not (ok and result and result.AdAvailabilityResult == Enum.AdAvailabilityResult.IsAvailable))
 	end)
 end
 for i, tip in { { "Tip25", 25 }, { "Tip100", 100 }, { "Tip500", 500 }, { "Tip1000", 1000 } } do
@@ -555,6 +556,52 @@ local function refreshShop()
 	for _, c in cards do
 		c.refresh()
 	end
+end
+-- Shop tabs (#165): with ~40 items the grid got long, so a row of tabs filters it by kind. The kinds come from the
+-- cards' LayoutOrder ranges: gloves 1-49 and 100 (Aurora), hats 50-79, buddies 80-98, the rest (trail, coin packs,
+-- the free-coins ad, tips) under More. Opens on All, so nothing is hidden until you pick a tab.
+do
+	local TABS = {
+		{ "All", function(_: number) return true end },
+		{ "Gloves", function(o: number) return o < 50 or o == 100 end },
+		{ "Hats", function(o: number) return o >= 50 and o < 80 end },
+		{ "Buddies", function(o: number) return o >= 80 and o < 99 end },
+		{ "More", function(o: number) return o == 99 or o > 100 end },
+	}
+	local row = make("Frame", { Position = UDim2.fromOffset(12, 62), Size = UDim2.new(1, -24, 0, 36), BackgroundTransparency = 1 }, shop)
+	make("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Center, Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder }, row)
+	local tabButtons: { TextButton } = {}
+	local current = 1
+	local function apply()
+		local keep = TABS[current][2]
+		for _, f in list:GetChildren() do
+			if f:IsA("Frame") then
+				f.Visible = keep(f.LayoutOrder) and f:GetAttribute("ShopOff") ~= true
+			end
+		end
+	end
+	for _, f in list:GetChildren() do
+		f:GetAttributeChangedSignal("ShopOff"):Connect(apply) -- the ad card turns itself on and off
+	end
+	local function pick(index: number)
+		current = index
+		apply()
+		for i, b in tabButtons do
+			b.BackgroundColor3 = if i == index then ORANGE else INK:Lerp(CREAM, 0.55)
+		end
+		list.CanvasPosition = Vector2.zero
+	end
+	for i, tab in TABS do
+		local b = button(row, tab[1], INK:Lerp(CREAM, 0.55), UDim2.new(1 / #TABS, -6, 1, 0))
+		b.LayoutOrder = i
+		b.TextScaled = true
+		make("UITextSizeConstraint", { MaxTextSize = 16 }, b) -- same size on every tab; smaller only if a phone needs it
+		b.Activated:Connect(function()
+			pick(i)
+		end)
+		table.insert(tabButtons, b)
+	end
+	pick(1)
 end
 for _, attr in { "Coins", "GloveStyle", "HatStyle", "PetStyle", "AuroraPass", "DoubleLavaPass", "VIP", "LavaPassPremium", "TrailPass" } do
 	player:GetAttributeChangedSignal(attr):Connect(refreshShop)

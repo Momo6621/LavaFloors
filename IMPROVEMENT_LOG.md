@@ -3,6 +3,29 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 165. Shop tabs: All, Gloves, Hats, Buddies, More
+
+**Why.** With this session's new gloves, hats and buddies the shop grid held 48 cards in one scroll. Kids looking for a
+buddy had to scroll past every glove and hat.
+
+**Built.** LavaFloorsUI:
+- A row of five tabs under the shop's ribbon (the grid moves down 38 px). The selected tab is in the theme's lava
+  colour; the others are muted.
+- Each tab filters the grid by the cards' existing LayoutOrder ranges: gloves 1-49 plus Aurora at 100, hats 50-79,
+  buddies 80-98, and More for the trail, coin packs, the free-coins ad and tips.
+- The shop opens on All, so it looks the same until a tab is tapped. Picking a tab scrolls back to the top.
+- The free-coins ad card used to switch its own `Visible` on and off. It now sets a `ShopOff` attribute that the filter
+  respects, so a tab can't show the card while no ad is available.
+- Tab labels scale to fit but are capped at 16 px, so all five read the same size.
+
+**Verified.** Lints pass. The Studio copy matches the repo (73502 bytes, hash 223257378) and compiles. Playtest:
+- 48 cards: 12 gloves, 12 hats, 13 buddies, 11 more.
+- All showed 47 (the ad card stayed hidden).
+- Screenshots show the tab row under the ribbon, first with uneven label sizes, then even after the 16 px cap.
+
+Not checked: tapping a tab. Studio's coordinate clicks reported success but didn't reach the game, two tries, a known
+limit with these tools. The tab handler is a plain button `Activated`.
+
 ## 164. Two hub challenges: finish the Warm-up Hop, try things on at the mirror
 
 **Why.** The daily challenges pointed only at rounds. Two of them now send kids to the hub features between rounds,
