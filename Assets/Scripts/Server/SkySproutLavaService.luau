@@ -1769,6 +1769,7 @@ local function buildArena()
 	if c.Y > 20 then
 		local under = Instance.new("Model")
 		under.Name = "IslandUnderside"
+		workspace:SetAttribute("IslandCenter", c) -- for the orbiting stone halo drawn on each client (#167)
 		under.Parent = arenaFolder
 		local urng = Random.new(137)
 		local function decor(piece: BasePart)

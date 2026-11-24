@@ -3,6 +3,31 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 167. A halo of floating stones circling the island
+
+**Why.** Architecture with movement: looking down from the deck, the floating island had nothing around it. A slow
+orbit of stones frames it and gives the view a calm, satisfying motion between rounds.
+
+**Built.**
+- SkySproutLavaService: the island block publishes `workspace.IslandCenter`.
+- LavaFloorsUI draws the halo on each client:
+  - 18 basalt stones, 9-15 studs, each with a neon crystal on top.
+  - They sit on a ring 125 studs from the island's centre, 24 studs below its top, just outside the 100-stud rim.
+  - The ring turns once every 150 s. Each stone bobs ±1.5 studs and is tilted a little, and its crystal spins.
+  - Crystals take the world's `UIAccent` and follow theme changes.
+- Everything is anchored with no collision, queries, touches or shadows, and since it's built locally it costs no
+  network traffic.
+
+**Verified.** Lints pass. The Studio copies match the repo (SkySproutLavaService 247887 bytes, hash 150119151;
+LavaFloorsUI 75983, hash 435172999) and compile. Playtest (with the earlier 5-9 stud size):
+- 36 halo parts were built.
+- A stone moved 10.8 studs in 2 s, about the 5.2 studs/s a 125-stud ring at 150 s a turn gives.
+- The crystals were Candy pink in a Candy round.
+
+Not checked: a clean screenshot. During play the game's own camera fought the capture camera, and the shots ended up
+inside the plaza, under the rim or in the lava. One capture did show the day-1 calendar under the result card (#148)
+with "🔥 1 day in a row!" (#146), confirming those two.
+
 ## 166. Three new titles, and earned titles stay earned
 
 **Why.**

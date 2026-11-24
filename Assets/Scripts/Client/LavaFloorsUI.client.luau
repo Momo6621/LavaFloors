@@ -1547,6 +1547,65 @@ task.defer(function()
 	end)
 end)
 
+-- Island halo (#167): a ring of floating stones, each with a glowing crystal in the world's accent colour, circling the
+-- floating island just below its rim once every 150 s, bobbing gently. Drawn only on this screen (no network traffic);
+-- decoration only, nothing collides or can be hit.
+task.defer(function()
+	local RunService = game:GetService("RunService")
+	local Themes = require(RS:WaitForChild("LavaThemes")) :: any
+	local centre = workspace:GetAttribute("IslandCenter")
+	while typeof(centre) ~= "Vector3" do
+		workspace:GetAttributeChangedSignal("IslandCenter"):Wait()
+		centre = workspace:GetAttribute("IslandCenter")
+	end
+	local COUNT, RADIUS, DROP, PERIOD = 18, 125, 24, 150
+	local folder = Instance.new("Folder")
+	folder.Name = "IslandHalo"
+	local rng = Random.new(167)
+	local stones = {}
+	for k = 1, COUNT do
+		local size = rng:NextNumber(9, 15) -- big enough to read from the deck against a 100-stud island
+		local function piece(name: string, partSize: Vector3, material: Enum.Material, color: Color3): Part
+			local p = Instance.new("Part")
+			p.Name = name
+			p.Anchored = true
+			p.CanCollide, p.CanQuery, p.CanTouch, p.CastShadow = false, false, false, false
+			p.Size = partSize
+			p.Material = material
+			p.Color = color
+			p.Parent = folder
+			return p
+		end
+		table.insert(stones, {
+			rock = piece("HaloRock", Vector3.new(size, size * 0.7, size * 0.9), Enum.Material.Basalt, Color3.fromRGB(62, 50, 48)),
+			crystal = piece("HaloCrystal", Vector3.new(1.4, size * 0.45, 1.4), Enum.Material.Neon, Color3.fromRGB(255, 120, 40)),
+			angle = k / COUNT * math.pi * 2,
+			bob = rng:NextNumber(0, math.pi * 2),
+			tilt = rng:NextNumber(-0.25, 0.25),
+			size = size,
+		})
+	end
+	folder.Parent = workspace
+	local function recolour()
+		local theme = Themes.Get(workspace:GetAttribute("LavaTheme"))
+		for _, s in stones do
+			s.crystal.Color = theme.UIAccent or Color3.fromRGB(255, 120, 40)
+		end
+	end
+	workspace:GetAttributeChangedSignal("LavaTheme"):Connect(recolour)
+	recolour()
+	RunService.Heartbeat:Connect(function()
+		local t = os.clock()
+		for _, s in stones do
+			local a = s.angle + t * (math.pi * 2 / PERIOD)
+			local pos = centre + Vector3.new(math.cos(a) * RADIUS, -DROP + math.sin(t * 0.8 + s.bob) * 1.5, math.sin(a) * RADIUS)
+			local cf = CFrame.new(pos) * CFrame.Angles(s.tilt, -a, s.tilt * 0.5)
+			s.rock.CFrame = cf
+			s.crystal.CFrame = cf * CFrame.new(0, s.size * 0.35 + s.size * 0.2, 0) * CFrame.Angles(0, t * 0.6 + s.bob, 0)
+		end
+	end)
+end)
+
 -- Try-on mirror (#140): stepping on the mirror stage opens the shop with TRY buttons, and the camera looks out of the
 -- mirror at you (shifted so you stand left of the shop panel). Stepping off hands the camera back. No hint pop-up:
 -- the TRY buttons and the mirror's sign explain it.
