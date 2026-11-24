@@ -3,6 +3,18 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 151. The live round screen shows the twist during the round
+
+**Why.** The countdown names the twist (#145), but once the round started the deck lost it, and twists like Drop
+Party or Mega Shoves explain what the watchers see on the floor.
+
+**Built.** SkySproutLavaService, LiveRound board: during a round the last line is "🤖 3 bots still in · 🎁 Drop Party"
+(or "Twist: 🎁 Drop Party" with no bots left).
+
+**Verified.** Lints pass. The Studio copy matches the repo (232331 bytes, hash 905400936) and compiles. Solo playtest
+reading the board every 0.5 s: countdown "Twist: 🎁 Drop Party", then "🤖 3 bots still in · 🎁 Drop Party" through the
+round, then "Round over! ... 👑 🤖 Taffy, 🤖 Gumdrop won!" and "Last round:".
+
 ## 150. The live round screen names the bots when they win
 
 **Why.** In a round the bots win, the round-over screen (#145) only listed the players, all "💥 out", so the deck

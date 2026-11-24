@@ -1222,7 +1222,9 @@ local function buildArena()
 				return { "Round over!", rows[1] or "", rows[2] or "", rows[3] or "", rows[4] or "" }
 			end
 			local botsIn = #aliveBotNames()
-			rows[5] = if botsIn > 0 then string.format("🤖 %d bot%s still climbing", botsIn, if botsIn == 1 then "" else "s") else ""
+			-- The round's twist rides on the last line (#151), so the deck knows why the floor is acting up.
+			local twist = tostring(L.Mutator.Name)
+			rows[5] = if botsIn > 0 then string.format("🤖 %d bot%s still in · %s", botsIn, if botsIn == 1 then "" else "s", twist) else "Twist: " .. twist
 			return rows
 		end, true)
 		-- All-time Top Winners (#149): raised like the live screen, to its left, over Top Supporters.
