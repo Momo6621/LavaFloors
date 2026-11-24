@@ -3,6 +3,22 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 145. The live round screen counts down and remembers the last round
+
+**Why.** Between rounds the new screen (#144) only said "waiting", which is most of what the deck sees. Kids want to
+know when the next round starts, what the twist is, and how the last one went.
+
+**Built.** SkySproutLavaService, LiveRound board fill:
+- Countdown phase: "Next round in N..." (from `L.EndsAt`) and "Twist: " with the chosen twist's name.
+- Results phase: "Round over!" over the same standings list; the list is kept.
+- Idle (and any moment with no runners): "Last round:" with the top three of that list and "Next round soon!"; the
+  first-ever wait still shows the look-down hint.
+
+**Verified.** Lints pass. The Studio copy matches the repo (228773 bytes, hash 217450367) and compiles. Solo playtest
+reading the board every 0.5 s for 85 s across three rounds: the waiting text, then each round's countdown 4-3-2-1
+with its twist (Mega Shoves, Drop Party, Duos), the live lines during the round, "Round over!" with the player's
+line, and "Last round: ... Next round soon!" until the next countdown.
+
 ## 144. A live round screen on the hub deck
 
 **Why.** The owner's hub is meant to "onlook the game". From the deck you can see the island far below, but not who

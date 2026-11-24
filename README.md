@@ -21,7 +21,9 @@ On the other side of the plaza from the Warm-up Hop, three neon bounce pads (pin
 and 28 studs up with a springy sound, just for fun between rounds (`CFG.BouncePads`, #142).
 Floating over the walkway between the two leaderboards, a 🔴 LIVE ROUND screen faces the plaza and updates every
 second during a round: each player's name with how many rises up they are (👑 when crowned, 💥 when out) and how many
-bots are still climbing, so the deck can follow the game below (#144).
+bots are still climbing, so the deck can follow the game below (#144). Between rounds it counts down the next one with
+its twist ("Next round in 3... / Twist: 👥 Duos"), shows "Round over!" with the standings, then keeps them up as
+"Last round:" until the next countdown (#145).
 
 Each round is 3 phases of 10 seconds. Every phase the floor:
 

@@ -1120,8 +1120,16 @@ local function buildArena()
 		end)
 		-- Live round screen (#144, the hub watches the game): who is still climbing and how many rises up, so the
 		-- deck can follow the round below. Real players only by name; bots are counted on the last line.
+		-- Between rounds (#145) it counts down the next round with its twist, and keeps the last round's standings up.
+		local lastRound: { string }? = nil
 		board("LiveRound", 0, "🔴 LIVE ROUND", Color3.fromRGB(230, 50, 40), function()
-			if L.Phase ~= "Round" then
+			if L.Phase == "Countdown" then
+				return { string.format("Next round in %d...", math.max(1, math.ceil(L.EndsAt - now()))), "Twist: " .. tostring(L.Mutator.Name), "", "Look down through the force field", "to watch the climbers!" }
+			end
+			if L.Phase == "Idle" or next(L.Runners) == nil then
+				if lastRound then
+					return { "Last round:", lastRound[1] or "", lastRound[2] or "", lastRound[3] or "", "Next round soon!" }
+				end
 				return { "Waiting for the next round...", "", "Look down through the force field", "to watch the climbers!" }
 			end
 			local climbers = {}
@@ -1146,6 +1154,10 @@ local function buildArena()
 				local e = climbers[i]
 				local mark = if e.Crowned then "👑" elseif e.Alive then "⬆ " .. e.Rises else "💥 out"
 				table.insert(rows, string.format("%s  %s", e.Name, mark))
+			end
+			if L.Phase == "Results" then
+				lastRound = rows
+				return { "Round over!", rows[1] or "", rows[2] or "", rows[3] or "", rows[4] or "" }
 			end
 			local botsIn = #aliveBotNames()
 			rows[5] = if botsIn > 0 then string.format("🤖 %d bot%s still climbing", botsIn, if botsIn == 1 then "" else "s") else ""
