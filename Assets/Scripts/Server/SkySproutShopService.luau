@@ -161,6 +161,12 @@ local function daily(p: Player)
 	local reward = DAILY[streak] * (if isVip and C.Vip then C.Vip.DailyMultiplier else 1)
 	d.LastDaily = today
 	d.DailyStreak = streak
+	-- Days in a row (#146, owner's request): playing yesterday too adds one, otherwise it starts again at 1. It's only a
+	-- count to be proud of (with your best kept): no coins hang on it, and the reward ladder above never resets.
+	local inRow = if last == today - 1 then math.min((tonumber(d.LoginStreak) or 0) + 1, 100000) else 1
+	local bestInRow = math.max(tonumber(d.BestLoginStreak) or 0, inRow)
+	d.LoginStreak = inRow
+	d.BestLoginStreak = bestInRow
 	d.Coins = math.min(100000000, d.Coins + reward)
 	local dailyBalance = d.Coins
 	task.spawn(pcall, function()
@@ -180,7 +186,7 @@ local function daily(p: Player)
 		-- The 7-day calendar card on the client (SkySproutLavaClient, "LavaDaily").
 		local remote = game.ReplicatedStorage:FindFirstChild("ArenaEvent")
 		if remote and remote:IsA("RemoteEvent") then
-			remote:FireClient(p, "LavaDaily", { Day = streak, Rewards = DAILY, Multiplier = if isVip and C.Vip then C.Vip.DailyMultiplier else 1 })
+			remote:FireClient(p, "LavaDaily", { Day = streak, Rewards = DAILY, Multiplier = if isVip and C.Vip then C.Vip.DailyMultiplier else 1, InRow = inRow, BestInRow = bestInRow })
 		end
 		if welcomeBack then
 			tell(p, string.format("👋 Welcome back! We missed you: +%d coins", WELCOME_BACK_COINS))

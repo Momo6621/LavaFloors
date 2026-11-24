@@ -3,6 +3,31 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 146. Days in a row on the daily card (owner's request)
+
+**Why.** The owner asked for a feature that shows how many days you've logged in in a row. The daily reward ladder
+counts days collected but pauses on a missed day, so it never said "in a row".
+
+**Built.**
+- SkySproutShopService `daily()`: when the day's reward is collected, `LoginStreak` goes up by one if you last
+  collected yesterday (UTC days), otherwise it starts again at 1; `BestLoginStreak` keeps the highest. Both go to the
+  client in the "LavaDaily" message (`InRow`, `BestInRow`).
+- SkySproutRules: the two new profile fields default to 0 and are cleaned like `DailyStreak` (whole numbers 0-100000).
+- SkySproutLavaClient: the daily card is 28 px taller with a gold line under the hint: "🔥 1 day in a row!", or
+  "🔥 5 days in a row · Best: 9" when your best is higher. The label is created without a new local and found by name
+  (that script is at Luau's 200-local limit).
+- Kid-fair: no coins or items depend on the count, so missing a day loses nothing (the reward ladder still never
+  resets); it's a number to be proud of, with your best kept.
+
+**Verified.** Lints pass. The Studio copies match the repo (SkySproutRules 11753 bytes, hash 185548886;
+SkySproutShopService 9040, hash 825350797; SkySproutLavaClient 125873, hash 485575190) and compile. Studio
+playtest (Studio saves nothing, so every play is a first day): the server sent `InRow = 1, BestInRow = 1` with the
+"Day 1 daily reward" notice. A LavaDaily message fired from the test server with `InRow = 5, BestInRow = 9` showed the
+card ("DAY 3 REWARD: +75", "🔥 5 days in a row · Best: 9") and it closed itself 7 s later. Not checked: two real days in
+a row on a published server, and a screenshot (capture timed out with Studio in the background). Noticed: in Studio
+the fresh player is dropped into back-to-back rounds, and the real day-1 card didn't come up within ~70 s; the card's
+show-after-3-s-out-of-a-round logic is unchanged by this entry.
+
 ## 145. The live round screen counts down and remembers the last round
 
 **Why.** Between rounds the new screen (#144) only said "waiting", which is most of what the deck sees. Kids want to

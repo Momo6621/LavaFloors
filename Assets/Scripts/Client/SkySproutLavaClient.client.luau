@@ -280,7 +280,7 @@ end
 
 -- Daily reward calendar: when the day's coins arrive (once a day, after joining) a card shows the 7-day ladder: days
 -- already collected, today's reward and tomorrow's. Missing a day only pauses the ladder, it never resets. Tap to close.
-local dailyCard: TextButton = make("TextButton", { Name = "DailyCard", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.45), Size = UDim2.fromOffset(500, 156), Text = "", AutoButtonColor = false, Visible = false, ZIndex = 8 }, gui)
+local dailyCard: TextButton = make("TextButton", { Name = "DailyCard", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.45), Size = UDim2.fromOffset(500, 184), Text = "", AutoButtonColor = false, Visible = false, ZIndex = 8 }, gui)
 UI.glass(dailyCard, 20)
 local dailyTitle: TextLabel = make("TextLabel", { BackgroundTransparency = 1, Position = UDim2.fromOffset(12, 8), Size = UDim2.new(1, -24, 0, 30), Font = FONT, TextScaled = true, Text = "DAILY REWARD", ZIndex = 9 }, dailyCard)
 UI.text(dailyTitle, "title")
@@ -298,6 +298,8 @@ local dailyRow: Frame = make("Frame", { Name = "Days", BackgroundTransparency = 
 make("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Center, Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder }, dailyRow)
 local dailyHint: TextLabel = make("TextLabel", { BackgroundTransparency = 1, Position = UDim2.fromOffset(12, 126), Size = UDim2.new(1, -24, 0, 22), Font = FONT, TextScaled = true, Text = "", ZIndex = 9 }, dailyCard)
 UI.text(dailyHint, "body")
+-- Days in a row (#146): a gold line under the hint. Found by name in revealDaily (this script is at the local limit).
+UI.text(make("TextLabel", { Name = "InRow", BackgroundTransparency = 1, Position = UDim2.fromOffset(12, 152), Size = UDim2.new(1, -24, 0, 24), Font = FONT, TextScaled = true, Text = "", TextColor3 = UI.Gold, ZIndex = 9 }, dailyCard), "body")
 local dailyShownAt = 0
 local dailyOnScreen = false -- tracked here, since other HUD code can hide the card when a round starts
 dailyCard.Activated:Connect(function()
@@ -349,6 +351,11 @@ local function revealDaily(v: any)
 	task.defer(placeDailyCoin)
 	local nextCoins = tonumber(rewards[math.min(day + 1, #rewards)]) or 0
 	dailyHint.Text = if day < #rewards then string.format("Next time you play: %d coins. Missing a day won't reset it!", nextCoins * mult) else "Top reward every day you play!"
+	local inRow, bestInRow = tonumber(v.InRow), tonumber(v.BestInRow) or 0
+	local inRowLabel = dailyCard:FindFirstChild("InRow") :: TextLabel?
+	if inRowLabel then
+		inRowLabel.Text = if not inRow then "" elseif bestInRow > inRow then string.format("🔥 %d day%s in a row  ·  Best: %d", inRow, if inRow == 1 then "" else "s", bestInRow) else string.format("🔥 %d day%s in a row!", inRow, if inRow == 1 then "" else "s")
+	end
 	dailyCard.Visible = true
 	dailyOnScreen = true
 	dailyLast = v

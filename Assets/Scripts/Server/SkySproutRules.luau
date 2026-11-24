@@ -1,7 +1,7 @@
 local C=require(game.ReplicatedStorage.SkySproutConfig)
 local R={}
 function R.floor(points)return math.clamp(1+math.floor(points/C.PointsPerFloor),1,C.MaxFloor)end
-function R.new()return {Version=8,Waystones={},Contracts={},XP=0,Style="Vanguard",Relic="Ember",BossClears={},Hunts={},Stories={},Coins=0,Points=0,BestFloor=1,Wins=0,Losses=0,Knockouts=0,Skin="Mint",Owned={Mint=true},FloorQuests={},Receipts={},LastDaily=0,DailyStreak=0,Crowns=0,Hat="",OwnedHats={},Pet="",OwnedPets={},PassSeason=0,PassXP=0,PassFree={},PassPrem={},Tipped=0,WelcomeClaimed=false,Invited={},InviteDay=0,InviteToday=0,Daily={Day=0,P={},C={}},Redeemed={},TutorialDone=false,WeekNo=0,WeekCrowns=0,BestHeight=0,Chest=0,ChestsOpened=0,Gems={},Title="",GiftsSent=0,EscapeParties=0,RoundsPlayed=0,WinEmote="Cheer",MusicOff=false,FirstCrownDay=0,TwistWins={},WorldsSeen={}}end
+function R.new()return {Version=8,Waystones={},Contracts={},XP=0,Style="Vanguard",Relic="Ember",BossClears={},Hunts={},Stories={},Coins=0,Points=0,BestFloor=1,Wins=0,Losses=0,Knockouts=0,Skin="Mint",Owned={Mint=true},FloorQuests={},Receipts={},LastDaily=0,DailyStreak=0,LoginStreak=0,BestLoginStreak=0,Crowns=0,Hat="",OwnedHats={},Pet="",OwnedPets={},PassSeason=0,PassXP=0,PassFree={},PassPrem={},Tipped=0,WelcomeClaimed=false,Invited={},InviteDay=0,InviteToday=0,Daily={Day=0,P={},C={}},Redeemed={},TutorialDone=false,WeekNo=0,WeekCrowns=0,BestHeight=0,Chest=0,ChestsOpened=0,Gems={},Title="",GiftsSent=0,EscapeParties=0,RoundsPlayed=0,WinEmote="Cheer",MusicOff=false,FirstCrownDay=0,TwistWins={},WorldsSeen={}}end
 function R.clean(raw)
  local p=R.new();if type(raw)~="table"then return p end
  for _,k in ipairs({"Coins","Points","Wins","Losses","Knockouts","BestFloor","XP","Crowns"})do
@@ -37,6 +37,8 @@ function R.clean(raw)
  p.XP=math.min(200000,p.XP)
  if type(raw.LastDaily)=="number"and raw.LastDaily==raw.LastDaily then p.LastDaily=math.clamp(math.floor(raw.LastDaily),0,10000000)end
  if type(raw.DailyStreak)=="number"and raw.DailyStreak==raw.DailyStreak then p.DailyStreak=math.clamp(math.floor(raw.DailyStreak),0,7)end
+ if type(raw.LoginStreak)=="number"and raw.LoginStreak==raw.LoginStreak then p.LoginStreak=math.clamp(math.floor(raw.LoginStreak),0,100000)end
+ if type(raw.BestLoginStreak)=="number"and raw.BestLoginStreak==raw.BestLoginStreak then p.BestLoginStreak=math.clamp(math.floor(raw.BestLoginStreak),0,100000)end
  p.WelcomeClaimed=raw.WelcomeClaimed==true
  p.TutorialDone=raw.TutorialDone==true
  if type(raw.WeekNo)=="number"and raw.WeekNo==raw.WeekNo then p.WeekNo=math.clamp(math.floor(raw.WeekNo),0,100000)end
