@@ -346,6 +346,8 @@ each) is free for everyone.
 - Rewarded video ads only start once the game is public and meets Roblox's eligibility rules.
 - Set the badge IDs in `SkySproutConfig`.
 - Set Lighting → Technology to **Future** in Studio.
+- After publishing, check the parts Studio can't test here: the 🏆 ALL-TIME WINNERS board fills from its data store
+  (`LavaAllTimeCrowns_v1`) within a minute of a crown, and "🔥 days in a row" counts real days (UTC).
 
 ## Store art
 
