@@ -3,6 +3,21 @@
 One entry per improvement-loop iteration: what the research said players and kids like, what was built, and how it
 was checked. Newest first.
 
+## 174. Snappier floor motion: rippling rings, settling moves, landing squash
+
+**Why.** Owner's request: improve the geometry and pop of the game.
+
+**Built.**
+- LavaGrid: a growing ring zips in tile by tile around the centre; each tile slides out and hops 1.6 studs into place.
+- Spins and rises overshoot by 3% (about 5° on the half-turn, 0.7 studs on a rise) and settle back, so each move ends
+  with a clunk. The peak rise speed is about 25% higher.
+- Client: the tile you land on dips (0.15 to 0.45 studs, deeper on harder landings) and springs back, with a dust puff
+  on big drops. Only on your own screen, and off with reduced motion.
+
+**Verified.** Lints pass; Studio copies match the repo (LavaGrid 14119 bytes, client 129557). A playtest ran full
+rounds with no console errors. A before/after recording of both grids showed the ripple and settle. Not seen yet: the
+landing squash in play.
+
 ## 173. A seventh world: 🌊 Tidal Lagoon
 
 **Why.** More variety in every session (content for the game to take off). The count-based titles from #166 mean a

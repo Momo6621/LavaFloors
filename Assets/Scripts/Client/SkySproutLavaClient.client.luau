@@ -1538,7 +1538,7 @@ end)
 -- Wear: a tile darkens, cracks and shakes as it wears out, then shatters into chunks that tumble into the lava.
 local CRACKED = Color3.fromRGB(70, 52, 48)
 local WHITE = Color3.new(1, 1, 1)
-type Look = { color: Color3, material: Enum.Material, broken: boolean }
+type Look = { color: Color3, material: Enum.Material, broken: boolean, landedAt: number?, dip: number? }
 local looks: { [BasePart]: Look } = {}
 
 local function shatter(tile: BasePart, at: CFrame)
@@ -1745,6 +1745,13 @@ Run.PreSimulation:Connect(function()
 		end
 		local delta = Grid.Delta(towerModel, tile, t)
 		local moved = delta * rest
+		-- Landing squash: the tile you just landed on dips and springs back, with everything riding on it.
+		local landing = looks[tile :: BasePart]
+		local landedAt, dip = landing and landing.landedAt, landing and landing.dip
+		if landedAt and dip and t - landedAt < 0.5 and not REDUCED_MOTION then
+			local e = math.max(0, t - landedAt)
+			moved = CFrame.new(0, -dip * math.sin(e * 18) * math.exp(-e * 9), 0) * moved
+		end
 		local pivot = item:GetAttribute("BobPivot")
 		if typeof(pivot) == "Vector3" then
 			local around = delta * CFrame.new(pivot)
@@ -2869,6 +2876,52 @@ task.defer(function()
 			bufferedAt = t
 		end
 	end)
+end)
+
+-- Landing squash: landing on a floor tile after a jump or a fall makes the tile dip under you and spring back, deeper
+-- the faster you came down, with a puff of dust on a big drop. Only on your own screen; the grid itself doesn't move.
+-- Its own function, so its locals don't count toward this script's 200-local limit.
+task.defer(function()
+	local fallSpeed = 0
+	local function watch(character: Model)
+		local h = character:WaitForChild("Humanoid", 10)
+		local root = character:WaitForChild("HumanoidRootPart", 10)
+		if not (h and h:IsA("Humanoid") and root and root:IsA("BasePart")) then
+			return
+		end
+		h.StateChanged:Connect(function(_, new)
+			if new ~= Enum.HumanoidStateType.Landed then
+				return
+			end
+			local speed = fallSpeed
+			fallSpeed = 0
+			task.wait() -- the floor material is only known a frame after landing
+			local tile = tileUnderFeet()
+			local look = tile and looks[tile]
+			if not tile or not look or speed < 12 then
+				return
+			end
+			look.landedAt = workspace:GetServerTimeNow()
+			look.dip = math.clamp(speed / 160, 0.15, 0.45)
+			if speed > 70 and not REDUCED_MOTION then
+				burst(root.Position - Vector3.new(0, 3, 0), ColorSequence.new(tile.Color:Lerp(WHITE, 0.55)), 12, 9)
+			end
+		end)
+		local tracking: RBXScriptConnection
+		tracking = Run.Heartbeat:Connect(function()
+			if not character.Parent then
+				tracking:Disconnect()
+				return
+			end
+			if h:GetState() == Enum.HumanoidStateType.Freefall then
+				fallSpeed = math.max(fallSpeed, -root.AssemblyLinearVelocity.Y)
+			end
+		end)
+	end
+	player.CharacterAdded:Connect(watch)
+	if player.Character then
+		task.spawn(watch, player.Character)
+	end
 end)
 
 -- Your bubble ends (#104): when your shield bubble wears off mid-round, a soft falling chime (the "bubble on" sound, lower)

@@ -44,6 +44,28 @@ local function window(s: number, w: { number }, phaseTime: number): number
 	return smooth((s - w[1] * phaseTime) / ((w[2] - w[1]) * phaseTime))
 end
 
+-- Spins and rises land with a little swing: they start as smoothly as before, go 3% past the target (5 degrees on
+-- the half-turn, 0.7 studs on a rise) and settle back onto it with no speed left, so every move ends with a
+-- satisfying "clunk" into place instead of easing to a stop. The peak speed is about 25% higher than a plain ease.
+local OVERSHOOT = 0.03
+local SETTLE_AT = 0.82 -- share of the window spent getting past the target; the rest settles back
+local function settle(a: number): number
+	a = math.clamp(a, 0, 1)
+	if a < SETTLE_AT then
+		return (1 + OVERSHOOT) * smooth(a / SETTLE_AT)
+	end
+	return 1 + OVERSHOOT * (1 - smooth((a - SETTLE_AT) / (1 - SETTLE_AT)))
+end
+
+local function settleWindow(s: number, w: { number }, phaseTime: number): number
+	return settle((s - w[1] * phaseTime) / ((w[2] - w[1]) * phaseTime))
+end
+
+-- A growing ring zips round: each tile starts a little after the one before it (by its angle round the centre, outer
+-- rings a beat later), slides out from under its neighbour and hops up into place.
+local RIPPLE = 0.45 -- share of the grow window the sweep takes; each tile's own slide-and-pop takes the rest
+local POP_HOP = 1.6 -- how far a tile jumps above its place as it pops up, in studs
+
 function G.Ring(size: number, row: number, col: number): number
 	local mid = (size + 1) / 2
 	return math.max(math.abs(row - mid), math.abs(col - mid))
@@ -145,8 +167,8 @@ function G.Pose(tower: Instance, t: number): (number, number)
 	end
 	local y = baseY + riseStep * p
 	if p < (attr(tower, "Phases") or 0) then
-		angle += math.rad(spins[p + 1] or 0) * window(s, SPIN, phaseTime)
-		y += riseStep * window(s, RISE, phaseTime)
+		angle += math.rad(spins[p + 1] or 0) * settleWindow(s, SPIN, phaseTime)
+		y += riseStep * settleWindow(s, RISE, phaseTime)
 	end
 	return angle, y
 end
@@ -253,14 +275,18 @@ function G.TileCFrame(tower: Instance, row: number, col: number, t: number): CFr
 	local x, z = (col - mid) * step, (row - mid) * step
 	local lift = 0
 	if out < 1 then
-		local slide = math.min(1, out / 0.7)
-		local pop = math.max(0, (out - 0.7) / 0.3)
+		-- Where this tile comes in the sweep (0..1): its angle round the centre, outer rings a little later.
+		local turn = (math.atan2(row - mid, col - mid) / (2 * math.pi)) % 1
+		local delay = RIPPLE * math.clamp(turn * 0.8 + ((G.Ring(size, row, col) + 1) % 2) * 0.2, 0, 1)
+		local own = math.clamp((out - delay) / (1 - RIPPLE), 0, 1)
+		local slide = smooth(own / 0.7)
+		local pop = math.clamp((own - 0.7) / 0.3, 0, 1)
 		if math.abs(col - mid) >= math.abs(row - mid) then
 			x -= math.sign(col - mid) * step * (1 - slide)
 		else
 			z -= math.sign(row - mid) * step * (1 - slide)
 		end
-		lift = -TUCK_DROP * (1 - pop)
+		lift = -TUCK_DROP * (1 - smooth(pop)) + POP_HOP * math.sin(math.pi * pop)
 	end
 	lift += G.Lift(tower, row, col, t)
 	local centre = CFrame.new(attr(tower, "CenterX") or 0, y - sink + lift, attr(tower, "CenterZ") or 0)
